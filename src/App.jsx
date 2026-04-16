@@ -287,13 +287,13 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      const txt = JSON.stringify(data);
-const clean = txt.replace(/```json/g, "").replace(/```/g, "").trim();
-      <p style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6, marginBottom: 14 }}>{scanResult.explanation}</p>
+      if (data.error) throw new Error(data.error);
+      setScanResult(data);
       setScanStep("result");
     } catch (e) {
+    } catch (e) {
       console.error(e);
-      setScanErr("Analysis failed. Check your Gemini API key or try again.");
+      setScanErr("Analysis failed. Please try again.");
       setScanStep("pick");
     }
   };
