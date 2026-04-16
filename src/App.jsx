@@ -276,28 +276,19 @@ Reply ONLY with this exact JSON (no markdown, no explanation outside JSON):
 If not claimable: {"claimable":false,"category_id":null,"category_name":null,"total_amount":0,"suggested_amount":0,"explanation":"Reason why it does not qualify.","conditions":null}`;
 
     try {
-      const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-      const parts = [];
-
-      // Add image if present
+      const body = { prompt };
       if (scanImg) {
-        const base64 = scanImg.split(",")[1];
-        const mimeType = scanImg.split(";")[0].split(":")[1];
-        parts.push({ inlineData: { mimeType, data: base64 } });
+        body.imageBase64 = scanImg.split(",")[1];
+        body.mimeType = scanImg.split(";")[0].split(":")[1];
       }
-      parts.push({ text: prompt });
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts }] }),
-        }
-      );
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const data = await res.json();
-      const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const clean = txt.replace(/```json/g, "").replace(/```/g, "").trim();
+      const txt = JSON.stringify(data);
+      const clean = txt;
       setScanResult(JSON.parse(clean));
       setScanStep("result");
     } catch (e) {
