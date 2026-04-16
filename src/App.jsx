@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-try { window.__OAI_KEY = import.meta.env.VITE_OPENAI_API_KEY || ""; } catch {}
+// ── Supabase client ──
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+);
 
 const C = {
   pri: "#1A1C1E", priLight: "#2D2F33", priPale: "#E8FA5B", mint: "#D4EDE1", mintDeep: "#A8D5BA",
@@ -23,6 +28,8 @@ const REL = {"2025":[{id:"personal",name:"Individual & Dependents",icon:"👤",i
 
 const BK=[{max:5000,r:0,c:0},{max:20000,r:1,c:0},{max:35000,r:3,c:150},{max:50000,r:6,c:600},{max:70000,r:11,c:1500},{max:100000,r:19,c:3700},{max:400000,r:25,c:9400},{max:600000,r:26,c:84400},{max:2000000,r:28,c:136400},{max:Infinity,r:30,c:528400}];
 const calcTax=(ci)=>{if(ci<=0)return 0;let p=0;for(const b of BK){if(ci<=b.max)return b.c+(ci-p)*b.r/100;p=b.max;}return 0;};
+
+// localStorage helpers (for guest mode)
 const SK="ringgit-v2";
 const ld=()=>{try{return JSON.parse(localStorage.getItem(SK))||{};}catch{return{};}};
 const sv=(d)=>{try{localStorage.setItem(SK,JSON.stringify(d));}catch{}};
@@ -40,45 +47,25 @@ const MonthPicker = ({ label, value, onChange }) => {
   return (
     <div style={{ flex: 1 }}>
       <label style={lb}>{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        style={{
-          ...ip,
-          textAlign: "left",
-          cursor: "pointer",
-          color: value ? C.text : C.textSec,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          border: "1.5px solid " + (value ? C.mintDeep : C.border),
-        }}
-      >
+      <button type="button" onClick={() => setOpen(true)}
+        style={{ ...ip, textAlign: "left", cursor: "pointer", color: value ? C.text : C.textSec, display: "flex", alignItems: "center", justifyContent: "space-between", border: "1.5px solid " + (value ? C.mintDeep : C.border) }}>
         <span>{display}</span>
         <span style={{ fontSize: 10, opacity: 0.5 }}>▾</span>
       </button>
       {open && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(26,28,30,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(6px)" }}
-          onClick={() => setOpen(false)}
-        >
-          <div
-            style={{ backgroundColor: C.card, borderRadius: "28px 28px 0 0", width: "100%", maxWidth: 480, padding: "20px 20px 32px", boxShadow: "0 -8px 40px rgba(0,0,0,0.15)", fontFamily: "'Poppins',sans-serif" }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(26,28,30,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(6px)" }} onClick={() => setOpen(false)}>
+          <div style={{ backgroundColor: C.card, borderRadius: "28px 28px 0 0", width: "100%", maxWidth: 480, padding: "20px 20px 32px", boxShadow: "0 -8px 40px rgba(0,0,0,0.15)", fontFamily: "'Poppins',sans-serif" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{label}</span>
-              <button
-                style={{ ...bt, backgroundColor: C.priPale, color: C.pri, padding: "9px 22px", fontSize: 13, fontWeight: 700 }}
-                onClick={() => { onChange(selY + "-" + String(selM + 1).padStart(2, "0") + "-01"); setOpen(false); }}
-              >Done</button>
+              <button style={{ ...bt, backgroundColor: C.priPale, color: C.pri, padding: "9px 22px", fontSize: 13, fontWeight: 700 }}
+                onClick={() => { onChange(selY + "-" + String(selM + 1).padStart(2, "0") + "-01"); setOpen(false); }}>Done</button>
             </div>
             <div style={{ marginBottom: 16 }}>
               <div style={st}>YEAR</div>
               <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
                 {years.map(y => (
                   <button key={y} type="button"
-                    style={{ ...bt, padding: "10px 20px", backgroundColor: selY === y ? "#1A1C1E" : C.sage, color: selY === y ? "#fff" : C.text, fontSize: 13, flexShrink: 0, transition: "all 0.15s" }}
+                    style={{ ...bt, padding: "10px 20px", backgroundColor: selY === y ? "#1A1C1E" : C.sage, color: selY === y ? "#fff" : C.text, fontSize: 13, flexShrink: 0 }}
                     onClick={() => setSelY(y)}>{y}</button>
                 ))}
               </div>
@@ -88,7 +75,7 @@ const MonthPicker = ({ label, value, onChange }) => {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
                 {MONTHS.map((m, i) => (
                   <button key={m} type="button"
-                    style={{ ...bt, padding: "13px 0", backgroundColor: selM === i ? "#1A1C1E" : C.sage, color: selM === i ? "#fff" : C.text, fontSize: 13, borderRadius: 14, transition: "all 0.15s" }}
+                    style={{ ...bt, padding: "13px 0", backgroundColor: selM === i ? "#1A1C1E" : C.sage, color: selM === i ? "#fff" : C.text, fontSize: 13, borderRadius: 14 }}
                     onClick={() => setSelM(i)}>{m}</button>
                 ))}
               </div>
@@ -101,8 +88,8 @@ const MonthPicker = ({ label, value, onChange }) => {
 };
 
 export default function Ringgit() {
-  const [user, setUser] = useState(null);
-  const [auth, setAuth] = useState("welcome");
+  const [user, setUser] = useState(null);           // { id, name, email, provider }
+  const [authMode, setAuthMode] = useState("welcome"); // welcome | signup | app
   const [nameIn, setNameIn] = useState("");
   const [yobIn, setYobIn] = useState("");
   const [ya, setYa] = useState("2025");
@@ -122,6 +109,7 @@ export default function Ringgit() {
   const [scanStep, setScanStep] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
   const [scanErr, setScanErr] = useState(null);
+  const [loading, setLoading] = useState(true);
   const fRef = useRef(null);
   const scanDescRef = useRef(null);
   const [iEmp, setIEmp] = useState("");
@@ -130,19 +118,81 @@ export default function Ringgit() {
   const [iEnd, setIEnd] = useState("");
   const [viewImg, setViewImg] = useState(null);
 
+  // ── Auth listener ──
   useEffect(() => {
-    const d = ld();
-    if (d.user) { setUser(d.user); setAuth("app"); }
-    const yd = d[ya];
-    if (yd) { setClaims(yd.claims || {}); setReceipts(yd.receipts || []); setIncomes(yd.incomes || []); }
-    else { setClaims({}); setReceipts([]); setIncomes([]); }
-  }, [ya]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const u = session.user;
+        setUser({ id: u.id, name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User", email: u.email, provider: "google" });
+        setAuthMode("app");
+      }
+      setLoading(false);
+    });
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        setUser({ id: u.id, name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User", email: u.email, provider: "google" });
+        setAuthMode("app");
+      } else if (_event === "SIGNED_OUT") {
+        setUser(null);
+        setAuthMode("welcome");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Load data when ya or user changes ──
   useEffect(() => {
-    if (auth === "app" && user) {
+    if (authMode !== "app") return;
+    if (user?.provider === "google" && user?.id) {
+      loadFromSupabase();
+    } else {
+      // guest: load from localStorage
+      const d = ld();
+      const yd = d[ya] || {};
+      setClaims(yd.claims || {});
+      setReceipts(yd.receipts || []);
+      setIncomes(yd.incomes || []);
+    }
+  }, [ya, authMode, user?.id]);
+
+  // ── Auto-set G1 ──
+  useEffect(() => {
+    if (authMode === "app" && !claims.G1) {
+      setClaims(p => ({ ...p, G1: { amount: 9000 } }));
+    }
+  }, [ya, authMode]);
+
+  // ── Save for guest ──
+  useEffect(() => {
+    if (authMode === "app" && user?.provider !== "google") {
       const d = ld(); d[ya] = { claims, receipts, incomes }; d.user = user; sv(d);
     }
   }, [claims, receipts, incomes, user, ya]);
+
+  // ── Supabase load ──
+  const loadFromSupabase = async () => {
+    if (!user?.id) return;
+    try {
+      const [{ data: cl }, { data: inc }, { data: rec }] = await Promise.all([
+        supabase.from("claims").select("*").eq("user_id", user.id).eq("ya", ya),
+        supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
+        supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
+      ]);
+      const claimsObj = {};
+      (cl || []).forEach(c => { claimsObj[c.item_id] = { amount: c.amount, units: c.units }; });
+      setClaims(claimsObj);
+      setIncomes(inc || []);
+      setReceipts(rec || []);
+    } catch (e) { console.error("Load error", e); }
+  };
+
+  // ── Supabase save claim ──
+  const saveClaimToSupabase = async (id, amt, units) => {
+    if (!user?.id) return;
+    await supabase.from("claims").upsert({ user_id: user.id, ya, item_id: id, amount: amt, units: units || 1 }, { onConflict: "user_id,ya,item_id" });
+  };
 
   const cats = REL[ya] || REL["2025"];
   const allItems = cats.flatMap(c => c.items);
@@ -151,82 +201,177 @@ export default function Ringgit() {
   const chargeable = Math.max(0, totalIncome - totalRelief);
   const estTax = calcTax(chargeable);
 
-  useEffect(() => { if (auth === "app" && !claims.G1) setClaims(p => ({ ...p, G1: { amount: 9000 } })); }, [ya, auth]);
-
-  const saveClaim = (id, amt, units) => {
+  const saveClaim = async (id, amt, units) => {
     const it = allItems.find(i => i.id === id); if (!it) return;
     const cap = it.perUnit ? it.cap * (units || 1) : it.cap;
-    setClaims(p => ({ ...p, [id]: { ...p[id], amount: Math.min(amt, cap), units: units || 1 } }));
+    const finalAmt = Math.min(amt, cap);
+    setClaims(p => ({ ...p, [id]: { ...p[id], amount: finalAmt, units: units || 1 } }));
+    if (user?.provider === "google") await saveClaimToSupabase(id, finalAmt, units);
   };
+
+  const addIncome = async (inc) => {
+    setIncomes(p => [...p, inc]);
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya });
+    }
+  };
+
+  const removeIncome = async (id) => {
+    setIncomes(p => p.filter(i => i.id !== id));
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+    }
+  };
+
+  const addReceipt = async (rec) => {
+    setReceipts(p => [...p, rec]);
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("receipts").insert({ ...rec, user_id: user.id, ya });
+    }
+  };
+
+  const removeReceipt = async (id) => {
+    setReceipts(p => p.filter(x => x.id !== id));
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("receipts").delete().eq("id", id).eq("user_id", user.id);
+    }
+  };
+
   const switchYA = (y) => { setYa(y); setShowYa(false); setExpCat(null); setEditItem(null); closeScan(); };
+
   const closeScan = () => { setScanMode(null); setScanImg(null); setScanDesc(""); setScanStep("idle"); setScanResult(null); setScanErr(null); };
   const openScan = (id) => { setScanMode(id || "general"); setScanStep("pick"); setScanImg(null); setScanDesc(""); setScanResult(null); };
+
   const handleFile = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader(); r.onload = (ev) => setScanImg(ev.target.result); r.readAsDataURL(f); e.target.value = "";
   };
 
+  // ── Gemini AI scan ──
   const runAI = async () => {
     const desc = scanDescRef.current?.value || scanDesc;
     if (!scanImg && !desc) return;
     setScanStep("analyzing"); setScanErr(null);
-    const list = allItems.filter(i => !i.auto).map(i => i.id + ": " + i.name + " (cap RM" + i.cap + ") - " + i.desc).join("\n");
-    const imgContent = scanImg ? [{ type: "image_url", image_url: { url: scanImg } }] : [];
-    const prompt = "Malaysian tax relief validator YA" + ya + ". " + (scanImg ? "Receipt attached." : "No image.") + " " + (desc ? "User says: " + desc : "") + "\nReliefs:\n" + list + '\nReply ONLY JSON:\n{"claimable":true,"category_id":"G10","category_name":"...","total_amount":512,"suggested_amount":492,"explanation":"...","conditions":"..."}\ntotal_amount=full receipt. suggested_amount=qualifying portion. Not claimable: both 0, category_id null.';
+
+    const list = allItems.filter(i => !i.auto).map(i => `${i.id}: ${i.name} (cap RM${i.cap}) - ${i.desc}`).join("\n");
+    const prompt = `You are a Malaysian tax relief validator for Year of Assessment (YA) ${ya}, strictly following LHDN BE form guidelines.
+
+Your ONLY job is to determine if an expense qualifies for Malaysian income tax relief under the Income Tax Act 1967.
+
+${desc ? `User describes the expense as: "${desc}"` : "No description provided."}
+${scanImg ? "A receipt image has been attached." : "No receipt image."}
+
+Available relief categories for YA${ya}:
+${list}
+
+Rules:
+- Only approve expenses that are explicitly listed as qualifying reliefs under LHDN YA${ya}
+- Do NOT approve general living expenses, groceries, clothing, entertainment, travel (unless domestic tourism under VMY2026), or anything not in the list above
+- If partially claimable (e.g. receipt has both qualifying and non-qualifying items), suggest only the qualifying portion
+- Be conservative — when in doubt, do not approve
+
+Reply ONLY with this exact JSON (no markdown, no explanation outside JSON):
+{"claimable":true,"category_id":"G10","category_name":"Sports & fitness","total_amount":250,"suggested_amount":250,"explanation":"Gym membership qualifies under G10 Sports & fitness relief.","conditions":"Keep receipt for 7 years for LHDN audit purposes."}
+
+If not claimable: {"claimable":false,"category_id":null,"category_name":null,"total_amount":0,"suggested_amount":0,"explanation":"Reason why it does not qualify.","conditions":null}`;
+
     try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + (window.__OAI_KEY || "") }, body: JSON.stringify({ model: "gpt-4o-mini", max_tokens: 800, messages: [{ role: "user", content: [...imgContent, { type: "text", text: prompt }] }] }) });
+      const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+      const parts = [];
+
+      // Add image if present
+      if (scanImg) {
+        const base64 = scanImg.split(",")[1];
+        const mimeType = scanImg.split(";")[0].split(":")[1];
+        parts.push({ inlineData: { mimeType, data: base64 } });
+      }
+      parts.push({ text: prompt });
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts }] }),
+        }
+      );
       const data = await res.json();
-      const txt = data.choices?.[0]?.message?.content || "";
-      setScanResult(JSON.parse(txt.replace(/```json/g, "").replace(/```/g, "").trim()));
+      const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const clean = txt.replace(/```json/g, "").replace(/```/g, "").trim();
+      setScanResult(JSON.parse(clean));
       setScanStep("result");
-    } catch { setScanErr("Analysis failed."); setScanStep("pick"); }
+    } catch (e) {
+      console.error(e);
+      setScanErr("Analysis failed. Check your Gemini API key or try again.");
+      setScanStep("pick");
+    }
   };
 
-  const addFromScan = (useTotal) => {
+  const addFromScan = async (useTotal) => {
     if (!scanResult?.claimable || !scanResult.category_id) return;
     const it = allItems.find(i => i.id === scanResult.category_id); if (!it) return;
     const amt = useTotal ? scanResult.total_amount : scanResult.suggested_amount;
     const existing = claims[it.id]?.amount || 0;
     const cap = it.perUnit ? it.cap * (claims[it.id]?.units || 1) : it.cap;
-    setClaims(p => ({ ...p, [it.id]: { ...p[it.id], amount: Math.min(existing + amt, cap) } }));
-    setReceipts(p => [...p, { id: Date.now().toString(), name: scanResult.category_name, data: scanImg, date: new Date().toLocaleDateString("en-MY"), itemId: scanResult.category_id, amount: amt }]);
+    const newAmt = Math.min(existing + amt, cap);
+
+    setClaims(p => ({ ...p, [it.id]: { ...p[it.id], amount: newAmt } }));
+    if (user?.provider === "google") await saveClaimToSupabase(it.id, newAmt, claims[it.id]?.units || 1);
+
+    const rec = { id: Date.now().toString(), name: scanResult.category_name, data: scanImg, date: new Date().toLocaleDateString("en-MY"), item_id: scanResult.category_id, itemId: scanResult.category_id, amount: amt };
+    await addReceipt(rec);
     closeScan();
   };
 
   const exportD = () => { const b = new Blob([JSON.stringify(ld(), null, 2)], { type: "application/json" }); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "ringgit-backup.json"; a.click(); };
   const importD = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); sv(d); const y = d[ya] || {}; setClaims(y.claims || {}); setReceipts(y.receipts || []); setIncomes(y.incomes || []); alert("Restored!"); } catch { alert("Invalid"); } }; r.readAsText(f);
+    const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); sv(d); const y = d[ya] || {}; setClaims(y.claims || {}); setReceipts(y.receipts || []); setIncomes(y.incomes || []); alert("Restored!"); } catch { alert("Invalid file"); } }; r.readAsText(f);
   };
 
   const filtCats = search ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length) : cats;
   const itemName = (id) => allItems.find(i => i.id === id)?.name || id;
-
   const fmtPeriod = (start, end) => {
     const fmt = (d) => { if (!d) return ""; const [y, m] = d.split("-"); return MONTHS[parseInt(m) - 1] + " " + y; };
     return (start && end) ? fmt(start) + " – " + fmt(end) : "Full year";
   };
 
+  // ── Loading screen ──
+  if (loading) return (
+    <div style={{ ...base, background: "linear-gradient(160deg,#1A1C1E,#2D2F33)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <Logo size={56} />
+        <div style={{ marginTop: 16, width: 32, height: 32, border: "3px solid rgba(255,255,255,0.2)", borderTop: "3px solid #E8FA5B", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "16px auto 0" }} />
+      </div>
+    </div>
+  );
+
   // ── WELCOME SCREEN ──
-  if (auth === "welcome") return (
+  if (authMode === "welcome") return (
     <div style={{ ...base, background: "linear-gradient(160deg,#1A1C1E,#2D2F33)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, color: "#fff", textAlign: "center" }}>
       <Logo size={64} />
       <h1 style={{ fontSize: 34, fontWeight: 700, margin: "14px 0 6px", letterSpacing: -1, fontFamily: "'Poppins',sans-serif" }}>Ringgit</h1>
       <p style={{ fontSize: 14, opacity: 0.6, marginBottom: 40, fontWeight: 400, fontFamily: "'Poppins',sans-serif" }}>Your Malaysian finance companion</p>
-      <button style={{ ...bt, backgroundColor: "#E8FA5B", color: "#1A1C1E", width: "100%", padding: "16px 0", fontSize: 15, marginBottom: 10, boxShadow: "0 4px 20px rgba(232,250,91,0.3)" }} onClick={() => { setUser({ name: "Google User", provider: "google" }); setAuth("signup"); }}>Continue with Google</button>
-      <button style={{ ...bt, backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", width: "100%", padding: "16px 0", fontSize: 15, marginBottom: 10 }} onClick={() => { setUser({ name: "Apple User", provider: "apple" }); setAuth("signup"); }}>Continue with Apple</button>
+      <button style={{ ...bt, backgroundColor: "#E8FA5B", color: "#1A1C1E", width: "100%", padding: "16px 0", fontSize: 15, marginBottom: 10, boxShadow: "0 4px 20px rgba(232,250,91,0.3)" }}
+        onClick={async () => {
+          await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: { redirectTo: window.location.origin }
+          });
+        }}>Continue with Google</button>
       <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
         <div style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" }} />
         <span style={{ fontSize: 12, opacity: 0.4, fontFamily: "'Poppins',sans-serif" }}>or</span>
         <div style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" }} />
       </div>
-      <button style={{ ...bt, backgroundColor: "rgba(255,255,255,0.06)", color: "#fff", width: "100%", padding: "16px 0", fontSize: 15 }} onClick={() => setAuth("signup")}>Continue as Guest</button>
-      <p style={{ fontSize: 11, opacity: 0.3, marginTop: 24, fontFamily: "'Poppins',sans-serif" }}>Free · Data on device · Not financial advice</p>
+      <button style={{ ...bt, backgroundColor: "rgba(255,255,255,0.06)", color: "#fff", width: "100%", padding: "16px 0", fontSize: 15 }}
+        onClick={() => setAuthMode("signup")}>Continue as Guest</button>
+      <p style={{ fontSize: 11, opacity: 0.3, marginTop: 24, fontFamily: "'Poppins',sans-serif" }}>Free · Google users get cloud sync · Not financial advice</p>
     </div>
   );
 
-  // ── SIGNUP SCREEN ──
-  if (auth === "signup") return (
+  // ── SIGNUP SCREEN (guest only) ──
+  if (authMode === "signup") return (
     <div style={{ ...base, backgroundColor: C.bg, display: "flex", flexDirection: "column", padding: 24 }}>
       <div style={{ textAlign: "center", marginTop: 48, marginBottom: 36 }}>
         <Logo size={48} />
@@ -237,8 +382,10 @@ export default function Ringgit() {
         <div><label style={lb}>Your name</label><input style={ip} placeholder="e.g. Vick" value={nameIn} onChange={e => setNameIn(e.target.value)} /></div>
         <div><label style={lb}>Year of birth</label><input style={ip} type="number" placeholder="e.g. 1990" value={yobIn} onChange={e => setYobIn(e.target.value)} /></div>
       </div>
-      <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "16px 0", fontSize: 16, marginTop: 28, boxShadow: "0 4px 20px rgba(26,28,30,0.15)" }} onClick={() => { const u = { name: nameIn || user?.name || "User", yob: yobIn, provider: user?.provider || "guest" }; setUser(u); setAuth("app"); const d = ld(); d.user = u; sv(d); }}>Get Started</button>
-      <button style={{ ...bt, backgroundColor: "transparent", color: C.textSec, marginTop: 12, fontSize: 14 }} onClick={() => { setUser({ name: "Guest", provider: "guest" }); setAuth("app"); }}>Skip for now</button>
+      <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "16px 0", fontSize: 16, marginTop: 28 }}
+        onClick={() => { const u = { name: nameIn || "Guest", yob: yobIn, provider: "guest" }; setUser(u); setAuthMode("app"); const d = ld(); d.user = u; sv(d); }}>Get Started</button>
+      <button style={{ ...bt, backgroundColor: "transparent", color: C.textSec, marginTop: 12, fontSize: 14 }}
+        onClick={() => { setUser({ name: "Guest", provider: "guest" }); setAuthMode("app"); }}>Skip for now</button>
     </div>
   );
 
@@ -249,7 +396,7 @@ export default function Ringgit() {
       <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(26,28,30,0.55)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(6px)" }}>
         <div style={{ backgroundColor: C.card, borderRadius: "32px 32px 0 0", width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", padding: 22, boxShadow: "0 -4px 40px rgba(0,0,0,0.12)", fontFamily: "'Poppins',sans-serif" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text, fontFamily: "'Poppins',sans-serif" }}>🤖 AI Receipt Check</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: C.text }}>🤖 AI Receipt Check</h3>
             <button style={{ ...bt, width: 32, height: 32, borderRadius: 16, backgroundColor: C.sage, color: C.textSec, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }} onClick={closeScan}>✕</button>
           </div>
 
@@ -258,30 +405,26 @@ export default function Ringgit() {
               <div style={{ ...cd, backgroundColor: C.mint, textAlign: "center", padding: 28, cursor: "pointer" }} onClick={() => fRef.current?.click()}>
                 {scanImg
                   ? <img src={scanImg} style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 12 }} />
-                  : <div><div style={{ fontSize: 36, marginBottom: 8 }}>📸</div><div style={{ fontSize: 14, fontWeight: 700, color: C.pri, fontFamily: "'Poppins',sans-serif" }}>Upload receipt (optional)</div><div style={{ fontSize: 12, color: C.textSec, marginTop: 4, fontFamily: "'Poppins',sans-serif" }}>Photo, screenshot, or PDF</div></div>}
+                  : <div><div style={{ fontSize: 36, marginBottom: 8 }}>📸</div><div style={{ fontSize: 14, fontWeight: 700, color: C.pri }}>Upload receipt (optional)</div><div style={{ fontSize: 12, color: C.textSec, marginTop: 4 }}>Photo or screenshot</div></div>}
               </div>
-              <input ref={fRef} type="file" accept="image/*,application/pdf" capture="environment" style={{ display: "none" }} onChange={handleFile} />
-              {!scanImg && <div style={{ fontSize: 11, color: "#7C6A0A", backgroundColor: C.yellow, textAlign: "center", marginTop: 8, padding: "8px 12px", borderRadius: 10, fontFamily: "'Poppins',sans-serif" }}>💡 Attaching a receipt helps during LHDN audits (7yr requirement)</div>}
-              {/* FIX: use ref-based textarea so keyboard stays open */}
+              <input ref={fRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+              {!scanImg && <div style={{ fontSize: 11, color: "#7C6A0A", backgroundColor: C.yellow, textAlign: "center", marginTop: 8, padding: "8px 12px", borderRadius: 10 }}>💡 Keeping receipts helps during LHDN audits (7-year requirement)</div>}
               <textarea
                 ref={scanDescRef}
                 style={{ ...ip, marginTop: 12, resize: "none", minHeight: 70 }}
-                placeholder='Describe the expense (e.g. "gym membership RM250")'
+                placeholder='Describe the expense (e.g. "gym membership RM250" or "dental checkup RM180")'
                 defaultValue={scanDesc}
                 onBlur={e => setScanDesc(e.target.value)}
               />
-              {scanErr && <div style={{ color: C.danger, fontSize: 13, fontWeight: 600, marginTop: 8, textAlign: "center", fontFamily: "'Poppins',sans-serif" }}>{scanErr}</div>}
-              <button
-                style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "15px 0", fontSize: 15, marginTop: 14, boxShadow: "0 2px 12px rgba(45,106,79,0.3)" }}
-                onClick={runAI}
-              >🤖 Check if Claimable</button>
+              {scanErr && <div style={{ color: C.danger, fontSize: 13, fontWeight: 600, marginTop: 8, textAlign: "center" }}>{scanErr}</div>}
+              <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "15px 0", fontSize: 15, marginTop: 14 }} onClick={runAI}>🤖 Check if Claimable</button>
             </div>
           )}
 
           {scanStep === "analyzing" && (
             <div style={{ textAlign: "center", padding: "44px 0" }}>
               <div style={{ width: 40, height: 40, border: "4px solid " + C.border, borderTop: "4px solid #1A1C1E", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1C1E", fontFamily: "'Poppins',sans-serif" }}>Analyzing...</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A1C1E" }}>Checking against LHDN YA{ya} reliefs...</div>
             </div>
           )}
 
@@ -289,15 +432,15 @@ export default function Ringgit() {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
                 <span style={{ fontSize: 28 }}>{scanResult.claimable ? "✅" : "❌"}</span>
-                <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: scanResult.claimable ? C.success : C.danger, fontFamily: "'Poppins',sans-serif" }}>{scanResult.claimable ? "Claimable!" : "Not Claimable"}</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: scanResult.claimable ? C.success : C.danger }}>{scanResult.claimable ? "Claimable!" : "Not Claimable"}</h3>
               </div>
-              <p style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6, marginBottom: 14, fontFamily: "'Poppins',sans-serif" }}>{scanResult.explanation}</p>
+              <p style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6, marginBottom: 14 }}>{scanResult.explanation}</p>
               {scanResult.claimable && (
                 <div style={{ ...cd, backgroundColor: C.mint }}>
-                  <div style={rw}><span style={rl}>Category</span><span style={{ fontWeight: 700, fontSize: 13, fontFamily: "'Poppins',sans-serif" }}>{scanResult.category_id + " – " + scanResult.category_name}</span></div>
-                  <div style={rw}><span style={rl}>Total</span><span style={{ fontWeight: 700, fontFamily: "'Poppins',sans-serif" }}>{"RM " + (scanResult.total_amount || 0).toLocaleString()}</span></div>
-                  <div style={rw}><span style={rl}>Suggested</span><span style={{ fontWeight: 800, color: C.pri, fontSize: 20, fontFamily: "'Poppins',sans-serif" }}>{"RM " + (scanResult.suggested_amount || 0).toLocaleString()}</span></div>
-                  {scanResult.conditions && <div style={{ marginTop: 8, padding: "8px 12px", backgroundColor: C.yellow, borderRadius: 10, fontSize: 11, color: "#7C6A0A", lineHeight: 1.5, fontFamily: "'Poppins',sans-serif" }}>⚠️ {scanResult.conditions}</div>}
+                  <div style={rw}><span style={rl}>Category</span><span style={{ fontWeight: 700, fontSize: 13 }}>{scanResult.category_id + " – " + scanResult.category_name}</span></div>
+                  <div style={rw}><span style={rl}>Total</span><span style={{ fontWeight: 700 }}>{"RM " + (scanResult.total_amount || 0).toLocaleString()}</span></div>
+                  <div style={rw}><span style={rl}>Suggested</span><span style={{ fontWeight: 800, color: C.pri, fontSize: 20 }}>{"RM " + (scanResult.suggested_amount || 0).toLocaleString()}</span></div>
+                  {scanResult.conditions && <div style={{ marginTop: 8, padding: "8px 12px", backgroundColor: C.yellow, borderRadius: 10, fontSize: 11, color: "#7C6A0A", lineHeight: 1.5 }}>⚠️ {scanResult.conditions}</div>}
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
@@ -305,7 +448,7 @@ export default function Ringgit() {
                   <button style={{ ...bt, backgroundColor: C.sage, color: C.text, width: "100%", padding: "12px 0", fontSize: 13 }} onClick={() => addFromScan(true)}>{"Add full (RM " + (scanResult.total_amount || 0).toLocaleString() + ")"}</button>
                 )}
                 {scanResult.claimable && (
-                  <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "14px 0", fontSize: 14, boxShadow: "0 2px 12px rgba(45,106,79,0.3)" }} onClick={() => addFromScan(false)}>{"Add suggested (RM " + (scanResult.suggested_amount || 0).toLocaleString() + ")"}</button>
+                  <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "14px 0", fontSize: 14 }} onClick={() => addFromScan(false)}>{"Add suggested (RM " + (scanResult.suggested_amount || 0).toLocaleString() + ")"}</button>
                 )}
                 <button style={{ ...bt, backgroundColor: "transparent", color: C.textSec, fontSize: 13 }} onClick={closeScan}>{scanResult.claimable ? "Skip" : "Close"}</button>
               </div>
@@ -319,7 +462,7 @@ export default function Ringgit() {
   // ── MAIN APP ──
   return (
     <div style={base}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;} * {box-sizing:border-box;}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;} *{box-sizing:border-box;}`}</style>
       <ScanModal />
 
       {/* Lightbox */}
@@ -334,7 +477,10 @@ export default function Ringgit() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <div>
             <div style={{ fontSize: 13, opacity: 0.5, fontWeight: 400, fontFamily: "'Poppins',sans-serif" }}>Welcome back,</div>
-            <div style={{ fontSize: 24, fontWeight: 600, fontFamily: "'Poppins',sans-serif" }}>{user?.name || "User"}</div>
+            <div style={{ fontSize: 24, fontWeight: 600, fontFamily: "'Poppins',sans-serif" }}>
+              {user?.name || "User"}
+              {user?.provider === "google" && <span style={{ fontSize: 10, backgroundColor: "#E8FA5B", color: "#1A1C1E", padding: "2px 8px", borderRadius: 20, marginLeft: 8, fontWeight: 700, verticalAlign: "middle" }}>☁️ Synced</span>}
+            </div>
           </div>
           <div style={{ position: "relative" }}>
             <button style={{ ...bt, backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", padding: "8px 16px", fontSize: 12 }} onClick={() => setShowYa(!showYa)}>{"YA" + ya + " ▾"}</button>
@@ -374,13 +520,13 @@ export default function Ringgit() {
         {tab === "relief" && (
           <div>
             <button style={{ ...cd, width: "100%", backgroundColor: "#E8FA5B", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginBottom: 16, textAlign: "left", boxShadow: "0 4px 20px rgba(232,250,91,0.2)" }} onClick={() => openScan("general")}>
-              <div style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: "#1A1C1E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, color: "#fff" }}>🤖</div>
+              <div style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: "#1A1C1E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🤖</div>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1C1E", fontFamily: "'Poppins',sans-serif" }}>AI Receipt Scanner</div>
-                <div style={{ fontSize: 12, color: "rgba(26,28,30,0.5)", fontWeight: 400, fontFamily: "'Poppins',sans-serif" }}>Upload or describe to check</div>
+                <div style={{ fontSize: 12, color: "rgba(26,28,30,0.5)", fontFamily: "'Poppins',sans-serif" }}>Gemini validates your LHDN claims</div>
               </div>
             </button>
-            <input style={{ ...ip, marginBottom: 14, backgroundColor: C.card, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }} placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...ip, marginBottom: 14, backgroundColor: C.card }} placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)} />
             {filtCats.map(cat => (
               <div key={cat.id} style={{ marginBottom: 10 }}>
                 <div style={{ ...cd, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => setExpCat(expCat === cat.id ? null : cat.id)}>
@@ -392,9 +538,9 @@ export default function Ringgit() {
                 {(expCat === cat.id || search) && cat.items.map(item => {
                   const cl = claims[item.id]; const done = cl?.amount > 0; const ed = editItem === item.id;
                   const ec = item.perUnit ? item.cap * (cl?.units || 1) : item.cap;
-                  const ir = receipts.filter(rx => rx.itemId === item.id);
+                  const ir = receipts.filter(rx => (rx.itemId || rx.item_id) === item.id);
                   return (
-                    <div key={item.id} style={{ ...cd, marginTop: 6, marginLeft: 6, backgroundColor: done ? C.mint : C.card, boxShadow: done ? "0 1px 6px rgba(45,106,79,0.1)" : "0 1px 4px rgba(0,0,0,0.03)" }}>
+                    <div key={item.id} style={{ ...cd, marginTop: 6, marginLeft: 6, backgroundColor: done ? C.mint : C.card }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 3, fontFamily: "'Poppins',sans-serif" }}>
@@ -409,7 +555,7 @@ export default function Ringgit() {
                           {ir.length > 0 && (
                             <div style={{ marginTop: 6 }}>
                               {ir.map(rx => (
-                                <div key={rx.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: C.textSec, marginTop: 3, fontFamily: "'Poppins',sans-serif" }}>
+                                <div key={rx.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: C.textSec, marginTop: 3 }}>
                                   {rx.data && <img src={rx.data} style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover", cursor: "pointer" }} onClick={e => { e.stopPropagation(); setViewImg(rx.data); }} />}
                                   <span>{"RM " + (rx.amount || 0).toLocaleString() + " – " + rx.date}</span>
                                 </div>
@@ -421,7 +567,8 @@ export default function Ringgit() {
                           {item.auto
                             ? <div style={{ fontSize: 9, fontWeight: 700, color: C.pri, backgroundColor: C.priPale, padding: "5px 10px", borderRadius: 8, fontFamily: "'Poppins',sans-serif" }}>AUTO</div>
                             : <>
-                              <button style={{ padding: "7px 12px", border: "none", borderRadius: 8, backgroundColor: done ? C.pri : C.sage, color: done ? "#fff" : C.pri, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }} onClick={() => { if (ed) setEditItem(null); else { setEditItem(item.id); setAmtIn(cl?.amount?.toString() || ""); setUnitIn(cl?.units || 1); } }}>{done ? "Edit" : "+ Claim"}</button>
+                              <button style={{ padding: "7px 12px", border: "none", borderRadius: 8, backgroundColor: done ? C.pri : C.sage, color: done ? "#fff" : C.pri, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}
+                                onClick={() => { if (ed) setEditItem(null); else { setEditItem(item.id); setAmtIn(cl?.amount?.toString() || ""); setUnitIn(cl?.units || 1); } }}>{done ? "Edit" : "+ Claim"}</button>
                               <button style={{ padding: "5px 10px", border: "none", borderRadius: 8, backgroundColor: C.sage, color: C.textSec, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }} onClick={() => openScan(item.id)}>🤖 Scan</button>
                             </>}
                         </div>
@@ -436,7 +583,7 @@ export default function Ringgit() {
                           )}
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <span style={{ fontSize: 14, fontWeight: 700, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>RM</span>
-                            <input style={{ ...ip, flex: 1, backgroundColor: "#fff", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.06)" }} type="number" placeholder="0" value={amtIn} onChange={e => setAmtIn(e.target.value)} autoFocus />
+                            <input style={{ ...ip, flex: 1, backgroundColor: "#fff" }} type="number" placeholder="0" value={amtIn} onChange={e => setAmtIn(e.target.value)} autoFocus />
                             <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", padding: "10px 16px", fontSize: 12 }} onClick={() => { saveClaim(item.id, parseFloat(amtIn) || 0, unitIn); setEditItem(null); }}>Save</button>
                           </div>
                           {parseFloat(amtIn) > ec && <div style={{ fontSize: 11, color: C.warning, fontWeight: 600, marginTop: 4, fontFamily: "'Poppins',sans-serif" }}>{"Capped at RM " + ec.toLocaleString()}</div>}
@@ -456,28 +603,19 @@ export default function Ringgit() {
           <div>
             <div style={{ ...cd, display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>{"Add Employment Income (YA" + ya + ")"}</div>
-              <div>
-                <label style={lb}>Employer</label>
-                <input style={ip} placeholder="e.g. AirAsia" value={iEmp} onChange={e => setIEmp(e.target.value)} />
-              </div>
-              <div>
-                <label style={lb}>Annual gross income (RM)</label>
-                <input style={ip} type="number" placeholder="0" value={iAmt} onChange={e => setIAmt(e.target.value)} />
-              </div>
-              {/* FIX: iOS-style month pickers, clearly visible with border */}
+              <div><label style={lb}>Employer</label><input style={ip} placeholder="e.g. AirAsia" value={iEmp} onChange={e => setIEmp(e.target.value)} /></div>
+              <div><label style={lb}>Annual gross income (RM)</label><input style={ip} type="number" placeholder="0" value={iAmt} onChange={e => setIAmt(e.target.value)} /></div>
               <div style={{ display: "flex", gap: 10 }}>
                 <MonthPicker label="Start" value={iStart} onChange={setIStart} />
                 <MonthPicker label="End" value={iEnd} onChange={setIEnd} />
               </div>
-              <button
-                style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "14px 0", fontSize: 14, boxShadow: "0 2px 12px rgba(45,106,79,0.3)", marginTop: 2 }}
-                onClick={() => {
+              <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "14px 0", fontSize: 14, marginTop: 2 }}
+                onClick={async () => {
                   if (!iEmp || !iAmt) return;
                   const period = fmtPeriod(iStart, iEnd);
-                  setIncomes(p => [...p, { id: Date.now().toString(), employer: iEmp, amount: parseFloat(iAmt) || 0, period }]);
+                  await addIncome({ id: Date.now().toString(), employer: iEmp, amount: parseFloat(iAmt) || 0, period });
                   setIEmp(""); setIAmt(""); setIStart(""); setIEnd("");
-                }}
-              >+ Add Income Source</button>
+                }}>+ Add Income Source</button>
             </div>
 
             {incomes.length > 0 && (
@@ -489,10 +627,10 @@ export default function Ringgit() {
                       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>{inc.employer}</div>
                       <div style={{ fontSize: 11, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>{inc.period + " · RM " + inc.amount.toLocaleString()}</div>
                     </div>
-                    <button style={{ width: 28, height: 28, border: "none", borderRadius: 14, backgroundColor: "#FECACA", color: C.danger, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Poppins',sans-serif" }} onClick={() => setIncomes(p => p.filter(i => i.id !== inc.id))}>✕</button>
+                    <button style={{ width: 28, height: 28, border: "none", borderRadius: 14, backgroundColor: "#FECACA", color: C.danger, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeIncome(inc.id)}>✕</button>
                   </div>
                 ))}
-                <div style={{ ...cd, backgroundColor: C.mint, fontFamily: "'Poppins',sans-serif" }}>Total: <strong>{"RM " + totalIncome.toLocaleString()}</strong></div>
+                <div style={{ ...cd, backgroundColor: C.mint }}>Total: <strong>{"RM " + totalIncome.toLocaleString()}</strong></div>
               </div>
             )}
 
@@ -534,11 +672,10 @@ export default function Ringgit() {
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Poppins',sans-serif" }}>{rx.name}</div>
                       <div style={{ fontSize: 10, color: C.textSec, marginTop: 2, fontFamily: "'Poppins',sans-serif" }}>{rx.date + (rx.amount ? " · RM " + rx.amount.toLocaleString() : "")}</div>
                       <div style={{ marginTop: 4, display: "flex", gap: 4, flexWrap: "wrap" }}>
-                        {rx.itemId && <span style={{ fontSize: 9, fontWeight: 700, color: C.pri, backgroundColor: C.priPale, padding: "2px 7px", borderRadius: 6, fontFamily: "'Poppins',sans-serif" }}>{rx.itemId + ": " + itemName(rx.itemId)}</span>}
-                        <span style={{ fontSize: 9, color: C.textSec, backgroundColor: C.sage, padding: "2px 7px", borderRadius: 6, fontFamily: "'Poppins',sans-serif" }}>{"Added " + rx.date}</span>
+                        {(rx.itemId || rx.item_id) && <span style={{ fontSize: 9, fontWeight: 700, color: C.pri, backgroundColor: C.priPale, padding: "2px 7px", borderRadius: 6, fontFamily: "'Poppins',sans-serif" }}>{(rx.itemId || rx.item_id) + ": " + itemName(rx.itemId || rx.item_id)}</span>}
                       </div>
                     </div>
-                    <button style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, border: "none", borderRadius: 12, backgroundColor: "#FECACA", color: C.danger, fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Poppins',sans-serif" }} onClick={() => setReceipts(p => p.filter(x => x.id !== rx.id))}>✕</button>
+                    <button style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, border: "none", borderRadius: 12, backgroundColor: "#FECACA", color: C.danger, fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeReceipt(rx.id)}>✕</button>
                   </div>
                 ))}
               </div>}
@@ -553,25 +690,30 @@ export default function Ringgit() {
                 <div style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.mint, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, color: C.pri, fontFamily: "'Poppins',sans-serif" }}>{(user?.name || "U")[0]}</div>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>{user?.name}</div>
-                  <div style={{ fontSize: 11, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>{(user?.provider === "guest" ? "Guest" : user?.provider) + " · YA" + ya}</div>
+                  <div style={{ fontSize: 11, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>{user?.provider === "google" ? "☁️ Google · Synced" : "Guest · Local only"} · YA{ya}</div>
                 </div>
               </div>
+              {user?.provider !== "google" && (
+                <button style={{ ...bt, backgroundColor: "#E8FA5B", color: "#1A1C1E", width: "100%", padding: "11px 0", fontSize: 13, marginTop: 14, fontWeight: 700 }}
+                  onClick={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } })}>
+                  ☁️ Sign in with Google to sync data
+                </button>
+              )}
             </div>
-            <div style={{ ...cd, marginBottom: 10 }}>
-              <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>Backup & Restore</h3>
-              <p style={{ fontSize: 12, color: C.textSec, margin: "0 0 10px", fontFamily: "'Poppins',sans-serif" }}>Download before switching phones.</p>
-              <div style={{ display: "flex", gap: 6 }}>
-                <button style={{ ...bt, flex: 1, backgroundColor: C.sage, color: C.pri, padding: "11px 0", fontSize: 12 }} onClick={exportD}>💾 Download</button>
-                <label style={{ ...bt, flex: 1, backgroundColor: C.sage, color: C.pri, padding: "11px 0", fontSize: 12, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                  📂 Restore<input type="file" accept=".json" style={{ display: "none" }} onChange={importD} />
-                </label>
+
+            {user?.provider !== "google" && (
+              <div style={{ ...cd, marginBottom: 10 }}>
+                <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>Backup & Restore</h3>
+                <p style={{ fontSize: 12, color: C.textSec, margin: "0 0 10px", fontFamily: "'Poppins',sans-serif" }}>Download before switching phones.</p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button style={{ ...bt, flex: 1, backgroundColor: C.sage, color: C.pri, padding: "11px 0", fontSize: 12 }} onClick={exportD}>💾 Download</button>
+                  <label style={{ ...bt, flex: 1, backgroundColor: C.sage, color: C.pri, padding: "11px 0", fontSize: 12, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    📂 Restore<input type="file" accept=".json" style={{ display: "none" }} onChange={importD} />
+                  </label>
+                </div>
               </div>
-            </div>
-            <div style={{ ...cd, marginBottom: 10 }}>
-              <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>Cloud Sync · RM5/year</h3>
-              <p style={{ fontSize: 12, color: C.textSec, margin: "0 0 10px", fontFamily: "'Poppins',sans-serif" }}>Sync across devices.</p>
-              <button style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", width: "100%", padding: "11px 0", fontSize: 13 }} onClick={() => alert("We will notify you!")}>Notify Me</button>
-            </div>
+            )}
+
             <div style={{ ...cd, marginBottom: 10 }}>
               <h3 style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>Coming Soon</h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -580,11 +722,18 @@ export default function Ringgit() {
                 ))}
               </div>
             </div>
+
             <div style={{ ...cd, marginBottom: 10 }}>
-              <button style={{ border: "none", background: "none", color: C.danger, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }} onClick={() => { if (confirm("Reset YA" + ya + "?")) { setClaims({}); setReceipts([]); setIncomes([]); } }}>🗑️ Reset YA{ya} Data</button>
+              <button style={{ border: "none", background: "none", color: C.danger, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}
+                onClick={() => { if (confirm("Reset YA" + ya + " data?")) { setClaims({}); setReceipts([]); setIncomes([]); } }}>🗑️ Reset YA{ya} Data</button>
             </div>
-            <button style={{ ...bt, backgroundColor: "transparent", color: C.textSec, width: "100%", marginTop: 4, fontSize: 12 }} onClick={() => { const d = ld(); delete d.user; sv(d); setUser(null); setAuth("welcome"); }}>Sign Out</button>
-            <div style={{ textAlign: "center", padding: "16px 0", fontSize: 10, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>Ringgit v2.0 · Not financial advice</div>
+
+            <button style={{ ...bt, backgroundColor: "transparent", color: C.textSec, width: "100%", marginTop: 4, fontSize: 12 }}
+              onClick={async () => {
+                if (user?.provider === "google") { await supabase.auth.signOut(); }
+                else { const d = ld(); delete d.user; sv(d); setUser(null); setAuthMode("welcome"); }
+              }}>Sign Out</button>
+            <div style={{ textAlign: "center", padding: "16px 0", fontSize: 10, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>Ringgit v3.0 · Powered by Gemini · Not financial advice</div>
           </div>
         )}
 
