@@ -288,8 +288,8 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       });
       const data = await res.json();
       const txt = JSON.stringify(data);
-      const clean = txt;
-      setScanResult(JSON.parse(clean));
+const clean = txt.replace(/```json/g, "").replace(/```/g, "").trim();
+      <p style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6, marginBottom: 14 }}>{scanResult.explanation}</p>
       setScanStep("result");
     } catch (e) {
       console.error(e);
