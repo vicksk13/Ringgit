@@ -23,6 +23,19 @@ const Logo = ({ size = 36 }) => (
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+const RENTAL_DEDUCTIONS = [
+  { id: "rd1",  name: "Assessment Tax",               malay: "Cukai Taksiran",             icon: "🏛️", desc: "Local council tax, paid semi-annually" },
+  { id: "rd2",  name: "Quit Rent / Parcel Rent",      malay: "Cukai Tanah / Cukai Petak",  icon: "📋", desc: "Yearly land tax to state authorities" },
+  { id: "rd3",  name: "Home Loan Interest",           malay: "Faedah Pinjaman",             icon: "🏦", desc: "Interest only — NOT principal repayment" },
+  { id: "rd4",  name: "Fire Insurance",               malay: "Insurans Kebakaran",           icon: "🔥", desc: "Fire insurance premium for the property" },
+  { id: "rd5",  name: "Repair & Maintenance",         malay: "Pembaikan & Penyelenggaraan", icon: "🔧", desc: "Fix existing items only — not upgrades or renovations" },
+  { id: "rd6",  name: "Maintenance Fee & Sinking Fund", malay: "Yuran Penyelenggaraan",    icon: "🏢", desc: "Strata/condo fees + Indah Water bill" },
+  { id: "rd7",  name: "Pest Control",                 malay: "Kawalan Perosak",              icon: "🐛", desc: "Pest control services for the property" },
+  { id: "rd8",  name: "Agent Fees (Renewal Only)",    malay: "Komisyen Ejen (Pembaharuan)", icon: "🤝", desc: "Renewal tenancy only — NOT fees for first tenant" },
+  { id: "rd9",  name: "Legal Fees on Tenancy",        malay: "Yuran Guaman",                 icon: "⚖️", desc: "Legal costs on tenancy agreement renewal" },
+  { id: "rd10", name: "Rent Collection Expenses",     malay: "Kos Kutipan Sewa",             icon: "💰", desc: "Collection costs including stamp duty on agreement" },
+];
+
 const REL = {"2025":[{id:"personal",name:"Individual & Dependents",icon:"👤",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic for all resident taxpayers"},{id:"G4",name:"Disabled individual",cap:7000,desc:"Certified by JKM"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income or alimony"},{id:"G15",name:"Disabled spouse",cap:6000,desc:"Spouse certified disabled"}]},{id:"medical",name:"Medical & Special Needs",icon:"🏥",items:[{id:"G6",name:"Serious disease / fertility / vaccination / dental",cap:10000,desc:"G6+G7+G8 combined cap RM10k. Vaccination RM1k sub, dental RM1k sub"},{id:"G7",name:"Medical exam / self-test / mental health",cap:1000,desc:"Check-up, screening, oximeter, BP monitor, mental health"},{id:"G8",name:"Learning disability (child 18 and below)",cap:6000,desc:"ASD, ADHD, GDD, Down Syndrome diagnosis and rehab"},{id:"G2",name:"Parents / grandparents medical",cap:8000,desc:"Medical, dental, nursing, carer. Check-up sub-limit RM1k"},{id:"G3",name:"Disabled equipment",cap:6000,desc:"Wheelchair, hearing aid, dialysis machine"}]},{id:"lifestyle",name:"Lifestyle",icon:"🎯",items:[{id:"G9",name:"Books, gadgets, internet, courses",cap:2500,desc:"Books, smartphone/tablet/PC, internet bills, upskilling"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees (golf lessons, tennis coaching, etc), competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},{id:"G21",name:"EV charging / composting",cap:2500,desc:"EV charging install/rental/subscription, composting machine"}]},{id:"insurance",name:"Insurance & Contributions",icon:"🛡",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Insurance/takaful (max RM3k) + EPF (max RM4k)"},{id:"G18",name:"PRS / Deferred annuity",cap:3000,desc:"Private Retirement Scheme"},{id:"G19",name:"Education & medical insurance",cap:4000,desc:"Insurance premiums for education or medical"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"SOCSO + Employment Insurance"}]},{id:"education",name:"Education & Savings",icon:"🎓",items:[{id:"G5",name:"Education fees (self)",cap:7000,desc:"Postgraduate, professional. Upskilling sub-limit RM2k"},{id:"G13",name:"SSPN net savings",cap:8000,desc:"Net deposits minus withdrawals"}]},{id:"children",name:"Children",icon:"👶",items:[{id:"G16a",name:"Child under 18",cap:2000,desc:"RM2,000 per unmarried child",perUnit:true,unitName:"children"},{id:"G16b",name:"Child 18+ in education",cap:8000,desc:"Diploma+ MY / degree+ overseas",perUnit:true,unitName:"children"},{id:"G16c",name:"Disabled child",cap:8000,desc:"Additional RM8k if in higher education",perUnit:true,unitName:"children"},{id:"G12",name:"Childcare / kindergarten",cap:3000,desc:"Child aged 6 and below"},{id:"G11",name:"Breastfeeding equipment",cap:1000,desc:"Child aged 2 and below. Once every 2 years"}]},{id:"housing",name:"Housing",icon:"🏠",items:[{id:"G22",name:"Housing loan interest (first home)",cap:7000,desc:"SPA 2025-2027. RM7k if up to RM500k, RM5k if RM500k-750k"}]}],"2026":[{id:"personal",name:"Individual",icon:"👤",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},{id:"G4",name:"Disabled individual",cap:8000,desc:"Increased"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}]},{id:"lifestyle",name:"Lifestyle",icon:"🎯",items:[{id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Same as YA2025"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},{id:"VMY",name:"Visit Malaysia 2026",cap:1000,desc:"NEW: Domestic tourism"}]},{id:"medical",name:"Medical",icon:"🏥",items:[{id:"G6",name:"Medical",cap:10000,desc:"Same as YA2025"},{id:"G2",name:"Parents medical",cap:8000,desc:"Medical, dental, nursing"}]},{id:"insurance",name:"Insurance",icon:"🛡",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},{id:"G18",name:"PRS",cap:3000,desc:"PRS"},{id:"G19",name:"Education & medical insurance",cap:4000,desc:"Premiums"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}]},{id:"children",name:"Children",icon:"👶",items:[{id:"G16a",name:"Child under 18",cap:2000,desc:"Per child",perUnit:true,unitName:"children"},{id:"G16c",name:"Disabled child",cap:10000,desc:"Increased",perUnit:true,unitName:"children"}]},{id:"housing",name:"Housing",icon:"🏠",items:[{id:"G22",name:"Housing loan interest",cap:7000,desc:"First-time buyer"}]}],"2027":[{id:"personal",name:"Individual",icon:"👤",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}]},{id:"lifestyle",name:"Lifestyle",icon:"🎯",items:[{id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Gadgets, internet"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."}]},{id:"insurance",name:"Insurance",icon:"🛡",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}]}]};
 
 const BK=[{max:5000,r:0,c:0},{max:20000,r:1,c:0},{max:35000,r:3,c:150},{max:50000,r:6,c:600},{max:70000,r:11,c:1500},{max:100000,r:19,c:3700},{max:400000,r:25,c:9400},{max:600000,r:26,c:84400},{max:2000000,r:28,c:136400},{max:Infinity,r:30,c:528400}];
@@ -94,6 +107,7 @@ export default function Ringgit() {
   const [claims, setClaims] = useState({});
   const [receipts, setReceipts] = useState([]);
   const [incomes, setIncomes] = useState([]);
+  const [rentalProps, setRentalProps] = useState([]);
   const [expCat, setExpCat] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [amtIn, setAmtIn] = useState("");
@@ -108,12 +122,20 @@ export default function Ringgit() {
   const [scanErr, setScanErr] = useState(null);
   const [loading, setLoading] = useState(true);
   const fRef = useRef(null);
+  const rImgRef = useRef(null);
   const scanDescRef = useRef(null);
   const [iEmp, setIEmp] = useState("");
   const [iAmt, setIAmt] = useState("");
   const [iStart, setIStart] = useState("");
   const [iEnd, setIEnd] = useState("");
   const [viewImg, setViewImg] = useState(null);
+  // Rental state
+  const [showAddRental, setShowAddRental] = useState(false);
+  const [rPropName, setRPropName] = useState("");
+  const [rGrossRent, setRGrossRent] = useState("");
+  const [expandedRental, setExpandedRental] = useState(null);
+  const [activeRentalDeduct, setActiveRentalDeduct] = useState(null);
+  const [rentalDeductDraft, setRentalDeductDraft] = useState({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -148,6 +170,7 @@ export default function Ringgit() {
       setClaims(yd.claims || {});
       setReceipts(yd.receipts || []);
       setIncomes(yd.incomes || []);
+      setRentalProps(yd.rentalProps || []);
     }
   }, [ya, authMode, user?.id]);
 
@@ -159,9 +182,9 @@ export default function Ringgit() {
 
   useEffect(() => {
     if (authMode === "app" && user?.provider !== "google") {
-      const d = ld(); d[ya] = { claims, receipts, incomes }; d.user = user; sv(d);
+      const d = ld(); d[ya] = { claims, receipts, incomes, rentalProps }; d.user = user; sv(d);
     }
-  }, [claims, receipts, incomes, user, ya]);
+  }, [claims, receipts, incomes, rentalProps, user, ya]);
 
   const loadFromSupabase = async () => {
     if (!user?.id) return;
@@ -187,7 +210,12 @@ export default function Ringgit() {
   const cats = REL[ya] || REL["2025"];
   const allItems = cats.flatMap(c => c.items);
   const totalRelief = allItems.reduce((s, i) => s + (i.auto ? i.cap : (claims[i.id]?.amount || 0)), 0);
-  const totalIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalEmploymentIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalRentalIncome = rentalProps.reduce((sum, p) => {
+    const deductTotal = Object.values(p.deductions || {}).reduce((s, d) => s + (d.amount || 0), 0);
+    return sum + Math.max(0, (p.grossRent || 0) - deductTotal);
+  }, 0);
+  const totalIncome = totalEmploymentIncome + totalRentalIncome;
   const chargeable = Math.max(0, totalIncome - totalRelief);
   const estTax = calcTax(chargeable);
 
@@ -225,6 +253,35 @@ export default function Ringgit() {
     if (user?.provider === "google" && user?.id) {
       await supabase.from("receipts").delete().eq("id", id).eq("user_id", user.id);
     }
+  };
+
+  // Rental helpers
+  const addRentalProperty = () => {
+    if (!rPropName || !rGrossRent) return;
+    const newProp = { id: Date.now().toString(), name: rPropName, grossRent: parseFloat(rGrossRent) || 0, deductions: {} };
+    setRentalProps(p => [...p, newProp]);
+    setRPropName(""); setRGrossRent(""); setShowAddRental(false);
+    setExpandedRental(newProp.id);
+  };
+
+  const updateRentalDeduction = (propId, deductId, amount, image) => {
+    setRentalProps(prev => prev.map(p => {
+      if (p.id !== propId) return p;
+      const existing = p.deductions[deductId] || {};
+      return { ...p, deductions: { ...p.deductions, [deductId]: { amount: parseFloat(amount) || 0, image: image !== undefined ? image : existing.image } } };
+    }));
+  };
+
+  const removeRentalProperty = (id) => setRentalProps(prev => prev.filter(p => p.id !== id));
+
+  const handleRentalImg = (e, propId, deductId) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => {
+      const currentAmt = rentalDeductDraft[`${propId}-${deductId}`] ?? rentalProps.find(p => p.id === propId)?.deductions[deductId]?.amount ?? 0;
+      updateRentalDeduction(propId, deductId, currentAmt, ev.target.result);
+    };
+    r.readAsDataURL(f); e.target.value = "";
   };
 
   const switchYA = (y) => { setYa(y); setShowYa(false); setExpCat(null); setEditItem(null); closeScan(); };
@@ -266,18 +323,14 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
     if (scanImg) {
       userContent.push({
         type: "image",
-        source: {
-          type: "base64",
-          media_type: scanImg.split(";")[0].split(":")[1],
-          data: scanImg.split(",")[1]
-        }
+        source: { type: "base64", media_type: scanImg.split(";")[0].split(":")[1], data: scanImg.split(",")[1] }
       });
     }
     userContent.push({
       type: "text",
       text: desc
-  ? `User describes the expense as: "${desc}". ${scanImg ? "A receipt image is also attached — extract all line items from it and evaluate each one individually." : "No receipt image provided."}`
-  : "A receipt image has been attached. Extract ALL line items from the receipt individually. For each line item, decide if it qualifies for any LHDN tax relief. Sum up only the qualifying line items for suggested_amount. Sum the full receipt total for total_amount."
+        ? `User describes the expense as: "${desc}". ${scanImg ? "A receipt image is also attached — extract all line items from it and evaluate each one individually." : "No receipt image provided."}`
+        : "A receipt image has been attached. Extract ALL line items from the receipt individually. For each line item, decide if it qualifies for any LHDN tax relief. Sum up only the qualifying line items for suggested_amount. Sum the full receipt total for total_amount."
     });
 
     try {
@@ -334,7 +387,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
   const exportD = () => { const b = new Blob([JSON.stringify(ld(), null, 2)], { type: "application/json" }); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "ringgit-backup.json"; a.click(); };
   const importD = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); sv(d); const y = d[ya] || {}; setClaims(y.claims || {}); setReceipts(y.receipts || []); setIncomes(y.incomes || []); alert("Restored!"); } catch { alert("Invalid file"); } }; r.readAsText(f);
+    const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); sv(d); const y = d[ya] || {}; setClaims(y.claims || {}); setReceipts(y.receipts || []); setIncomes(y.incomes || []); setRentalProps(y.rentalProps || []); alert("Restored!"); } catch { alert("Invalid file"); } }; r.readAsText(f);
   };
 
   const filtCats = search ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length) : cats;
@@ -362,10 +415,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       <p style={{ fontSize: 14, opacity: 0.6, marginBottom: 40, fontWeight: 400, fontFamily: "'Poppins',sans-serif" }}>Your Malaysian finance companion</p>
       <button className="ringgit-tap" style={{ ...bt, backgroundColor: "#E8FA5B", color: "#1A1C1E", width: "100%", padding: "16px 0", fontSize: 15, marginBottom: 10, boxShadow: "0 4px 20px rgba(232,250,91,0.3)" }}
         onClick={async () => {
-          await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: { redirectTo: window.location.origin }
-          });
+          await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
         }}>Continue with Google</button>
       <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
         <div style={{ flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" }} />
@@ -472,7 +522,6 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       <style>{globalCSS}</style>
       <ScanModal />
 
-      {/* Floating AI Scan FAB — available globally on relief tab */}
       {tab === "relief" && !scanOpen && (
         <button
           className="ringgit-tap"
@@ -518,7 +567,6 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
           </div>
         </div>
 
-        {/* Summary — glassy glow behind yellow card */}
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", inset: -8, backgroundColor: "#E8FA5B", filter: "blur(24px)", opacity: 0.25, borderRadius: 40, pointerEvents: "none" }} />
           <div style={{ position: "relative", backgroundColor: "#E8FA5B", borderRadius: 28, padding: "22px 22px", boxShadow: "0 10px 30px rgba(232,250,91,0.18), inset 0 1px 0 rgba(255,255,255,0.5)" }}>
@@ -534,17 +582,16 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
         </div>
       </div>
 
-      {/* Glass Tab Bar */}
+      {/* Tab Bar */}
       <div style={{ display: "flex", backgroundColor: "rgba(255,255,255,0.7)", backdropFilter: "blur(18px)", margin: "0 16px", borderRadius: 9999, marginTop: -18, position: "relative", zIndex: 5, boxShadow: "0px 12px 40px rgba(26,28,30,0.08)", padding: 4, border: "1px solid rgba(255,255,255,0.6)" }}>
         {[["relief", "Tax Relief"], ["income", "Income"], ["receipts", "Receipts"], ["more", "More"]].map(([k, l]) => (
           <button key={k} className="ringgit-tab" style={{ flex: 1, padding: "12px 4px", border: "none", borderRadius: 9999, backgroundColor: tab === k ? "#1A1C1E" : "transparent", color: tab === k ? "#fff" : "#94A3B8", fontSize: 12, fontWeight: tab === k ? 600 : 500, cursor: "pointer", fontFamily: "'Poppins',sans-serif", transition: "all 0.25s ease-out" }} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
 
-      {/* Tab content */}
       <div style={{ padding: 16, paddingTop: 20 }}>
 
-        {/* RELIEF */}
+        {/* RELIEF TAB */}
         {tab === "relief" && (
           <div style={{ animation: "fadeIn 0.2s ease-out" }}>
             <button className="ringgit-card-tap" style={{ ...cd, width: "100%", backgroundColor: "#E8FA5B", display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginBottom: 18, textAlign: "left", boxShadow: "0 8px 24px rgba(232,250,91,0.25), inset 0 1px 0 rgba(255,255,255,0.5)", border: "1px solid rgba(26,28,30,0.04)" }} onClick={openScan}>
@@ -630,9 +677,11 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
           </div>
         )}
 
-        {/* INCOME */}
+        {/* INCOME TAB */}
         {tab === "income" && (
           <div style={{ animation: "fadeIn 0.2s ease-out" }}>
+
+            {/* Employment Income */}
             <div style={{ ...cd, display: "flex", flexDirection: "column", gap: 12, backgroundColor: "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif" }}>{"Add Employment Income (YA" + ya + ")"}</div>
               <div><label style={lb}>Employer</label><input className="ringgit-input" style={ip} placeholder="e.g. Space X" value={iEmp} onChange={e => setIEmp(e.target.value)} /></div>
@@ -652,7 +701,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
 
             {incomes.length > 0 && (
               <div style={{ marginTop: 18 }}>
-                <div style={st}>INCOME SOURCES</div>
+                <div style={st}>EMPLOYMENT SOURCES</div>
                 {incomes.map(inc => (
                   <div key={inc.id} className="ringgit-item-card" style={{ ...cd, display: "flex", alignItems: "center", gap: 10, marginBottom: 10, backgroundColor: "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }}>
                     <div style={{ flex: 1 }}>
@@ -662,14 +711,188 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
                     <button className="ringgit-tap" style={{ width: 28, height: 28, border: "none", borderRadius: 14, backgroundColor: "#FECACA", color: C.danger, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeIncome(inc.id)}>✕</button>
                   </div>
                 ))}
-                <div style={{ ...cd, backgroundColor: C.mint, border: "1px solid rgba(168,213,186,0.4)" }}>Total: <strong>{"RM " + totalIncome.toLocaleString()}</strong></div>
               </div>
             )}
+
+            {/* ── RENTAL INCOME SECTION ── */}
+            <div style={{ marginTop: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.2, color: C.textSec, textTransform: "uppercase", fontFamily: "'Poppins',sans-serif" }}>Rental Income</div>
+                  <div style={{ fontSize: 11, color: C.textSec, fontFamily: "'Poppins',sans-serif", marginTop: 2 }}>Section 4(d) · Net after deductions</div>
+                </div>
+                <button className="ringgit-tap" style={{ ...bt, backgroundColor: "#1A1C1E", color: "#E8FA5B", padding: "9px 16px", fontSize: 12, fontWeight: 700 }} onClick={() => setShowAddRental(!showAddRental)}>+ Property</button>
+              </div>
+
+              {showAddRental && (
+                <div style={{ ...cd, marginBottom: 14, backgroundColor: "rgba(255,255,255,0.85)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.6)", animation: "expand 0.2s ease-out" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif", marginBottom: 12 }}>Add Rental Property</div>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={lb}>Property Name / Address</label>
+                    <input className="ringgit-input" style={ip} placeholder="e.g. Subang Jaya Condo A-12" value={rPropName} onChange={e => setRPropName(e.target.value)} />
+                  </div>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={lb}>Annual Gross Rental Income (RM)</label>
+                    <input className="ringgit-input" style={ip} type="number" placeholder="e.g. 18000" value={rGrossRent} onChange={e => setRGrossRent(e.target.value)} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button className="ringgit-tap" style={{ ...bt, flex: 1, backgroundColor: "#1A1C1E", color: "#fff", padding: "13px 0", fontSize: 13 }} onClick={addRentalProperty}>Add Property</button>
+                    <button className="ringgit-tap" style={{ ...bt, flex: 1, backgroundColor: C.sage, color: C.textSec, padding: "13px 0", fontSize: 13 }} onClick={() => setShowAddRental(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {rentalProps.length === 0 && !showAddRental && (
+                <div style={{ textAlign: "center", padding: "24px 0", color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>
+                  <div style={{ fontSize: 32, marginBottom: 6 }}>🏠</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>No rental properties yet</div>
+                  <div style={{ fontSize: 11, marginTop: 3 }}>Tap + Property to add one</div>
+                </div>
+              )}
+
+              {rentalProps.map(prop => {
+                const deductTotal = Object.values(prop.deductions || {}).reduce((s, d) => s + (d.amount || 0), 0);
+                const netRent = Math.max(0, (prop.grossRent || 0) - deductTotal);
+                const claimedCount = Object.values(prop.deductions || {}).filter(d => d.amount > 0).length;
+                const isExpanded = expandedRental === prop.id;
+
+                return (
+                  <div key={prop.id} style={{ marginBottom: 12 }}>
+                    {/* Property card */}
+                    <div className="ringgit-card-tap" style={{ ...cd, cursor: "pointer", backgroundColor: "rgba(255,255,255,0.82)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }} onClick={() => setExpandedRental(isExpanded ? null : prop.id)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: "#1A1C1E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>🏠</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prop.name}</div>
+                          <div style={{ fontSize: 11, color: C.textSec, fontFamily: "'Poppins',sans-serif", marginTop: 2 }}>Gross RM {(prop.grossRent || 0).toLocaleString()} · Deductions RM {deductTotal.toLocaleString()}</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: "#1A1C1E", fontFamily: "'Poppins',sans-serif" }}>RM {netRent.toLocaleString()}</div>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: C.textSec, textTransform: "uppercase", letterSpacing: 0.5 }}>Net Taxable</div>
+                        </div>
+                        <span style={{ fontSize: 12, color: C.textSec, transition: "transform 0.2s ease-out", transform: isExpanded ? "rotate(90deg)" : "rotate(0)", marginLeft: 4 }}>›</span>
+                      </div>
+                      <div style={{ marginTop: 10, height: 4, backgroundColor: C.sage, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${prop.grossRent > 0 ? Math.min(100, (deductTotal / prop.grossRent) * 100) : 0}%`, backgroundColor: "#E8FA5B", borderRadius: 999, transition: "width 0.4s ease-out" }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                        <span style={{ fontSize: 10, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>{claimedCount}/{RENTAL_DEDUCTIONS.length} deductions added</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: "#1A1C1E", fontFamily: "'Poppins',sans-serif" }}>{prop.grossRent > 0 ? Math.round((deductTotal / prop.grossRent) * 100) : 0}% deducted</span>
+                      </div>
+                    </div>
+
+                    {/* Deductions checklist */}
+                    {isExpanded && (
+                      <div style={{ marginLeft: 6, animation: "expand 0.25s ease-out" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: C.textSec, textTransform: "uppercase", fontFamily: "'Poppins',sans-serif", margin: "12px 0 6px", paddingLeft: 2 }}>Section 4(d) Deductions</div>
+                        <div style={{ fontSize: 10, color: "#7C6A0A", backgroundColor: "#E8FA5B", padding: "8px 12px", borderRadius: 10, marginBottom: 10, fontFamily: "'Poppins',sans-serif", lineHeight: 1.5 }}>
+                          ⚠️ Keep original receipts 7 years · Only deduct expenses incurred while property was rented out
+                        </div>
+
+                        {RENTAL_DEDUCTIONS.map(ded => {
+                          const saved = prop.deductions?.[ded.id];
+                          const hasClaim = (saved?.amount || 0) > 0;
+                          const localKey = `${prop.id}-${ded.id}`;
+                          const isActive = activeRentalDeduct === localKey;
+
+                          return (
+                            <div key={ded.id} className="ringgit-item-card" style={{ ...cd, marginBottom: 8, backgroundColor: hasClaim ? C.mint : "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: hasClaim ? "1px solid rgba(168,213,186,0.5)" : "1px solid rgba(255,255,255,0.55)" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text, fontFamily: "'Poppins',sans-serif", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                    <span>{ded.icon}</span>
+                                    <span>{ded.name}</span>
+                                    {hasClaim && <span style={{ fontSize: 10, fontWeight: 800, backgroundColor: "#1A1C1E", color: "#fff", padding: "2px 8px", borderRadius: 8 }}>RM {saved.amount.toLocaleString()}</span>}
+                                  </div>
+                                  <div style={{ fontSize: 10, color: "#7B9E87", fontStyle: "italic", fontFamily: "'Poppins',sans-serif", marginTop: 1 }}>{ded.malay}</div>
+                                  <div style={{ fontSize: 11, color: C.textSec, lineHeight: 1.5, marginTop: 3, fontFamily: "'Poppins',sans-serif" }}>{ded.desc}</div>
+                                  {saved?.image && (
+                                    <img src={saved.image} style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8, marginTop: 6, cursor: "pointer", border: "2px solid rgba(168,213,186,0.6)" }} onClick={() => setViewImg(saved.image)} />
+                                  )}
+                                </div>
+                                <button className="ringgit-tap" style={{ padding: "9px 14px", border: "none", borderRadius: 12, backgroundColor: hasClaim ? C.pri : C.sage, color: hasClaim ? "#fff" : C.pri, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif", flexShrink: 0 }}
+                                  onClick={() => { setActiveRentalDeduct(isActive ? null : localKey); setRentalDeductDraft(p => ({ ...p, [localKey]: saved?.amount?.toString() || "" })); }}>
+                                  {hasClaim ? "Edit" : "+ Add"}
+                                </button>
+                              </div>
+
+                              {isActive && (
+                                <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid " + C.border, animation: "expand 0.2s ease-out" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>RM</span>
+                                    <input
+                                      className="ringgit-input"
+                                      style={{ ...ip, flex: 1, backgroundColor: "#fff" }}
+                                      type="number"
+                                      placeholder="0"
+                                      autoFocus
+                                      value={rentalDeductDraft[localKey] ?? ""}
+                                      onChange={e => setRentalDeductDraft(p => ({ ...p, [localKey]: e.target.value }))}
+                                    />
+                                    <button className="ringgit-tap" style={{ ...bt, backgroundColor: "#1A1C1E", color: "#fff", padding: "10px 16px", fontSize: 12 }}
+                                      onClick={() => { updateRentalDeduction(prop.id, ded.id, rentalDeductDraft[localKey] || 0, undefined); setActiveRentalDeduct(null); }}>Save</button>
+                                  </div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <input ref={rImgRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => handleRentalImg(e, prop.id, ded.id)} />
+                                    <button className="ringgit-tap" style={{ ...bt, backgroundColor: C.sage, color: C.pri, padding: "9px 14px", fontSize: 11 }} onClick={() => rImgRef.current?.click()}>
+                                      📎 {saved?.image ? "Replace Receipt" : "Attach Receipt"}
+                                    </button>
+                                    {saved?.image && <span style={{ fontSize: 10, color: C.success, fontWeight: 600, fontFamily: "'Poppins',sans-serif" }}>✓ Saved</span>}
+                                  </div>
+                                  {hasClaim && (
+                                    <button className="ringgit-tap" style={{ border: "none", background: "none", color: C.danger, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Poppins',sans-serif", marginTop: 8 }}
+                                      onClick={() => { updateRentalDeduction(prop.id, ded.id, 0, null); setActiveRentalDeduct(null); }}>Remove</button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* Per-property net summary */}
+                        <div style={{ ...cd, backgroundColor: "#1A1C1E", border: "none", marginTop: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 13, fontFamily: "'Poppins',sans-serif" }}>
+                            <span style={{ color: "rgba(255,255,255,0.5)" }}>Gross Rental</span>
+                            <span style={{ color: "#fff", fontWeight: 600 }}>RM {(prop.grossRent || 0).toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 13, fontFamily: "'Poppins',sans-serif" }}>
+                            <span style={{ color: "rgba(255,255,255,0.5)" }}>Total Deductions</span>
+                            <span style={{ color: "#E8FA5B", fontWeight: 600 }}>– RM {deductTotal.toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.12)", marginTop: 8, paddingTop: 8, fontSize: 15, fontWeight: 800, fontFamily: "'Poppins',sans-serif" }}>
+                            <span style={{ color: "rgba(255,255,255,0.7)" }}>Net Taxable</span>
+                            <span style={{ color: "#E8FA5B" }}>RM {netRent.toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        <button className="ringgit-tap" style={{ border: "none", background: "none", color: C.danger, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Poppins',sans-serif", marginTop: 10, display: "block" }}
+                          onClick={() => removeRentalProperty(prop.id)}>🗑️ Remove this property</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {rentalProps.length > 0 && (
+                <div style={{ ...cd, backgroundColor: C.mint, border: "1px solid rgba(168,213,186,0.4)", marginTop: 4 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 800, color: C.text, fontFamily: "'Poppins',sans-serif" }}>
+                    <span>Total Net Rental Income</span>
+                    <span>RM {totalRentalIncome.toLocaleString()}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 4, fontFamily: "'Poppins',sans-serif" }}>Included in chargeable income above</div>
+                </div>
+              )}
+            </div>
+            {/* ── END RENTAL SECTION ── */}
 
             {totalIncome > 0 && (
               <div style={{ ...cd, marginTop: 16, backgroundColor: "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }}>
                 <div style={st}>TAX ESTIMATE</div>
-                {[["Gross Income", "RM " + totalIncome.toLocaleString(), C.text], ["Total Relief", "– RM " + totalRelief.toLocaleString(), C.success]].map(([l, v, clr]) => (
+                {[
+                  ["Employment Income", "RM " + totalEmploymentIncome.toLocaleString(), C.text],
+                  ["Net Rental Income", "RM " + totalRentalIncome.toLocaleString(), C.text],
+                  ["Total Relief", "– RM " + totalRelief.toLocaleString(), C.success],
+                ].filter(([,v]) => v !== "RM 0").map(([l, v, clr]) => (
                   <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>
                     <span>{l}</span><span style={{ color: clr, fontWeight: 600 }}>{v}</span>
                   </div>
@@ -685,7 +908,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
           </div>
         )}
 
-        {/* RECEIPTS */}
+        {/* RECEIPTS TAB */}
         {tab === "receipts" && (
           <div style={{ animation: "fadeIn 0.2s ease-out" }}>
             {receipts.length === 0
@@ -714,7 +937,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
           </div>
         )}
 
-        {/* MORE */}
+        {/* MORE TAB */}
         {tab === "more" && (
           <div style={{ animation: "fadeIn 0.2s ease-out" }}>
             <div style={{ ...cd, marginBottom: 12, backgroundColor: "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }}>
@@ -757,7 +980,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
 
             <div style={{ ...cd, marginBottom: 12, backgroundColor: "rgba(255,255,255,0.75)", backdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.55)" }}>
               <button className="ringgit-tap" style={{ border: "none", background: "none", color: C.danger, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}
-                onClick={() => { if (confirm("Reset YA" + ya + " data?")) { setClaims({}); setReceipts([]); setIncomes([]); } }}>🗑️ Reset YA{ya} Data</button>
+                onClick={() => { if (confirm("Reset YA" + ya + " data?")) { setClaims({}); setReceipts([]); setIncomes([]); setRentalProps([]); } }}>🗑️ Reset YA{ya} Data</button>
             </div>
 
             <button className="ringgit-tap" style={{ ...bt, backgroundColor: "transparent", color: C.textSec, width: "100%", marginTop: 4, fontSize: 12 }}
@@ -765,7 +988,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
                 if (user?.provider === "google") { await supabase.auth.signOut(); }
                 else { const d = ld(); delete d.user; sv(d); setUser(null); setAuthMode("welcome"); }
               }}>Sign Out</button>
-            <div style={{ textAlign: "center", padding: "16px 0", fontSize: 10, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>Ringgit v3.1 · Powered by Claude · Not financial advice</div>
+            <div style={{ textAlign: "center", padding: "16px 0", fontSize: 10, color: C.textSec, fontFamily: "'Poppins',sans-serif" }}>Ringgit v3.2 · Powered by Claude · Not financial advice</div>
           </div>
         )}
 
