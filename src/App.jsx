@@ -1494,8 +1494,6 @@ try {
   throw new Error("Claude returned invalid JSON: " + parseErr.message);
 }
 
-      setResult(parsed);
-      setStep("result");
     } catch (e) {
       console.error("Scanner error:", e);
       // FIX 3: More descriptive error so user knows what went wrong
