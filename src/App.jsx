@@ -1468,8 +1468,12 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       if (!textBlock) throw new Error("No response from Claude");
 
       let jsonText = textBlock.text.trim();
-      jsonText = jsonText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
-      const parsed = JSON.parse(jsonText);
+// Remove markdown code fences
+jsonText = jsonText.replace(/```json/gi, "").replace(/```/g, "");
+// Extract just the JSON object
+const match = jsonText.match(/\{[\s\S]*\}/);
+if (!match) throw new Error("No JSON found in response");
+const parsed = JSON.parse(match[0]);
 
       setResult(parsed);
       setStep("result");
