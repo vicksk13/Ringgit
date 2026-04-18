@@ -1,6 +1,52 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+const compressImage = async (dataUrl, maxSizeMB = 4.5) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      // Calculate scaling to stay under size limit
+      let quality = 0.8;
+      const maxDimension = 2048; // Start with reasonable max dimension
+      
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = (height / width) * maxDimension;
+          width = maxDimension;
+        } else {
+          width = (width / height) * maxDimension;
+          height = maxDimension;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Try progressive quality reduction
+      const tryCompress = (q) => {
+        const compressed = canvas.toDataURL('image/jpeg', q);
+        const sizeInMB = (compressed.length * 0.75) / (1024 * 1024); // Estimate base64 size
+        
+        if (sizeInMB > maxSizeMB && q > 0.1) {
+          return tryCompress(q - 0.1);
+        }
+        return compressed;
+      };
+      
+      resolve(tryCompress(quality));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+};
+
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_KEY
@@ -1322,13 +1368,32 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
 
   if (!open) return null;
 
-  const handleFile = (e) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = (ev) => setImg(ev.target.result);
-    r.readAsDataURL(f);
-    e.target.value = "";
+  const handleFile = async (e) => {
+  const f = e.target.files?.[0]; if (!f) return;
+  
+  setErr(null); // Clear any previous errors
+  
+  const r = new FileReader();
+  r.onload = async (ev) => {
+    try {
+      // Show a brief loading state (optional)
+      const originalSize = (f.size / 1024 / 1024).toFixed(1);
+      console.log(`Original image: ${originalSize} MB`);
+      
+      const compressed = await compressImage(ev.target.result);
+      
+      const compressedSize = (compressed.length * 0.75 / 1024 / 1024).toFixed(1);
+      console.log(`Compressed to: ${compressedSize} MB`);
+      
+      setImg(compressed);
+    } catch (err) {
+      console.error('Compression failed:', err);
+      setErr('Failed to process image. Try a smaller photo or take a new one.');
+    }
   };
+  r.readAsDataURL(f);
+  e.target.value = "";
+};
 
   const runAI = async () => {
     if (!img && !desc) return;
