@@ -1468,12 +1468,31 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       if (!textBlock) throw new Error("No response from Claude");
 
       let jsonText = textBlock.text.trim();
-// Remove markdown code fences
+
+console.log("Raw Claude response:", jsonText); // ✅ Debug log
+
+// Remove ALL markdown and extract ONLY the JSON object
 jsonText = jsonText.replace(/```json/gi, "").replace(/```/g, "");
-// Extract just the JSON object
-const match = jsonText.match(/\{[\s\S]*\}/);
-if (!match) throw new Error("No JSON found in response");
-const parsed = JSON.parse(match[0]);
+
+// Find JSON by looking for the opening { and closing } with proper nesting
+const firstBrace = jsonText.indexOf('{');
+const lastBrace = jsonText.lastIndexOf('}');
+
+if (firstBrace === -1 || lastBrace === -1) {
+  throw new Error("No JSON found in Claude's response");
+}
+
+// Extract just the JSON portion
+const jsonOnly = jsonText.substring(firstBrace, lastBrace + 1);
+
+try {
+  const parsed = JSON.parse(jsonOnly);
+  setResult(parsed);
+  setStep("result");
+} catch (parseErr) {
+  console.error("JSON parse failed. Extracted text was:", jsonOnly);
+  throw new Error("Claude returned invalid JSON: " + parseErr.message);
+}
 
       setResult(parsed);
       setStep("result");
