@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 // ─────────────────────────────────────────────────────────────
-// THEMES — light + dark (from design prototype)
+// THEMES — light + dark
 // ─────────────────────────────────────────────────────────────
 const THEMES = {
   light: {
@@ -64,20 +64,127 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
     settings: <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="3" {...p}/><path d="M19 12a7 7 0 0 0-.2-1.6l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.8-1.6L13 2h-4l-.7 2.9a7 7 0 0 0-2.8 1.6l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 3.2 12c0 .55.07 1.08.2 1.6l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.8 1.6l.7 2.9h4l.7-2.9a7 7 0 0 0 2.8-1.6l2.3 1 2-3.4-2-1.5c.13-.52.2-1.05.2-1.6z" {...p}/></svg>,
     sparkleAi: <svg viewBox="0 0 24 24" style={s}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" {...p}/></svg>,
     home: <svg viewBox="0 0 24 24" style={s}><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" {...p}/></svg>,
+    key: <svg viewBox="0 0 24 24" style={s}><circle cx="8" cy="15" r="4" {...p}/><path d="M12 11l8-8M18 6l2 2M15 9l2 2" {...p}/></svg>,
   };
   return map[name] || null;
 };
 
-// Map category id → icon name for design consistency
 const CAT_ICON = {
   personal: "user", medical: "heart", lifestyle: "sparkle",
   insurance: "shield", education: "sparkle", children: "user", housing: "home",
+  rental: "key", // FIX 1: rental icon
 };
 
 // ─────────────────────────────────────────────────────────────
-// LHDN Tax Relief data (YA2025/2026/2027) — preserved from prior app
+// LHDN Tax Relief data (YA2025/2026/2027)
 // ─────────────────────────────────────────────────────────────
-const REL = {"2025":[{id:"personal",name:"Individual & Dependents",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic for all resident taxpayers"},{id:"G4",name:"Disabled individual",cap:7000,desc:"Certified by JKM"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income or alimony"},{id:"G15",name:"Disabled spouse",cap:6000,desc:"Spouse certified disabled"}]},{id:"medical",name:"Medical & Special Needs",items:[{id:"G6",name:"Serious disease / fertility / vaccination / dental",cap:10000,desc:"G6+G7+G8 combined cap RM10k. Vaccination RM1k sub, dental RM1k sub"},{id:"G7",name:"Medical exam / self-test / mental health",cap:1000,desc:"Check-up, screening, oximeter, BP monitor, mental health"},{id:"G8",name:"Learning disability (child 18 and below)",cap:6000,desc:"ASD, ADHD, GDD, Down Syndrome diagnosis and rehab"},{id:"G2",name:"Parents / grandparents medical",cap:8000,desc:"Medical, dental, nursing, carer. Check-up sub-limit RM1k"},{id:"G3",name:"Disabled equipment",cap:6000,desc:"Wheelchair, hearing aid, dialysis machine"}]},{id:"lifestyle",name:"Lifestyle",items:[{id:"G9",name:"Books, gadgets, internet, courses",cap:2500,desc:"Books, smartphone/tablet/PC, internet bills, upskilling"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees (golf lessons, tennis coaching, etc), competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},{id:"G21",name:"EV charging / composting",cap:2500,desc:"EV charging install/rental/subscription, composting machine"}]},{id:"insurance",name:"Insurance & Contributions",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Insurance/takaful (max RM3k) + EPF (max RM4k)"},{id:"G18",name:"PRS / Deferred annuity",cap:3000,desc:"Private Retirement Scheme"},{id:"G19",name:"Education & medical insurance",cap:4000,desc:"Insurance premiums for education or medical"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"SOCSO + Employment Insurance"}]},{id:"education",name:"Education & Savings",items:[{id:"G5",name:"Education fees (self)",cap:7000,desc:"Postgraduate, professional. Upskilling sub-limit RM2k"},{id:"G13",name:"SSPN net savings",cap:8000,desc:"Net deposits minus withdrawals"}]},{id:"children",name:"Children",items:[{id:"G16a",name:"Child under 18",cap:2000,desc:"RM2,000 per unmarried child",perUnit:true,unitName:"children"},{id:"G16b",name:"Child 18+ in education",cap:8000,desc:"Diploma+ MY / degree+ overseas",perUnit:true,unitName:"children"},{id:"G16c",name:"Disabled child",cap:8000,desc:"Additional RM8k if in higher education",perUnit:true,unitName:"children"},{id:"G12",name:"Childcare / kindergarten",cap:3000,desc:"Child aged 6 and below"},{id:"G11",name:"Breastfeeding equipment",cap:1000,desc:"Child aged 2 and below. Once every 2 years"}]},{id:"housing",name:"Housing",items:[{id:"G22",name:"Housing loan interest (first home)",cap:7000,desc:"SPA 2025-2027. RM7k if up to RM500k, RM5k if RM500k-750k"}]}],"2026":[{id:"personal",name:"Individual",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},{id:"G4",name:"Disabled individual",cap:8000,desc:"Increased"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}]},{id:"lifestyle",name:"Lifestyle",items:[{id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Same as YA2025"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},{id:"VMY",name:"Visit Malaysia 2026",cap:1000,desc:"NEW: Domestic tourism"}]},{id:"medical",name:"Medical",items:[{id:"G6",name:"Medical",cap:10000,desc:"Same as YA2025"},{id:"G2",name:"Parents medical",cap:8000,desc:"Medical, dental, nursing"}]},{id:"insurance",name:"Insurance",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},{id:"G18",name:"PRS",cap:3000,desc:"PRS"},{id:"G19",name:"Education & medical insurance",cap:4000,desc:"Premiums"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}]},{id:"children",name:"Children",items:[{id:"G16a",name:"Child under 18",cap:2000,desc:"Per child",perUnit:true,unitName:"children"},{id:"G16c",name:"Disabled child",cap:10000,desc:"Increased",perUnit:true,unitName:"children"}]},{id:"housing",name:"Housing",items:[{id:"G22",name:"Housing loan interest",cap:7000,desc:"First-time buyer"}]}],"2027":[{id:"personal",name:"Individual",items:[{id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},{id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}]},{id:"lifestyle",name:"Lifestyle",items:[{id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Gadgets, internet"},{id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."}]},{id:"insurance",name:"Insurance",items:[{id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},{id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}]}]};
+const REL = {
+  "2025":[
+    {id:"personal",name:"Individual & Dependents",items:[
+      {id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic for all resident taxpayers"},
+      {id:"G4",name:"Disabled individual",cap:7000,desc:"Certified by JKM"},
+      {id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income or alimony"},
+      {id:"G15",name:"Disabled spouse",cap:6000,desc:"Spouse certified disabled"}
+    ]},
+    {id:"medical",name:"Medical & Special Needs",items:[
+      {id:"G6",name:"Serious disease / fertility / vaccination / dental",cap:10000,desc:"G6+G7+G8 combined cap RM10k. Vaccination RM1k sub, dental RM1k sub"},
+      {id:"G7",name:"Medical exam / self-test / mental health",cap:1000,desc:"Check-up, screening, oximeter, BP monitor, mental health"},
+      {id:"G8",name:"Learning disability (child 18 and below)",cap:6000,desc:"ASD, ADHD, GDD, Down Syndrome diagnosis and rehab"},
+      {id:"G2",name:"Parents / grandparents medical",cap:8000,desc:"Medical, dental, nursing, carer. Check-up sub-limit RM1k"},
+      {id:"G3",name:"Disabled equipment",cap:6000,desc:"Wheelchair, hearing aid, dialysis machine"}
+    ]},
+    {id:"lifestyle",name:"Lifestyle",items:[
+      {id:"G9",name:"Books, gadgets, internet, courses",cap:2500,desc:"Books, smartphone/tablet/PC, internet bills, upskilling"},
+      {id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees (golf lessons, tennis coaching, etc), competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},
+      {id:"G21",name:"EV charging / composting",cap:2500,desc:"EV charging install/rental/subscription, composting machine"}
+    ]},
+    {id:"insurance",name:"Insurance & Contributions",items:[
+      {id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Insurance/takaful (max RM3k) + EPF (max RM4k)"},
+      {id:"G18",name:"PRS / Deferred annuity",cap:3000,desc:"Private Retirement Scheme"},
+      {id:"G19",name:"Education & medical insurance",cap:4000,desc:"Insurance premiums for education or medical"},
+      {id:"G20",name:"SOCSO / EIS",cap:350,desc:"SOCSO + Employment Insurance"}
+    ]},
+    {id:"education",name:"Education & Savings",items:[
+      {id:"G5",name:"Education fees (self)",cap:7000,desc:"Postgraduate, professional. Upskilling sub-limit RM2k"},
+      {id:"G13",name:"SSPN net savings",cap:8000,desc:"Net deposits minus withdrawals"}
+    ]},
+    {id:"children",name:"Children",items:[
+      {id:"G16a",name:"Child under 18",cap:2000,desc:"RM2,000 per unmarried child",perUnit:true,unitName:"children"},
+      {id:"G16b",name:"Child 18+ in education",cap:8000,desc:"Diploma+ MY / degree+ overseas",perUnit:true,unitName:"children"},
+      {id:"G16c",name:"Disabled child",cap:8000,desc:"Additional RM8k if in higher education",perUnit:true,unitName:"children"},
+      {id:"G12",name:"Childcare / kindergarten",cap:3000,desc:"Child aged 6 and below"},
+      {id:"G11",name:"Breastfeeding equipment",cap:1000,desc:"Child aged 2 and below. Once every 2 years"}
+    ]},
+    {id:"housing",name:"Housing",items:[
+      {id:"G22",name:"Housing loan interest (first home)",cap:7000,desc:"SPA 2025-2027. RM7k if up to RM500k, RM5k if RM500k-750k"}
+    ]},
+    // FIX 1: Rental income & deductible expenses section
+    {id:"rental",name:"Rental Income & Expenses",items:[
+      {id:"R1",name:"Rental expenses — repairs & maintenance",cap:999999,desc:"Deductible: cost of repairs and maintenance of rental property"},
+      {id:"R2",name:"Rental expenses — quit rent & assessment",cap:999999,desc:"Deductible: quit rent, assessment tax paid to local authority"},
+      {id:"R3",name:"Rental expenses — insurance premium",cap:999999,desc:"Deductible: fire/building insurance on rental property"},
+      {id:"R4",name:"Rental expenses — management & agent fees",cap:999999,desc:"Deductible: property management fees, agent commission"},
+      {id:"R5",name:"Rental expenses — loan interest",cap:999999,desc:"Deductible: interest on loan taken to purchase/improve rental property"},
+    ]}
+  ],
+  "2026":[
+    {id:"personal",name:"Individual",items:[
+      {id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},
+      {id:"G4",name:"Disabled individual",cap:8000,desc:"Increased"},
+      {id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}
+    ]},
+    {id:"lifestyle",name:"Lifestyle",items:[
+      {id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Same as YA2025"},
+      {id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."},
+      {id:"VMY",name:"Visit Malaysia 2026",cap:1000,desc:"NEW: Domestic tourism"}
+    ]},
+    {id:"medical",name:"Medical",items:[
+      {id:"G6",name:"Medical",cap:10000,desc:"Same as YA2025"},
+      {id:"G2",name:"Parents medical",cap:8000,desc:"Medical, dental, nursing"}
+    ]},
+    {id:"insurance",name:"Insurance",items:[
+      {id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},
+      {id:"G18",name:"PRS",cap:3000,desc:"PRS"},
+      {id:"G19",name:"Education & medical insurance",cap:4000,desc:"Premiums"},
+      {id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}
+    ]},
+    {id:"children",name:"Children",items:[
+      {id:"G16a",name:"Child under 18",cap:2000,desc:"Per child",perUnit:true,unitName:"children"},
+      {id:"G16c",name:"Disabled child",cap:10000,desc:"Increased",perUnit:true,unitName:"children"}
+    ]},
+    {id:"housing",name:"Housing",items:[
+      {id:"G22",name:"Housing loan interest",cap:7000,desc:"First-time buyer"}
+    ]},
+    {id:"rental",name:"Rental Income & Expenses",items:[
+      {id:"R1",name:"Rental expenses — repairs & maintenance",cap:999999,desc:"Deductible: cost of repairs and maintenance of rental property"},
+      {id:"R2",name:"Rental expenses — quit rent & assessment",cap:999999,desc:"Deductible: quit rent, assessment tax paid to local authority"},
+      {id:"R3",name:"Rental expenses — insurance premium",cap:999999,desc:"Deductible: fire/building insurance on rental property"},
+      {id:"R4",name:"Rental expenses — management & agent fees",cap:999999,desc:"Deductible: property management fees, agent commission"},
+      {id:"R5",name:"Rental expenses — loan interest",cap:999999,desc:"Deductible: interest on loan taken to purchase/improve rental property"},
+    ]}
+  ],
+  "2027":[
+    {id:"personal",name:"Individual",items:[
+      {id:"G1",name:"Individual relief",cap:9000,auto:true,desc:"Automatic"},
+      {id:"G14",name:"Spouse / Alimony",cap:4000,desc:"Spouse with no income"}
+    ]},
+    {id:"lifestyle",name:"Lifestyle",items:[
+      {id:"G9",name:"Books, gadgets, internet",cap:2500,desc:"Gadgets, internet"},
+      {id:"G10",name:"Sports & fitness",cap:1000,desc:"Sports equipment (golf clubs, balls, bags, rackets, etc), gym membership, sports facility rental (golf green fees, golf simulator, badminton/squash court, swimming pool), sports training/lesson fees, competition entry fees. EXCLUDES: golf club joining/membership fees, sports clothing/shoes/apparel, buggy rental, insurance fees."}
+    ]},
+    {id:"insurance",name:"Insurance",items:[
+      {id:"G17",name:"Life insurance + EPF",cap:7000,desc:"Combined"},
+      {id:"G20",name:"SOCSO / EIS",cap:350,desc:"Contributions"}
+    ]},
+    {id:"rental",name:"Rental Income & Expenses",items:[
+      {id:"R1",name:"Rental expenses — repairs & maintenance",cap:999999,desc:"Deductible: cost of repairs and maintenance of rental property"},
+      {id:"R2",name:"Rental expenses — quit rent & assessment",cap:999999,desc:"Deductible: quit rent, assessment tax paid to local authority"},
+      {id:"R3",name:"Rental expenses — insurance premium",cap:999999,desc:"Deductible: fire/building insurance on rental property"},
+      {id:"R4",name:"Rental expenses — management & agent fees",cap:999999,desc:"Deductible: property management fees, agent commission"},
+      {id:"R5",name:"Rental expenses — loan interest",cap:999999,desc:"Deductible: interest on loan taken to purchase/improve rental property"},
+    ]}
+  ]
+};
 
 const BK = [{max:5000,r:0,c:0},{max:20000,r:1,c:0},{max:35000,r:3,c:150},{max:50000,r:6,c:600},{max:70000,r:11,c:1500},{max:100000,r:19,c:3700},{max:400000,r:25,c:9400},{max:600000,r:26,c:84400},{max:2000000,r:28,c:136400},{max:Infinity,r:30,c:528400}];
 const calcTax = (ci) => { if (ci <= 0) return 0; let p = 0; for (const b of BK) { if (ci <= b.max) return b.c + (ci - p) * b.r / 100; p = b.max; } return 0; };
@@ -86,7 +193,6 @@ const SK = "ringgit-v3";
 const ld = () => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } };
 const sv = (d) => { try { localStorage.setItem(SK, JSON.stringify(d)); } catch {} };
 
-// Migrate old v2 data (claims model) → v3 entries model on first run
 const migrateOld = () => {
   try {
     const old = JSON.parse(localStorage.getItem("ringgit-v2") || "{}");
@@ -114,7 +220,7 @@ const migrateOld = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// MonthPicker (used for income start/end dates)
+// MonthPicker
 // ─────────────────────────────────────────────────────────────
 const MonthPicker = ({ label, value, onChange, t }) => {
   const [open, setOpen] = useState(false);
@@ -177,8 +283,14 @@ export default function Ringgit() {
   const setThemeName = (n) => { setThemeNameRaw(n); try { localStorage.setItem("ringgit-theme", n); } catch {} };
   const t = THEMES[themeName];
 
+  // FIX 2: Sync body background to current theme so dark mode Welcome screen works
+  useEffect(() => {
+    document.body.style.background = t.bg;
+    document.body.style.color = t.ink;
+  }, [t.bg, t.ink]);
+
   const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState("welcome"); // welcome | signup | app
+  const [screen, setScreen] = useState("welcome");
   const [nameIn, setNameIn] = useState("");
   const [yobIn, setYobIn] = useState("");
   const [ya, setYa] = useState("2025");
@@ -187,15 +299,14 @@ export default function Ringgit() {
   const [entries, setEntries] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [incomes, setIncomes] = useState([]);
+  const [rentalIncomes, setRentalIncomes] = useState([]);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannerSeed, setScannerSeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewImg, setViewImg] = useState(null);
 
-  // Run migration once on mount
   useEffect(() => { migrateOld(); }, []);
 
-  // Supabase auth — listen for session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -203,7 +314,6 @@ export default function Ringgit() {
         setUser({ id: u.id, name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User", email: u.email, provider: "google" });
         setScreen("app");
       } else {
-        // Restore guest user from localStorage if available
         const d = ld();
         if (d.user) { setUser(d.user); setScreen("app"); }
       }
@@ -222,7 +332,6 @@ export default function Ringgit() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Load data when year or auth changes
   useEffect(() => {
     if (screen !== "app") return;
     if (user?.provider === "google" && user?.id) {
@@ -233,18 +342,18 @@ export default function Ringgit() {
       setEntries(yd.entries || []);
       setReceipts(yd.receipts || []);
       setIncomes(yd.incomes || []);
+      setRentalIncomes(yd.rentalIncomes || []);
     }
   }, [ya, screen, user?.id]);
 
-  // Persist guest data to localStorage
   useEffect(() => {
     if (screen === "app" && user?.provider !== "google") {
       const d = ld();
-      d[ya] = { entries, receipts, incomes };
+      d[ya] = { entries, receipts, incomes, rentalIncomes };
       d.user = user;
       sv(d);
     }
-  }, [entries, receipts, incomes, user, ya, screen]);
+  }, [entries, receipts, incomes, rentalIncomes, user, ya, screen]);
 
   const loadFromSupabase = async () => {
     if (!user?.id) return;
@@ -254,7 +363,6 @@ export default function Ringgit() {
         supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
         supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
       ]);
-      // Convert claims rows → entries. Each claim row is one entry in the new model.
       const e = (cl || []).map(c => ({
         id: c.id || `c-${c.item_id}-${Date.now()}`,
         itemId: c.item_id, amount: c.amount, units: c.units || 1,
@@ -263,7 +371,8 @@ export default function Ringgit() {
         hasReceipt: !!c.has_receipt,
       }));
       setEntries(e);
-      setIncomes(inc || []);
+      setIncomes((inc || []).filter(i => i.type !== "rental"));
+      setRentalIncomes((inc || []).filter(i => i.type === "rental"));
       setReceipts(rec || []);
     } catch (e) { console.error("Load error", e); }
   };
@@ -278,11 +387,24 @@ export default function Ringgit() {
   const itemTotalRaw = (id) => itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
   const itemTotalCapped = (id) => {
     const it = allItems.find(i => i.id === id); if (!it) return 0;
+    // Rental expense items are uncapped (deductible from rental income, not from tax relief cap)
+    if (it.cap >= 999999) return itemTotalRaw(id);
     const cap = it.perUnit ? it.cap * ((itemEntries(id)[0]?.units) || 1) : it.cap;
     return Math.min(itemTotalRaw(id), cap);
   };
-  const totalRelief = allItems.reduce((s, i) => s + (i.auto ? i.cap : itemTotalCapped(i.id)), 0);
-  const totalIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
+
+  const totalRelief = allItems.reduce((s, i) => {
+    // Skip rental items from standard relief total — they reduce rental income instead
+    if (i.id.startsWith("R")) return s;
+    return s + (i.auto ? i.cap : itemTotalCapped(i.id));
+  }, 0);
+
+  const totalRentalIncome = rentalIncomes.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalRentalExpenses = ["R1","R2","R3","R4","R5"].reduce((s, id) => s + itemTotalRaw(id), 0);
+  const netRentalIncome = Math.max(0, totalRentalIncome - totalRentalExpenses);
+
+  const totalEmploymentIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalIncome = totalEmploymentIncome + netRentalIncome;
   const chargeable = Math.max(0, totalIncome - totalRelief);
   const estTax = calcTax(chargeable);
 
@@ -306,7 +428,7 @@ export default function Ringgit() {
       const item = allItems.find(i => i.id === itemId);
       await addReceiptObj({
         id: Date.now() + "r", name: item?.name || itemId, itemId,
-        item_id: itemId, // dual-key for supabase compat
+        item_id: itemId,
         data: receiptImg,
         amount: newEntry.amount,
         merchant: "Scanned via AI",
@@ -325,11 +447,25 @@ export default function Ringgit() {
   const addIncome = async (inc) => {
     setIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya });
+      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "employment" });
     }
   };
   const removeIncome = async (id) => {
     setIncomes(p => p.filter(i => i.id !== id));
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+    }
+  };
+
+  // FIX 1: Rental income mutations
+  const addRentalIncome = async (inc) => {
+    setRentalIncomes(p => [...p, inc]);
+    if (user?.provider === "google" && user?.id) {
+      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "rental" });
+    }
+  };
+  const removeRentalIncome = async (id) => {
+    setRentalIncomes(p => p.filter(i => i.id !== id));
     if (user?.provider === "google" && user?.id) {
       await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
     }
@@ -348,7 +484,6 @@ export default function Ringgit() {
     }
   };
 
-  // Called when AI scanner returns a claimable result the user accepts
   const addFromScan = async (scanResult, useTotal, img) => {
     if (!scanResult?.claimable || !scanResult.category_id) return;
     const amt = useTotal ? scanResult.total_amount : scanResult.suggested_amount;
@@ -370,7 +505,7 @@ export default function Ringgit() {
       try {
         const d = JSON.parse(ev.target.result); sv(d);
         const y = d[ya] || {};
-        setEntries(y.entries || []); setReceipts(y.receipts || []); setIncomes(y.incomes || []);
+        setEntries(y.entries || []); setReceipts(y.receipts || []); setIncomes(y.incomes || []); setRentalIncomes(y.rentalIncomes || []);
         alert("Restored!");
       } catch { alert("Invalid file"); }
     };
@@ -384,7 +519,7 @@ export default function Ringgit() {
 
   const resetYAData = () => {
     if (!confirm(`Reset YA${ya} data?`)) return;
-    setEntries([]); setReceipts([]); setIncomes([]);
+    setEntries([]); setReceipts([]); setIncomes([]); setRentalIncomes([]);
     if (user?.provider === "google" && user?.id) {
       supabase.from("claims").delete().eq("user_id", user.id).eq("ya", ya);
       supabase.from("incomes").delete().eq("user_id", user.id).eq("ya", ya);
@@ -434,7 +569,6 @@ export default function Ringgit() {
     );
   }
 
-  // Main app
   return (
     <div style={baseStyle(t)}>
       <style>{globalCSS}</style>
@@ -445,7 +579,6 @@ export default function Ringgit() {
         </div>
       )}
 
-      {/* Top section: Header (relief) or simple title (other tabs) */}
       {tab === "relief" ? (
         <Header t={t} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable} estTax={estTax} />
@@ -460,7 +593,6 @@ export default function Ringgit() {
         </div>
       )}
 
-      {/* Tab content */}
       <div style={{ paddingBottom: 140 }}>
         {tab === "relief" && (
           <ReliefTab t={t} cats={cats} entries={entries}
@@ -469,7 +601,12 @@ export default function Ringgit() {
             onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
         )}
         {tab === "income" && (
-          <IncomeTab t={t} incomes={incomes} onAdd={addIncome} onRemove={removeIncome}
+          <IncomeTab t={t} incomes={incomes} rentalIncomes={rentalIncomes}
+            onAdd={addIncome} onRemove={removeIncome}
+            onAddRental={addRentalIncome} onRemoveRental={removeRentalIncome}
+            totalEmploymentIncome={totalEmploymentIncome}
+            totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
+            netRentalIncome={netRentalIncome}
             totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable} estTax={estTax} />
         )}
         {tab === "receipts" && (
@@ -483,10 +620,10 @@ export default function Ringgit() {
         )}
       </div>
 
-      {/* Floating Scan FAB on relief tab */}
+      {/* FIX 4: Scan FAB — raised bottom so it clears the tab bar */}
       {tab === "relief" && !scannerOpen && (
         <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }} style={{
-          position: "fixed", bottom: 104, right: "max(20px, calc(50vw - 220px))", zIndex: 35,
+          position: "fixed", bottom: 120, right: "max(20px, calc(50vw - 200px))", zIndex: 35,
           padding: "14px 20px", border: "none", borderRadius: 16,
           background: t.red, color: "#fff", fontSize: 13, fontWeight: 700,
           fontFamily: FONT, cursor: "pointer", letterSpacing: 0.3,
@@ -498,10 +635,8 @@ export default function Ringgit() {
         </button>
       )}
 
-      {/* Bottom tab bar */}
       <TabBar t={t} tab={tab} setTab={setTab} />
 
-      {/* Scanner modal */}
       <ScannerSheet open={scannerOpen} seededItem={scannerSeed} t={t} ya={ya} allItems={allItems}
         onClose={() => { setScannerOpen(false); setScannerSeed(null); }}
         onAdd={addFromScan} />
@@ -517,7 +652,8 @@ function Welcome({ t, onGoogle, onGuest }) {
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 28, color: t.bg, boxShadow: "0 12px 32px rgba(200,68,43,0.3)", marginBottom: 32 }}>RM</div>
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 28, color: "#fff", boxShadow: "0 12px 32px rgba(200,68,43,0.3)", marginBottom: 32 }}>RM</div>
+        {/* FIX 2: use t.ink for all text so dark mode renders correctly */}
         <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, letterSpacing: -1.5, lineHeight: 1 }}>Ringgit.</div>
         <div style={{ fontSize: 16, color: t.inkMute, marginTop: 12, lineHeight: 1.5, maxWidth: 300 }}>
           Tax relief tracker for Malaysian taxpayers. Filing season, simplified.
@@ -543,7 +679,7 @@ function Welcome({ t, onGoogle, onGuest }) {
 function Signup({ t, name, setName, yob, setYob, onDone, onSkip }) {
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "72px 24px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
-      <div style={{ width: 56, height: 56, borderRadius: 16, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: t.bg, marginBottom: 24 }}>RM</div>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", marginBottom: 24 }}>RM</div>
       <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>Set up your profile</div>
       <div style={{ fontSize: 14, color: t.inkMute, marginTop: 6, marginBottom: 32 }}>Helps personalise your calculations.</div>
 
@@ -603,7 +739,6 @@ function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelie
         </div>
       </div>
 
-      {/* Hero card */}
       <div style={{ marginTop: 20, background: t.ink, color: t.bg, borderRadius: 20, padding: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -672,7 +807,6 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      {/* Search */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14 }}>
         <Icon name="search" size={16} color={t.inkMute} />
         <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
@@ -682,21 +816,25 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       {filtCats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
         const expanded = expCat === cat.id || !!search;
+        // Special label for rental category
+        const isRental = cat.id === "rental";
         return (
           <div key={cat.id} style={{ marginBottom: 12 }}>
             <button onClick={() => setExpCat(expanded && !search ? null : cat.id)} style={{ width: "100%", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={cat.icon} size={18} color={t.red} />
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: isRental ? t.goldSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={cat.icon} size={18} color={isRental ? t.gold : t.red} />
               </div>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{cat.name}</div>
                 <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2, fontWeight: 500 }}>
-                  {doneCount} of {cat.items.length} claimed
+                  {isRental ? "Track deductible rental expenses" : `${doneCount} of ${cat.items.length} claimed`}
                 </div>
               </div>
-              <div style={{ padding: "4px 10px", borderRadius: 8, background: doneCount === cat.items.length ? t.greenSoft : t.bgAlt, color: doneCount === cat.items.length ? t.green : t.inkSoft, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                {doneCount}/{cat.items.length}
-              </div>
+              {!isRental && (
+                <div style={{ padding: "4px 10px", borderRadius: 8, background: doneCount === cat.items.length ? t.greenSoft : t.bgAlt, color: doneCount === cat.items.length ? t.green : t.inkSoft, fontSize: 11, fontWeight: 700 }}>
+                  {doneCount}/{cat.items.length}
+                </div>
+              )}
               <div style={{ transform: expanded ? "rotate(90deg)" : "none", transition: "transform .2s" }}>
                 <Icon name="chevR" size={14} color={t.inkMute} />
               </div>
@@ -704,42 +842,52 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
             {expanded && (
               <div style={{ marginTop: 8 }}>
+                {isRental && (
+                  <div style={{ padding: "10px 14px", background: t.goldSoft, borderRadius: 12, borderLeft: `3px solid ${t.gold}`, fontSize: 12, color: t.inkSoft, marginBottom: 8, lineHeight: 1.5 }}>
+                    Add rental expenses below. These are deducted from your gross rental income (entered in the <b>Income</b> tab) to arrive at net rental income.
+                  </div>
+                )}
                 {cat.items.map(item => {
                   const eItems = itemEntries(item.id);
                   const rawTotal = itemTotalRaw(item.id);
                   const units = eItems[0]?.units || 1;
-                  const capEffective = item.perUnit ? item.cap * units : item.cap;
-                  const claimed = item.auto ? item.cap : Math.min(rawTotal, capEffective);
-                  const pct = Math.round((claimed / capEffective) * 100);
+                  const isUncapped = item.cap >= 999999;
+                  const capEffective = isUncapped ? rawTotal || 1 : (item.perUnit ? item.cap * units : item.cap);
+                  const claimed = item.auto ? item.cap : (isUncapped ? rawTotal : Math.min(rawTotal, capEffective));
+                  const pct = isUncapped ? 100 : Math.round((claimed / capEffective) * 100);
                   const done = claimed > 0;
                   const isExp = expItem === item.id;
                   const isAdding = addingFor === item.id;
-                  const overCap = rawTotal > capEffective;
+                  const overCap = !isUncapped && rawTotal > capEffective;
 
                   return (
-                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? t.redSoft : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
+                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
                       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: t.red, background: t.redSoft, padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{item.id}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: isRental ? t.gold : t.red, background: isRental ? t.goldSoft : t.redSoft, padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{item.id}</span>
                             <span style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{item.name}</span>
                           </div>
                           <div style={{ fontSize: 12, color: t.inkMute, lineHeight: 1.5, marginBottom: 12 }}>{item.desc}</div>
 
-                          {/* Progress bar */}
                           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                             <div style={{ flex: 1, height: 6, background: t.bgAlt, borderRadius: 4, overflow: "hidden" }}>
-                              <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: item.auto ? t.green : (done ? t.red : t.inkMute), borderRadius: 4, transition: "width .3s" }} />
+                              <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: item.auto ? t.green : (done ? (isRental ? t.gold : t.red) : t.inkMute), borderRadius: 4, transition: "width .3s" }} />
                             </div>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: t.inkSoft, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>{pct}%</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: t.inkSoft, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>
+                              {isUncapped ? "" : `${pct}%`}
+                            </div>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.inkMute, fontWeight: 500 }}>
                             <span style={{ color: done ? t.ink : t.inkMute, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                               RM {claimed.toLocaleString()}
                             </span>
-                            <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                              / RM {capEffective.toLocaleString()} cap{item.perUnit ? ` (${units} ${item.unitName})` : ""}
-                            </span>
+                            {!isUncapped && (
+                              <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                                / RM {capEffective.toLocaleString()} cap{item.perUnit ? ` (${units} ${item.unitName})` : ""}
+                              </span>
+                            )}
+                            {isUncapped && <span style={{ color: t.inkMute }}>No cap — full deduction</span>}
                           </div>
                           {overCap && (
                             <div style={{ fontSize: 10, color: t.gold, fontWeight: 600, marginTop: 6 }}>
@@ -755,14 +903,13 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                             <button onClick={() => {
                               if (eItems.length === 0) { setAddingFor(isAdding ? null : item.id); setAmtIn(""); setDescIn(""); setUnitsIn(1); }
                               else { setExpItem(isExp ? null : item.id); }
-                            }} style={{ padding: "8px 14px", border: "none", borderRadius: 10, background: done ? t.ink : t.red, color: done ? t.bg : "#fff", fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                            }} style={{ padding: "8px 14px", border: "none", borderRadius: 10, background: done ? t.ink : (isRental ? t.gold : t.red), color: done ? t.bg : "#fff", fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
                               {done ? (<>View <Icon name={isExp ? "chevD" : "chevR"} size={10} color={t.bg} /></>) : "Add"}
                             </button>
                           )}
                         </div>
                       </div>
 
-                      {/* Entry list */}
                       {isExp && eItems.length > 0 && !item.auto && (
                         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
@@ -795,14 +942,13 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                         </div>
                       )}
 
-                      {/* Add entry form */}
                       {isAdding && (
                         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                             New entry for {item.id}
                           </div>
                           <input autoFocus value={descIn} onChange={e => setDescIn(e.target.value)}
-                            placeholder="Description (e.g. Gym membership)"
+                            placeholder="Description (e.g. Plumbing repair)"
                             style={{ width: "100%", padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
                           {item.perUnit && (
                             <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
@@ -815,24 +961,23 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                             <span style={{ fontSize: 13, fontWeight: 600, color: t.inkMute }}>RM</span>
                             <input type="number" value={amtIn} onChange={e => setAmtIn(e.target.value)} placeholder="0.00"
                               style={{ flex: 1, padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
-                            <button onClick={() => { onOpenScanner(item); setAddingFor(null); }}
-                              style={{ padding: "10px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                              <Icon name="camera" size={13} color={t.ink} />
-                              Scan
-                            </button>
+                            {!isRental && (
+                              <button onClick={() => { onOpenScanner(item); setAddingFor(null); }}
+                                style={{ padding: "10px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+                                <Icon name="camera" size={13} color={t.ink} />
+                                Scan
+                              </button>
+                            )}
                           </div>
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                             <button onClick={() => handleAdd(item)}
-                              style={{ flex: 1, padding: "10px 14px", border: "none", borderRadius: 10, background: t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>
+                              style={{ flex: 1, padding: "10px 14px", border: "none", borderRadius: 10, background: isRental ? t.gold : t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>
                               Save entry
                             </button>
                             <button onClick={() => { setAddingFor(null); setAmtIn(""); setDescIn(""); }}
                               style={{ padding: "10px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: "transparent", color: t.inkSoft, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
                               Cancel
                             </button>
-                          </div>
-                          <div style={{ fontSize: 10, color: t.inkMute, marginTop: 8, lineHeight: 1.5 }}>
-                            Tap <b>Scan</b> to attach a receipt — AI will verify it matches {item.id} and auto-fill the amount.
                           </div>
                         </div>
                       )}
@@ -848,11 +993,17 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   );
 }
 
-function IncomeTab({ t, incomes, onAdd, onRemove, totalIncome, totalRelief, chargeable, estTax }) {
+// FIX 1: IncomeTab now handles both employment + rental income
+function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
+  totalEmploymentIncome, totalRentalIncome, totalRentalExpenses, netRentalIncome,
+  totalIncome, totalRelief, chargeable, estTax }) {
   const [emp, setEmp] = useState("");
   const [amt, setAmt] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  // Rental income form
+  const [rentalAddr, setRentalAddr] = useState("");
+  const [rentalAmt, setRentalAmt] = useState("");
 
   const fmtPeriod = (s, e) => {
     const fmt = (d) => { if (!d) return ""; const [y, m] = d.split("-"); return MONTHS[parseInt(m) - 1] + " " + y; };
@@ -861,6 +1012,7 @@ function IncomeTab({ t, incomes, onAdd, onRemove, totalIncome, totalRelief, char
 
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
+      {/* Employment Income */}
       <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, marginBottom: 12 }}>Add Employment Income</div>
         <div style={{ marginBottom: 10 }}>
@@ -908,19 +1060,97 @@ function IncomeTab({ t, incomes, onAdd, onRemove, totalIncome, totalRelief, char
               </button>
             </div>
           ))}
+        </>
+      )}
 
+      {/* FIX 1: Rental Income Section */}
+      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginTop: 20, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <Icon name="key" size={16} color={t.gold} />
+          <div style={{ fontSize: 14, fontWeight: 700, color: t.ink }}>Add Rental Income</div>
+        </div>
+        <div style={{ fontSize: 12, color: t.inkMute, marginBottom: 14, lineHeight: 1.5 }}>
+          Gross rent received. Add deductible expenses under <b style={{ color: t.ink }}>Relief → Rental</b> to reduce your net rental income.
+        </div>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Property address / description</div>
+          <input value={rentalAddr} onChange={e => setRentalAddr(e.target.value)} placeholder="e.g. Condo Unit A-12-3, PJ"
+            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Annual gross rental income (RM)</div>
+          <input value={rentalAmt} onChange={e => setRentalAmt(e.target.value)} type="number" placeholder="0"
+            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <button onClick={async () => {
+          if (!rentalAddr || !rentalAmt) return;
+          await onAddRental({ id: Date.now() + "", employer: rentalAddr, amount: parseFloat(rentalAmt) || 0, period: "Rental income" });
+          setRentalAddr(""); setRentalAmt("");
+        }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 12, background: t.gold, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <Icon name="plus" size={16} color="#fff" /> Add Rental Income
+        </button>
+      </div>
+
+      {rentalIncomes.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
+            Rental Properties · {rentalIncomes.length}
+          </div>
+          {rentalIncomes.map(inc => (
+            <div key={inc.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: t.goldSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="key" size={18} color={t.gold} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{inc.employer}</div>
+                <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Gross rental</div>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>
+                RM {inc.amount.toLocaleString()}
+              </div>
+              <button onClick={() => onRemoveRental(inc.id)} style={{ width: 28, height: 28, border: "none", borderRadius: 8, background: t.goldSoft, color: t.gold, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="close" size={14} color={t.gold} />
+              </button>
+            </div>
+          ))}
+
+          {/* Rental net summary */}
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft, padding: "4px 0" }}>
+              <span>Gross rental income</span>
+              <span style={{ fontWeight: 600, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalRentalIncome.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft, padding: "4px 0" }}>
+              <span>Deductible expenses</span>
+              <span style={{ fontWeight: 600, color: t.green, fontVariantNumeric: "tabular-nums" }}>– RM {totalRentalExpenses.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: t.ink, borderTop: `1px solid ${t.hair}`, marginTop: 6, paddingTop: 8 }}>
+              <span>Net rental income</span>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {netRentalIncome.toLocaleString()}</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Overall tax estimate */}
+      {(incomes.length > 0 || rentalIncomes.length > 0) && (
+        <>
           <div style={{ background: t.ink, color: t.bg, borderRadius: 18, padding: 18, marginTop: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,239,227,0.6)", textTransform: "uppercase", letterSpacing: 1.2 }}>Total Employment Income</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,239,227,0.6)", textTransform: "uppercase", letterSpacing: 1.2 }}>Total Income</div>
             <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: -1, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
               RM {totalIncome.toLocaleString()}
             </div>
+            {rentalIncomes.length > 0 && (
+              <div style={{ fontSize: 11, color: "rgba(245,239,227,0.5)", marginTop: 4 }}>
+                Employment RM {totalEmploymentIncome.toLocaleString()} + Net rental RM {netRentalIncome.toLocaleString()}
+              </div>
+            )}
           </div>
 
-          {/* Tax estimate breakdown */}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginTop: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Tax Estimate</div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
-              <span>Gross Income</span>
+              <span>Total Income</span>
               <span style={{ fontWeight: 600, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalIncome.toLocaleString()}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
@@ -997,7 +1227,6 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
   const rowStyle = { display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", background: t.surface, borderRadius: 14, border: `1px solid ${t.hair}`, marginBottom: 8, cursor: "pointer" };
   return (
     <div style={{ padding: "0 20px 40px", fontFamily: FONT }}>
-      {/* Profile card */}
       <div style={{ background: t.surface, padding: 18, borderRadius: 18, border: `1px solid ${t.hair}`, marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 52, height: 52, borderRadius: 14, background: t.red, color: "#fff", fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {(user?.name || "U")[0].toUpperCase()}
@@ -1022,7 +1251,6 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         </button>
       )}
 
-      {/* Appearance */}
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Appearance</div>
       <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.hair}`, padding: 6, display: "flex", gap: 6, marginBottom: 20 }}>
         {[{ k: "light", label: "Light", icon: "sun" }, { k: "dark", label: "Dark", icon: "moon" }].map(opt => {
@@ -1036,7 +1264,6 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         })}
       </div>
 
-      {/* Data */}
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Data</div>
       <div onClick={onExport} style={rowStyle}>
         <Icon name="download" size={18} color={t.inkSoft} />
@@ -1060,7 +1287,6 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: t.red }}>Reset YA{ya} data</div>
       </div>
 
-      {/* Coming soon */}
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "16px 4px 10px" }}>Coming soon</div>
       <div style={{ background: t.surface, padding: 16, borderRadius: 16, border: `1px solid ${t.hair}`, display: "flex", flexWrap: "wrap", gap: 6 }}>
         {["Debt Tracker", "Savings Goals", "Budget Planner", "EPF Calc", "Zakat Calc"].map(f => (
@@ -1070,23 +1296,22 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         ))}
       </div>
 
-      {/* Sign out */}
       <button onClick={onSignOut} style={{ width: "100%", padding: 16, marginTop: 20, border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.inkSoft, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <Icon name="logout" size={16} color={t.inkSoft} />
         Sign out
       </button>
 
       <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 16 }}>
-        Ringgit v4.0 · Powered by Claude · Not financial advice
+        Ringgit v4.1 · Powered by Claude · Not financial advice
       </div>
     </div>
   );
 }
 
 function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
-  const [step, setStep] = useState("idle"); // idle | analyzing | result
+  const [step, setStep] = useState("idle");
   const [desc, setDesc] = useState("");
-  const [img, setImg] = useState(null); // dataURL or null
+  const [img, setImg] = useState(null);
   const [err, setErr] = useState(null);
   const [result, setResult] = useState(null);
   const fRef = useRef(null);
@@ -1109,7 +1334,7 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
     if (!img && !desc) return;
     setStep("analyzing"); setErr(null);
 
-    const list = allItems.filter(i => !i.auto).map(i => `${i.id}: ${i.name} (cap RM${i.cap}) - ${i.desc}`).join("\n");
+    const list = allItems.filter(i => !i.auto && i.cap < 999999).map(i => `${i.id}: ${i.name} (cap RM${i.cap}) - ${i.desc}`).join("\n");
     const scopedId = seededItem?.id;
     const scopedName = seededItem?.name;
 
@@ -1158,12 +1383,19 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
           "anthropic-dangerous-direct-browser-access": "true"
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          // FIX 3: Updated model name to current Claude Sonnet
+          model: "claude-sonnet-4-6",
           max_tokens: 500,
           system: systemPrompt,
           messages: [{ role: "user", content: userContent }]
         })
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       if (data.error) throw new Error(data.error.message || "API error");
 
@@ -1177,8 +1409,12 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
       setResult(parsed);
       setStep("result");
     } catch (e) {
-      console.error(e);
-      setErr("Analysis failed. Please check your connection and try again.");
+      console.error("Scanner error:", e);
+      // FIX 3: More descriptive error so user knows what went wrong
+      const msg = e.message?.includes("401") ? "Invalid API key — check VITE_ANTHROPIC_API_KEY in Vercel env vars."
+        : e.message?.includes("403") ? "API key doesn't have permission. Check Anthropic dashboard."
+        : "Analysis failed: " + (e.message || "Unknown error");
+      setErr(msg);
       setStep("idle");
     }
   };
@@ -1239,7 +1475,7 @@ If not claimable: {"claimable":false,"category_id":null,"category_name":null,"to
               LHDN requires <b style={{ color: t.gold }}>7 years</b> of receipt retention for audits. Snap a photo now.
             </div>
 
-            {err && <div style={{ color: t.red, fontSize: 12, fontWeight: 600, marginTop: 10, textAlign: "center" }}>{err}</div>}
+            {err && <div style={{ color: t.red, fontSize: 12, fontWeight: 600, marginTop: 10, padding: "10px 12px", background: t.redSoft, borderRadius: 10, lineHeight: 1.5 }}>{err}</div>}
 
             <button onClick={runAI} disabled={!img && !desc}
               style={{ width: "100%", marginTop: 14, padding: 16, border: "none", borderRadius: 14, background: (!img && !desc) ? t.inkMute : t.ink, color: t.bg, fontSize: 14, fontWeight: 700, fontFamily: FONT, cursor: (!img && !desc) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (!img && !desc) ? 0.5 : 1 }}>
@@ -1337,13 +1573,13 @@ const baseStyle = (t) => ({
   position: "relative",
 });
 
+// FIX 2: body background is now controlled by useEffect, not hardcoded here
 const globalCSS = `
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-body { background: #F5EFE3; }
 input::placeholder, textarea::placeholder { color: rgba(139,130,117,0.8); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
