@@ -1,8 +1,38 @@
+// ═════════════════════════════════════════════════════════════
+// RINGGIT — App.jsx
+// ═════════════════════════════════════════════════════════════
+//
+// VERCEL ENV VARS NEEDED (Settings → Environment Variables):
+//   VITE_SUPABASE_URL   = https://xsfqwyzqspopkirysuyj.supabase.co
+//   VITE_SUPABASE_KEY   = <your anon/public key — safe to expose>
+//   ANTHROPIC_API_KEY   = sk-ant-... (server-side ONLY, no VITE_ prefix)
+//
+// SUPABASE RLS — run this SQL in Supabase → SQL Editor:
+// ──────────────────────────────────────────────────────────────
+//   alter table claims   enable row level security;
+//   alter table incomes  enable row level security;
+//   alter table receipts enable row level security;
+//
+//   create policy "claims_self"   on claims   for all using (auth.uid() = user_id);
+//   create policy "incomes_self"  on incomes  for all using (auth.uid() = user_id);
+//   create policy "receipts_self" on receipts for all using (auth.uid() = user_id);
+//
+//   -- Storage bucket RLS (receipts bucket must exist):
+//   create policy "receipts_storage_self" on storage.objects
+//     for all using (auth.uid()::text = (storage.foldername(name))[1]);
+// ──────────────────────────────────────────────────────────────
+//
+// GOOGLE OAUTH SETUP (one-time):
+//   1. console.cloud.google.com → APIs → OAuth consent screen → External
+//   2. Create credentials → OAuth 2.0 Client ID → Web application
+//   3. Authorised redirect URI: https://<your-project>.supabase.co/auth/v1/callback
+//   4. Paste Client ID + Secret into Supabase → Auth → Providers → Google
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 // ─────────────────────────────────────────────────────────────
-// IMAGE COMPRESSION — resizes + compresses before sending to API
+// IMAGE COMPRESSION
 // ─────────────────────────────────────────────────────────────
 const compressImage = (dataUrl, maxSizeMB = 4.5) => {
   return new Promise((resolve, reject) => {
@@ -15,10 +45,8 @@ const compressImage = (dataUrl, maxSizeMB = 4.5) => {
         else { width = Math.round((width / height) * MAX_DIM); height = MAX_DIM; }
       }
       const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = width; canvas.height = height;
       canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-
       const tryQ = (q) => {
         const out = canvas.toDataURL("image/jpeg", q);
         const mb = (out.length * 0.75) / (1024 * 1024);
@@ -33,7 +61,30 @@ const compressImage = (dataUrl, maxSizeMB = 4.5) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// SUPABASE
+// SUPABASE STORAGE — upload receipt image, return public URL
+// Falls back to null on failure (caller uses base64 for guests)
+// ─────────────────────────────────────────────────────────────
+const uploadReceiptToStorage = async (supabaseClient, userId, receiptId, dataUrl) => {
+  try {
+    const fetchRes = await fetch(dataUrl);
+    const blob = await fetchRes.blob();
+    const path = `${userId}/${receiptId}.jpg`;
+    const { error } = await supabaseClient.storage
+      .from("receipts")
+      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+    if (error) throw error;
+    const { data: { publicUrl } } = supabaseClient.storage
+      .from("receipts")
+      .getPublicUrl(path);
+    return publicUrl;
+  } catch (e) {
+    console.error("Storage upload failed:", e);
+    return null;
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// SUPABASE CLIENT
 // ─────────────────────────────────────────────────────────────
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -64,7 +115,7 @@ const THEMES = {
   },
 };
 
-const FONT = "'Poppins', -apple-system, system-ui, sans-serif";
+const FONT  = "'Poppins', -apple-system, system-ui, sans-serif";
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -99,6 +150,8 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
     sparkleAi:  <svg viewBox="0 0 24 24" style={s}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" {...p}/></svg>,
     home:       <svg viewBox="0 0 24 24" style={s}><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" {...p}/></svg>,
     key:        <svg viewBox="0 0 24 24" style={s}><circle cx="8" cy="15" r="4" {...p}/><path d="M12 11l8-8M18 6l2 2M15 9l2 2" {...p}/></svg>,
+    cloud:      <svg viewBox="0 0 24 24" style={s}><path d="M18 10a6 6 0 0 0-12 0 4 4 0 0 0 0 8h12a4 4 0 0 0 0-8z" {...p}/></svg>,
+    warn:       <svg viewBox="0 0 24 24" style={s}><path d="M12 9v4M12 17h.01M10.3 3.6L2.5 17a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" {...p}/></svg>,
   };
   return map[name] || null;
 };
@@ -111,64 +164,74 @@ const CAT_ICON = {
 
 // ─────────────────────────────────────────────────────────────
 // TAX RELIEF DATA
+// Note on G17ins / G17epf: split from old G17 to enforce sub-limits.
+//   Life insurance/takaful → G17ins (cap RM3,000)
+//   EPF contributions      → G17epf (cap RM4,000)
+//   Combined G17 cap       → RM7,000 (enforced in totalRelief calc)
+//
+// Note on G1 for YA2026/2027: auto:true removed — amounts unconfirmed
+//   by LHDN. Users confirm manually. YA2025 G1 remains auto.
 // ─────────────────────────────────────────────────────────────
 const REL = {
   "2025": [
     { id: "personal", name: "Individual & Dependents", items: [
-      { id: "G1",  name: "Individual relief",        cap: 9000,  auto: true, desc: "Automatic for all resident taxpayers" },
-      { id: "G4",  name: "Disabled individual",      cap: 7000,  desc: "Certified by JKM" },
-      { id: "G14", name: "Spouse / Alimony",          cap: 4000,  desc: "Spouse with no income or alimony" },
-      { id: "G15", name: "Disabled spouse",           cap: 6000,  desc: "Spouse certified disabled" },
+      { id: "G1",  name: "Individual relief",   cap: 9000, auto: true, desc: "Automatic RM9,000 for all resident taxpayers — YA2025 confirmed" },
+      { id: "G4",  name: "Disabled individual", cap: 7000, desc: "Certified by JKM" },
+      { id: "G14", name: "Spouse / Alimony",    cap: 4000, desc: "Spouse with no income or alimony" },
+      { id: "G15", name: "Disabled spouse",     cap: 6000, desc: "Spouse certified disabled" },
     ]},
     { id: "medical", name: "Medical & Special Needs", items: [
-      { id: "G6",  name: "Serious disease / fertility / vaccination / dental", cap: 10000, desc: "G6+G7+G8 combined cap RM10k. Vaccination RM1k sub-limit, dental RM1k sub-limit" },
-      { id: "G7",  name: "Medical exam / self-test / mental health",           cap: 1000,  desc: "Check-up, screening, oximeter, BP monitor, mental health" },
-      { id: "G8",  name: "Learning disability (child 18 and below)",           cap: 6000,  desc: "ASD, ADHD, GDD, Down Syndrome diagnosis and rehab" },
-      { id: "G2",  name: "Parents / grandparents medical",                     cap: 8000,  desc: "Medical, dental, nursing, carer. Check-up sub-limit RM1k" },
-      { id: "G3",  name: "Disabled equipment",                                 cap: 6000,  desc: "Wheelchair, hearing aid, dialysis machine" },
+      { id: "G6", name: "Serious disease / fertility / vaccination / dental", cap: 10000, desc: "G6 + G7 + G8 share a combined RM10,000 cap. Vaccination sub-limit RM1k, dental sub-limit RM1k" },
+      { id: "G7", name: "Medical exam / self-test / mental health",           cap: 1000,  desc: "Check-up, screening, oximeter, BP monitor, mental health. Sub-limit within G6+G7+G8 RM10k cap" },
+      { id: "G8", name: "Learning disability (child 18 and below)",           cap: 6000,  desc: "ASD, ADHD, GDD, Down Syndrome diagnosis and rehab. Sub-limit within G6+G7+G8 RM10k cap" },
+      { id: "G2", name: "Parents / grandparents medical",                     cap: 8000,  desc: "Medical, dental, nursing, carer. Check-up sub-limit RM1k" },
+      { id: "G3", name: "Disabled equipment",                                 cap: 6000,  desc: "Wheelchair, hearing aid, dialysis machine" },
     ]},
     { id: "lifestyle", name: "Lifestyle", items: [
       { id: "G9",  name: "Books, gadgets, internet, courses", cap: 2500, desc: "Books, smartphone/tablet/PC, internet bills, upskilling courses" },
-      { id: "G10", name: "Sports & fitness",                  cap: 1000, desc: "Sports equipment (clubs/balls/bags/rackets), gym membership, court rental (badminton/squash/tennis), green fees, swimming, martial arts, yoga, competition entry fees. EXCLUDES: golf club joining fees, sports clothing/shoes, buggy rental." },
+      { id: "G10", name: "Sports & fitness",                  cap: 1000, desc: "Equipment, gym membership, court rental (badminton/squash/tennis), green fees, swimming, martial arts, yoga, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
       { id: "G21", name: "EV charging / composting",          cap: 2500, desc: "EV charging install/rental/subscription, composting machine" },
     ]},
     { id: "insurance", name: "Insurance & Contributions", items: [
-      { id: "G17", name: "Life insurance + EPF",          cap: 7000, desc: "Insurance/takaful (max RM3k) + EPF (max RM4k)" },
-      { id: "G18", name: "PRS / Deferred annuity",        cap: 3000, desc: "Private Retirement Scheme" },
-      { id: "G19", name: "Education & medical insurance", cap: 4000, desc: "Insurance premiums for education or medical" },
-      { id: "G20", name: "SOCSO / EIS",                   cap: 350,  desc: "SOCSO + Employment Insurance contributions" },
+      { id: "G17ins", name: "Life insurance / takaful",    cap: 3000, desc: "Life insurance or takaful premiums. Sub-limit of G17 combined RM7,000 cap (shared with EPF)" },
+      { id: "G17epf", name: "EPF contributions",           cap: 4000, desc: "Mandatory or voluntary EPF contributions. Sub-limit of G17 combined RM7,000 cap (shared with insurance)" },
+      { id: "G18",    name: "PRS / Deferred annuity",      cap: 3000, desc: "Private Retirement Scheme" },
+      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Insurance premiums for education or medical" },
+      { id: "G20",    name: "SOCSO / EIS",                  cap: 350,  desc: "SOCSO + Employment Insurance contributions" },
     ]},
     { id: "education", name: "Education & Savings", items: [
       { id: "G5",  name: "Education fees (self)", cap: 7000, desc: "Postgraduate, professional. Upskilling sub-limit RM2k" },
       { id: "G13", name: "SSPN net savings",      cap: 8000, desc: "Net deposits minus withdrawals" },
     ]},
     { id: "children", name: "Children", items: [
-      { id: "G16a", name: "Child under 18",            cap: 2000, desc: "RM2,000 per unmarried child",                      perUnit: true, unitName: "children" },
-      { id: "G16b", name: "Child 18+ in education",    cap: 8000, desc: "Diploma+ MY / degree+ overseas",                   perUnit: true, unitName: "children" },
-      { id: "G16c", name: "Disabled child",            cap: 8000, desc: "Additional RM8k if in higher education",           perUnit: true, unitName: "children" },
-      { id: "G12",  name: "Childcare / kindergarten",  cap: 3000, desc: "Child aged 6 and below" },
-      { id: "G11",  name: "Breastfeeding equipment",   cap: 1000, desc: "Child aged 2 and below. Once every 2 years" },
+      { id: "G16a", name: "Child under 18",           cap: 2000, desc: "RM2,000 per unmarried child",               perUnit: true, unitName: "children" },
+      { id: "G16b", name: "Child 18+ in education",   cap: 8000, desc: "Diploma+ MY / degree+ overseas",            perUnit: true, unitName: "children" },
+      { id: "G16c", name: "Disabled child",           cap: 8000, desc: "Additional RM8k if in higher education",    perUnit: true, unitName: "children" },
+      { id: "G12",  name: "Childcare / kindergarten", cap: 3000, desc: "Child aged 6 and below" },
+      { id: "G11",  name: "Breastfeeding equipment",  cap: 1000, desc: "Child aged 2 and below. Once every 2 years" },
     ]},
     { id: "housing", name: "Housing", items: [
-      { id: "G22", name: "Housing loan interest (first home)", cap: 7000, desc: "SPA 2025-2027. RM7k if up to RM500k, RM5k if RM500k–750k" },
+      { id: "G22", name: "Housing loan interest (first home)", cap: 7000, desc: "SPA 2025–2027. RM7k if up to RM500k, RM5k if RM500k–750k" },
     ]},
     { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",  cap: 999999, desc: "Deductible: cost of repairs and maintenance of rental property" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment", cap: 999999, desc: "Deductible: quit rent, assessment tax paid to local authority" },
-      { id: "R3", name: "Rental expenses — insurance premium",      cap: 999999, desc: "Deductible: fire/building insurance on rental property" },
-      { id: "R4", name: "Rental expenses — management & agent fees",cap: 999999, desc: "Deductible: property management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",          cap: 999999, desc: "Deductible: interest on loan taken to purchase/improve rental property" },
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: cost of repairs and maintenance of rental property" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax paid to local authority" },
+      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance on rental property" },
+      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: property management fees, agent commission" },
+      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: interest on loan taken to purchase/improve rental property" },
     ]},
   ],
+
   "2026": [
     { id: "personal", name: "Individual", items: [
-      { id: "G1",  name: "Individual relief",   cap: 9000, auto: true, desc: "Automatic" },
+      // G1 auto:true removed — YA2026 relief amounts unconfirmed by LHDN
+      { id: "G1",  name: "Individual relief",   cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2026 rates" },
       { id: "G4",  name: "Disabled individual", cap: 8000, desc: "Increased for YA2026" },
       { id: "G14", name: "Spouse / Alimony",    cap: 4000, desc: "Spouse with no income" },
     ]},
     { id: "lifestyle", name: "Lifestyle", items: [
       { id: "G9",  name: "Books, gadgets, internet", cap: 2500, desc: "Same as YA2025" },
-      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Sports equipment, gym membership, court rental, green fees, competition entry. EXCLUDES: golf club joining fees, sports clothing/shoes, buggy rental." },
+      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Equipment, gym membership, court rental, green fees, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
       { id: "VMY", name: "Visit Malaysia 2026",        cap: 1000, desc: "NEW: Domestic tourism — hotel, attraction, tour packages" },
     ]},
     { id: "medical", name: "Medical", items: [
@@ -176,63 +239,67 @@ const REL = {
       { id: "G2", name: "Parents medical",                                           cap: 8000,  desc: "Medical, dental, nursing" },
     ]},
     { id: "insurance", name: "Insurance", items: [
-      { id: "G17", name: "Life insurance + EPF",          cap: 7000, desc: "Combined" },
-      { id: "G18", name: "PRS",                           cap: 3000, desc: "Private Retirement Scheme" },
-      { id: "G19", name: "Education & medical insurance", cap: 4000, desc: "Premiums" },
-      { id: "G20", name: "SOCSO / EIS",                   cap: 350,  desc: "Contributions" },
+      { id: "G17ins", name: "Life insurance / takaful",    cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)" },
+      { id: "G17epf", name: "EPF contributions",           cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)" },
+      { id: "G18",    name: "PRS",                         cap: 3000, desc: "Private Retirement Scheme" },
+      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Premiums" },
+      { id: "G20",    name: "SOCSO / EIS",                  cap: 350,  desc: "Contributions" },
     ]},
     { id: "children", name: "Children", items: [
-      { id: "G16a", name: "Child under 18",   cap: 2000,  desc: "Per child",  perUnit: true, unitName: "children" },
-      { id: "G16c", name: "Disabled child",   cap: 10000, desc: "Increased",  perUnit: true, unitName: "children" },
+      { id: "G16a", name: "Child under 18",  cap: 2000,  desc: "Per child",  perUnit: true, unitName: "children" },
+      { id: "G16c", name: "Disabled child",  cap: 10000, desc: "Increased",  perUnit: true, unitName: "children" },
     ]},
     { id: "housing", name: "Housing", items: [
       { id: "G22", name: "Housing loan interest", cap: 7000, desc: "First-time buyer" },
     ]},
     { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",  cap: 999999, desc: "Deductible: repairs and maintenance" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment", cap: 999999, desc: "Deductible: quit rent, assessment tax" },
-      { id: "R3", name: "Rental expenses — insurance premium",      cap: 999999, desc: "Deductible: fire/building insurance" },
-      { id: "R4", name: "Rental expenses — management & agent fees",cap: 999999, desc: "Deductible: management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",          cap: 999999, desc: "Deductible: loan interest on rental property" },
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: repairs and maintenance" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax" },
+      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance" },
+      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: management fees, agent commission" },
+      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: loan interest on rental property" },
     ]},
   ],
+
   "2027": [
     { id: "personal", name: "Individual", items: [
-      { id: "G1",  name: "Individual relief", cap: 9000, auto: true, desc: "Automatic" },
+      // G1 auto:true removed — YA2027 relief amounts unconfirmed by LHDN
+      { id: "G1",  name: "Individual relief", cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2027 rates" },
       { id: "G14", name: "Spouse / Alimony",  cap: 4000, desc: "Spouse with no income" },
     ]},
     { id: "lifestyle", name: "Lifestyle", items: [
       { id: "G9",  name: "Books, gadgets, internet", cap: 2500, desc: "Gadgets, internet" },
-      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Sports equipment, gym membership, court rental, competition entry. EXCLUDES: golf club joining fees, sports clothing/shoes, buggy rental." },
+      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Equipment, gym membership, court rental, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
     ]},
     { id: "insurance", name: "Insurance", items: [
-      { id: "G17", name: "Life insurance + EPF", cap: 7000, desc: "Combined" },
-      { id: "G20", name: "SOCSO / EIS",          cap: 350,  desc: "Contributions" },
+      { id: "G17ins", name: "Life insurance / takaful", cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)" },
+      { id: "G17epf", name: "EPF contributions",        cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)" },
+      { id: "G20",    name: "SOCSO / EIS",               cap: 350,  desc: "Contributions" },
     ]},
     { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",  cap: 999999, desc: "Deductible: repairs and maintenance" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment", cap: 999999, desc: "Deductible: quit rent, assessment tax" },
-      { id: "R3", name: "Rental expenses — insurance premium",      cap: 999999, desc: "Deductible: fire/building insurance" },
-      { id: "R4", name: "Rental expenses — management & agent fees",cap: 999999, desc: "Deductible: management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",          cap: 999999, desc: "Deductible: loan interest on rental property" },
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: repairs and maintenance" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax" },
+      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance" },
+      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: management fees, agent commission" },
+      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: loan interest on rental property" },
     ]},
   ],
 };
 
 // ─────────────────────────────────────────────────────────────
-// TAX BRACKETS (YA2025)
+// TAX BRACKETS — YA2025 only. Flagged for YA2026/2027.
 // ─────────────────────────────────────────────────────────────
 const BK = [
-  { max: 5000,      r: 0,  c: 0      },
-  { max: 20000,     r: 1,  c: 0      },
-  { max: 35000,     r: 3,  c: 150    },
-  { max: 50000,     r: 6,  c: 600    },
-  { max: 70000,     r: 11, c: 1500   },
-  { max: 100000,    r: 19, c: 3700   },
-  { max: 400000,    r: 25, c: 9400   },
-  { max: 600000,    r: 26, c: 84400  },
-  { max: 2000000,   r: 28, c: 136400 },
-  { max: Infinity,  r: 30, c: 528400 },
+  { max: 5000,     r: 0,  c: 0      },
+  { max: 20000,    r: 1,  c: 0      },
+  { max: 35000,    r: 3,  c: 150    },
+  { max: 50000,    r: 6,  c: 600    },
+  { max: 70000,    r: 11, c: 1500   },
+  { max: 100000,   r: 19, c: 3700   },
+  { max: 400000,   r: 25, c: 9400   },
+  { max: 600000,   r: 26, c: 84400  },
+  { max: 2000000,  r: 28, c: 136400 },
+  { max: Infinity, r: 30, c: 528400 },
 ];
 const calcTax = (ci) => {
   if (ci <= 0) return 0;
@@ -340,6 +407,24 @@ const MonthPicker = ({ label, value, onChange, t }) => {
 };
 
 // ─────────────────────────────────────────────────────────────
+// SYNC ERROR TOAST
+// ─────────────────────────────────────────────────────────────
+function SyncToast({ message, t }) {
+  if (!message) return null;
+  return (
+    <div style={{
+      position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
+      background: t.red, color: "#fff", padding: "10px 18px", borderRadius: 12,
+      fontSize: 12, fontWeight: 600, fontFamily: FONT, zIndex: 200,
+      boxShadow: "0 6px 20px rgba(0,0,0,0.25)", maxWidth: 300, textAlign: "center",
+      animation: "fadein 0.2s",
+    }}>
+      {message}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function Ringgit() {
@@ -354,21 +439,29 @@ export default function Ringgit() {
     document.body.style.color = t.ink;
   }, [t.bg, t.ink]);
 
-  const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState("welcome");
-  const [nameIn, setNameIn] = useState("");
-  const [yobIn, setYobIn] = useState("");
-  const [ya, setYa] = useState("2025");
-  const [yaOpen, setYaOpen] = useState(false);
-  const [tab, setTab] = useState("relief");
-  const [entries, setEntries] = useState([]);
-  const [receipts, setReceipts] = useState([]);
-  const [incomes, setIncomes] = useState([]);
+  const [user,          setUser]          = useState(null);
+  const [screen,        setScreen]        = useState("welcome");
+  const [nameIn,        setNameIn]        = useState("");
+  const [yobIn,         setYobIn]         = useState("");
+  const [ya,            setYa]            = useState("2025");
+  const [yaOpen,        setYaOpen]        = useState(false);
+  const [tab,           setTab]           = useState("relief");
+  const [entries,       setEntries]       = useState([]);
+  const [receipts,      setReceipts]      = useState([]);
+  const [incomes,       setIncomes]       = useState([]);
   const [rentalIncomes, setRentalIncomes] = useState([]);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [scannerSeed, setScannerSeed] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [viewImg, setViewImg] = useState(null);
+  const [scannerOpen,   setScannerOpen]   = useState(false);
+  const [scannerSeed,   setScannerSeed]   = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [yaLoading,     setYaLoading]     = useState(false);
+  const [viewImg,       setViewImg]       = useState(null);
+  const [syncError,     setSyncError]     = useState(null);
+
+  // Helper to show a sync error toast for 4 seconds
+  const showSyncError = (msg) => {
+    setSyncError(msg);
+    setTimeout(() => setSyncError(null), 4000);
+  };
 
   useEffect(() => { migrateOld(); }, []);
 
@@ -421,12 +514,14 @@ export default function Ringgit() {
 
   const loadFromSupabase = async () => {
     if (!user?.id) return;
+    setYaLoading(true);
     try {
-      const [{ data: cl }, { data: inc }, { data: rec }] = await Promise.all([
+      const [{ data: cl, error: e1 }, { data: inc, error: e2 }, { data: rec, error: e3 }] = await Promise.all([
         supabase.from("claims").select("*").eq("user_id", user.id).eq("ya", ya),
         supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
         supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
       ]);
+      if (e1 || e2 || e3) throw e1 || e2 || e3;
       setEntries((cl || []).map(c => ({
         id: c.id || `c-${c.item_id}-${Date.now()}`,
         itemId: c.item_id, amount: c.amount, units: c.units || 1,
@@ -436,36 +531,71 @@ export default function Ringgit() {
       })));
       setIncomes((inc || []).filter(i => i.type !== "rental"));
       setRentalIncomes((inc || []).filter(i => i.type === "rental"));
-      setReceipts(rec || []);
-    } catch (e) { console.error("Supabase load error", e); }
+      // Prefer Supabase Storage URL over stored base64
+      setReceipts((rec || []).map(r => ({ ...r, data: r.storage_url || r.data })));
+    } catch (e) {
+      console.error("Supabase load error", e);
+      showSyncError("Failed to load cloud data. Check your connection.");
+    } finally {
+      setYaLoading(false);
+    }
   };
 
   // ── Derived data ──────────────────────────────────────────
-  const cats = useMemo(() => (REL[ya] || REL["2025"]).map(c => ({ ...c, icon: CAT_ICON[c.id] || "sparkle" })), [ya]);
+  const cats     = useMemo(() => (REL[ya] || REL["2025"]).map(c => ({ ...c, icon: CAT_ICON[c.id] || "sparkle" })), [ya]);
   const allItems = useMemo(() => cats.flatMap(c => c.items), [cats]);
 
   const itemEntries  = (id) => entries.filter(e => e.itemId === id);
   const itemTotalRaw = (id) => itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
+
+  // itemTotalCapped — enforces individual caps + combined caps for G6/G7/G8 and G17ins/G17epf
   const itemTotalCapped = (id) => {
     const it = allItems.find(i => i.id === id);
     if (!it) return 0;
     if (it.cap >= 999999) return itemTotalRaw(id);
+
+    // ── G6 + G7 + G8 share a combined RM10,000 cap ───────────
+    // Priority: G7 sub-limit RM1k, G8 sub-limit RM6k, G6 gets remainder
+    if (id === "G6" || id === "G7" || id === "G8") {
+      const g7Used = Math.min(itemTotalRaw("G7"), 1000);
+      const g8Used = Math.min(itemTotalRaw("G8"), 6000);
+      if (id === "G7") return g7Used;
+      if (id === "G8") return g8Used;
+      // G6 gets whatever RM10k headroom remains after G7 and G8
+      return Math.min(itemTotalRaw("G6"), Math.max(0, 10000 - g7Used - g8Used));
+    }
+
+    // ── G17ins / G17epf individual sub-limits ────────────────
+    // Combined RM7k cap enforced separately in totalRelief
+    if (id === "G17ins") return Math.min(itemTotalRaw("G17ins"), 3000);
+    if (id === "G17epf") return Math.min(itemTotalRaw("G17epf"), 4000);
+
     const cap = it.perUnit ? it.cap * (itemEntries(id)[0]?.units || 1) : it.cap;
     return Math.min(itemTotalRaw(id), cap);
   };
 
-  const totalRelief = allItems.reduce((s, i) => {
-    if (i.id.startsWith("R")) return s; // rental items reduce rental income, not relief cap
-    return s + (i.auto ? i.cap : itemTotalCapped(i.id));
-  }, 0);
+  // G17 combined cap — capped at RM7k total regardless of sub-limits
+  const g17Combined = (() => {
+    const ins = allItems.some(i => i.id === "G17ins") ? itemTotalCapped("G17ins") : 0;
+    const epf = allItems.some(i => i.id === "G17epf") ? itemTotalCapped("G17epf") : 0;
+    return Math.min(ins + epf, 7000);
+  })();
 
-  const totalRentalIncome   = rentalIncomes.reduce((s, i) => s + (i.amount || 0), 0);
-  const totalRentalExpenses = ["R1","R2","R3","R4","R5"].reduce((s, id) => s + itemTotalRaw(id), 0);
-  const netRentalIncome     = Math.max(0, totalRentalIncome - totalRentalExpenses);
+  const totalRelief = allItems.reduce((s, i) => {
+    if (i.id.startsWith("R")) return s;
+    if (i.id === "G17ins" || i.id === "G17epf") return s; // rolled into g17Combined
+    return s + (i.auto ? i.cap : itemTotalCapped(i.id));
+  }, 0) + g17Combined;
+
+  const totalRentalIncome     = rentalIncomes.reduce((s, i) => s + (i.amount || 0), 0);
+  const totalRentalExpenses   = ["R1","R2","R3","R4","R5"].reduce((s, id) => s + itemTotalRaw(id), 0);
+  const netRentalIncome       = Math.max(0, totalRentalIncome - totalRentalExpenses);
   const totalEmploymentIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
-  const totalIncome = totalEmploymentIncome + netRentalIncome;
-  const chargeable  = Math.max(0, totalIncome - totalRelief);
+  const totalIncome           = totalEmploymentIncome + netRentalIncome;
+  const chargeable            = Math.max(0, totalIncome - totalRelief);
+  // Tax estimate only confirmed for YA2025; flagged for other years
   const estTax      = calcTax(chargeable);
+  const taxIsTentative = ya !== "2025";
 
   // ── Entry mutations ───────────────────────────────────────
   const addEntry = async (itemId, amount, desc, units = 1, hasReceipt = false, receiptImg = null) => {
@@ -478,7 +608,16 @@ export default function Ringgit() {
     };
     setEntries(p => [newEntry, ...p]);
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("claims").insert({ user_id: user.id, ya, item_id: itemId, amount: newEntry.amount, units, desc: newEntry.desc, has_receipt: !!hasReceipt });
+      try {
+        const { error } = await supabase.from("claims").insert({
+          user_id: user.id, ya, item_id: itemId,
+          amount: newEntry.amount, units, desc: newEntry.desc, has_receipt: !!hasReceipt,
+        });
+        if (error) throw error;
+      } catch (e) {
+        console.error("Claim save error:", e);
+        showSyncError("Entry saved locally but failed to sync.");
+      }
     }
     if (hasReceipt && receiptImg) {
       const item = allItems.find(i => i.id === itemId);
@@ -493,46 +632,99 @@ export default function Ringgit() {
   const removeEntry = async (eid) => {
     setEntries(p => p.filter(e => e.id !== eid));
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("claims").delete().eq("id", eid).eq("user_id", user.id);
+      try {
+        const { error } = await supabase.from("claims").delete().eq("id", eid).eq("user_id", user.id);
+        if (error) throw error;
+      } catch (e) {
+        console.error("Claim delete error:", e);
+        showSyncError("Failed to remove entry from cloud.");
+      }
     }
   };
 
   const addIncome = async (inc) => {
     setIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "employment" });
+      try {
+        const { error } = await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "employment" });
+        if (error) throw error;
+      } catch (e) { console.error("Income save error:", e); showSyncError("Income saved locally but failed to sync."); }
     }
   };
   const removeIncome = async (id) => {
     setIncomes(p => p.filter(i => i.id !== id));
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+      try {
+        const { error } = await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+        if (error) throw error;
+      } catch (e) { console.error("Income delete error:", e); showSyncError("Failed to remove income from cloud."); }
     }
   };
 
   const addRentalIncome = async (inc) => {
     setRentalIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "rental" });
+      try {
+        const { error } = await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "rental" });
+        if (error) throw error;
+      } catch (e) { console.error("Rental save error:", e); showSyncError("Rental income saved locally but failed to sync."); }
     }
   };
   const removeRentalIncome = async (id) => {
     setRentalIncomes(p => p.filter(i => i.id !== id));
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+      try {
+        const { error } = await supabase.from("incomes").delete().eq("id", id).eq("user_id", user.id);
+        if (error) throw error;
+      } catch (e) { console.error("Rental delete error:", e); showSyncError("Failed to remove rental from cloud."); }
     }
   };
 
+  // addReceiptObj — uploads image to Supabase Storage for Google users
   const addReceiptObj = async (rec) => {
-    setReceipts(p => [rec, ...p]);
+    let storageUrl = null;
+    if (user?.provider === "google" && user?.id && rec.data) {
+      storageUrl = await uploadReceiptToStorage(supabase, user.id, rec.id, rec.data);
+    }
+    // For display: storage URL preferred over base64 (smaller payloads)
+    const displayRec = { ...rec, data: storageUrl || rec.data, storage_url: storageUrl };
+    setReceipts(p => [displayRec, ...p]);
+
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("receipts").insert({ ...rec, user_id: user.id, ya });
+      try {
+        // Omit raw base64 from DB row — only store metadata + storage_url
+        const { data: _b64, ...recMeta } = rec;
+        const { error } = await supabase.from("receipts").insert({
+          ...recMeta,
+          storage_url: storageUrl,
+          user_id: user.id,
+          ya,
+          // data column intentionally omitted — image lives in Storage
+        });
+        if (error) throw error;
+      } catch (e) {
+        console.error("Receipt save error:", e);
+        showSyncError("Receipt saved locally but failed to sync.");
+      }
     }
   };
+
   const removeReceipt = async (id) => {
+    const rx = receipts.find(r => r.id === id);
     setReceipts(p => p.filter(x => x.id !== id));
     if (user?.provider === "google" && user?.id) {
-      await supabase.from("receipts").delete().eq("id", id).eq("user_id", user.id);
+      try {
+        const { error } = await supabase.from("receipts").delete().eq("id", id).eq("user_id", user.id);
+        if (error) throw error;
+        // Also delete from Storage if we have a storage_url
+        if (rx?.storage_url) {
+          const path = `${user.id}/${id}.jpg`;
+          await supabase.storage.from("receipts").remove([path]);
+        }
+      } catch (e) {
+        console.error("Receipt delete error:", e);
+        showSyncError("Failed to remove receipt from cloud.");
+      }
     }
   };
 
@@ -543,11 +735,43 @@ export default function Ringgit() {
   };
 
   // ── Backup / restore ──────────────────────────────────────
-  const exportD = () => {
-    const b = new Blob([JSON.stringify(ld(), null, 2)], { type: "application/json" });
+  // For Google users: fetches all years from Supabase (not just localStorage)
+  const exportD = async () => {
+    let exportData = {};
+
+    if (user?.provider === "google" && user?.id) {
+      exportData.user = user;
+      for (const year of YEARS) {
+        try {
+          const [{ data: cl }, { data: inc }, { data: rec }] = await Promise.all([
+            supabase.from("claims").select("*").eq("user_id", user.id).eq("ya", year),
+            supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", year),
+            supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", year),
+          ]);
+          exportData[year] = {
+            entries: (cl || []).map(c => ({
+              id: c.id, itemId: c.item_id, amount: c.amount,
+              units: c.units || 1, desc: c.desc || "Entry", hasReceipt: !!c.has_receipt,
+            })),
+            incomes: (inc || []).filter(i => i.type !== "rental"),
+            rentalIncomes: (inc || []).filter(i => i.type === "rental"),
+            // storage_url kept for reference; base64 not exported (too large)
+            receipts: (rec || []).map(r => ({ ...r, data: r.storage_url || null })),
+          };
+        } catch (e) {
+          console.error(`Export error YA${year}:`, e);
+          showSyncError(`Could not fetch YA${year} from cloud.`);
+        }
+      }
+    } else {
+      exportData = ld();
+    }
+
+    const b = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const u = URL.createObjectURL(b);
     const a = document.createElement("a"); a.href = u; a.download = "ringgit-backup.json"; a.click();
   };
+
   const importD = (e) => {
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader();
@@ -629,9 +853,13 @@ export default function Ringgit() {
         </div>
       )}
 
+      {/* Sync error toast */}
+      <SyncToast message={syncError} t={t} />
+
       {tab === "relief" ? (
         <Header t={t} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
-          totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable} estTax={estTax} />
+          totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
+          estTax={estTax} taxIsTentative={taxIsTentative} />
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
@@ -641,7 +869,16 @@ export default function Ringgit() {
         </div>
       )}
 
-      <div style={{ paddingBottom: 140 }}>
+      {/* YA loading overlay — shown while fetching Supabase data on YA switch */}
+      <div style={{ paddingBottom: 140, position: "relative" }}>
+        {yaLoading && (
+          <div style={{ position: "absolute", inset: 0, background: t.bg + "cc", zIndex: 30, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, borderRadius: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 36, height: 36, border: `3px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute, fontFamily: FONT }}>Loading YA{ya}…</div>
+            </div>
+          </div>
+        )}
         {tab === "relief" && (
           <ReliefTab t={t} cats={cats} entries={entries}
             itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
@@ -655,7 +892,8 @@ export default function Ringgit() {
             totalEmploymentIncome={totalEmploymentIncome}
             totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
             netRentalIncome={netRentalIncome}
-            totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable} estTax={estTax} />
+            totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
+            estTax={estTax} taxIsTentative={taxIsTentative} />
         )}
         {tab === "receipts" && (
           <ReceiptsTab t={t} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} />
@@ -711,7 +949,7 @@ function Welcome({ t, onGoogle, onGuest }) {
         Continue as Guest
       </button>
       <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 20 }}>
-        Free · Google users get cloud sync · Not financial advice
+        Free · Google sync included · Not financial advice
       </div>
     </div>
   );
@@ -750,7 +988,7 @@ function Signup({ t, name, setName, yob, setYob, onDone, onSkip }) {
 // ─────────────────────────────────────────────────────────────
 // HEADER
 // ─────────────────────────────────────────────────────────────
-function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax }) {
+function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
   return (
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -786,10 +1024,18 @@ function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelie
       <div style={{ marginTop: 20, background: t.ink, color: t.bg, borderRadius: 20, padding: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 11, color: "rgba(245,239,227,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>Estimated Tax · YA{ya}</div>
+          <div style={{ fontSize: 11, color: "rgba(245,239,227,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>
+            Estimated Tax · YA{ya}
+            {taxIsTentative && <span style={{ marginLeft: 6, fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>YA2025 BRACKETS</span>}
+          </div>
           <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1.2, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
             RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
+          {taxIsTentative && (
+            <div style={{ fontSize: 10, color: "rgba(245,239,227,0.5)", marginTop: 2, lineHeight: 1.4 }}>
+              YA{ya} tax brackets not yet gazetted — estimate uses YA2025 rates
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(245,239,227,0.15)" }}>
             {[["Income", totalIncome], ["Relief", totalRelief], ["Chargeable", chargeable]].map(([l, v]) => (
               <div key={l}>
@@ -866,8 +1112,8 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
       {filtCats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-        const expanded = expCat === cat.id || !!search;
-        const isRental = cat.id === "rental";
+        const expanded  = expCat === cat.id || !!search;
+        const isRental  = cat.id === "rental";
 
         return (
           <div key={cat.id} style={{ marginBottom: 12 }}>
@@ -900,17 +1146,17 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                   </div>
                 )}
                 {cat.items.map(item => {
-                  const eItems      = itemEntries(item.id);
-                  const rawTotal    = itemTotalRaw(item.id);
-                  const units       = eItems[0]?.units || 1;
-                  const isUncapped  = item.cap >= 999999;
-                  const capEff      = isUncapped ? (rawTotal || 1) : (item.perUnit ? item.cap * units : item.cap);
-                  const claimed     = item.auto ? item.cap : (isUncapped ? rawTotal : Math.min(rawTotal, capEff));
-                  const pct         = isUncapped ? 100 : Math.round((claimed / capEff) * 100);
-                  const done        = claimed > 0;
-                  const isExp       = expItem === item.id;
-                  const isAdding    = addingFor === item.id;
-                  const overCap     = !isUncapped && rawTotal > capEff;
+                  const eItems   = itemEntries(item.id);
+                  const rawTotal = itemTotalRaw(item.id);
+                  const units    = eItems[0]?.units || 1;
+                  const isUncapped = item.cap >= 999999;
+                  const capEff   = isUncapped ? (rawTotal || 1) : (item.perUnit ? item.cap * units : item.cap);
+                  const claimed  = item.auto ? item.cap : (isUncapped ? rawTotal : Math.min(rawTotal, capEff));
+                  const pct      = isUncapped ? 100 : Math.round((claimed / capEff) * 100);
+                  const done     = claimed > 0;
+                  const isExp    = expItem === item.id;
+                  const isAdding = addingFor === item.id;
+                  const overCap  = !isUncapped && rawTotal > capEff;
 
                   return (
                     <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
@@ -1048,7 +1294,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 // ─────────────────────────────────────────────────────────────
 function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
   totalEmploymentIncome, totalRentalIncome, totalRentalExpenses, netRentalIncome,
-  totalIncome, totalRelief, chargeable, estTax }) {
+  totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
   const [emp,        setEmp]        = useState("");
   const [amt,        setAmt]        = useState("");
   const [start,      setStart]      = useState("");
@@ -1193,6 +1439,11 @@ function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, on
           </div>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginTop: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Tax Estimate</div>
+            {taxIsTentative && (
+              <div style={{ padding: "8px 10px", background: t.goldSoft, borderRadius: 8, borderLeft: `3px solid ${t.gold}`, fontSize: 11, color: t.inkSoft, lineHeight: 1.5, marginBottom: 10 }}>
+                Using YA2025 brackets — YA2026+ rates not yet gazetted
+              </div>
+            )}
             {[["Total Income", totalIncome, t.ink], ["Total Relief", totalRelief, t.green, "–"]].map(([l, v, c, prefix]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
                 <span>{l}</span>
@@ -1203,7 +1454,8 @@ function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, on
               <span>Chargeable</span><span style={{ fontVariantNumeric: "tabular-nums" }}>RM {chargeable.toLocaleString()}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, fontWeight: 800, color: t.red, paddingTop: 4 }}>
-              <span>Est. Tax</span><span style={{ fontVariantNumeric: "tabular-nums" }}>RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+              <span>Est. Tax{taxIsTentative ? "*" : ""}</span>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             </div>
           </div>
         </>
@@ -1229,10 +1481,11 @@ function ReceiptsTab({ t, receipts, onRemove, onView }) {
         </div>
       ) : receipts.map(rx => {
         const itemId = rx.itemId || rx.item_id;
+        const imgSrc = rx.storage_url || rx.data;
         return (
           <div key={rx.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-            {rx.data ? (
-              <img src={rx.data} onClick={() => onView(rx.data)} style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
+            {imgSrc ? (
+              <img src={imgSrc} onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
             ) : (
               <div style={{ width: 52, height: 52, borderRadius: 12, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Icon name="receipt" size={22} color={t.inkSoft} />
@@ -1262,10 +1515,13 @@ function ReceiptsTab({ t, receipts, onRemove, onView }) {
 // MORE TAB
 // ─────────────────────────────────────────────────────────────
 function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExport, onImport, onSignInGoogle }) {
+  const [exporting, setExporting] = useState(false);
   const rowStyle = { display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", background: t.surface, borderRadius: 14, border: `1px solid ${t.hair}`, marginBottom: 8, cursor: "pointer" };
+
   return (
     <div style={{ padding: "0 20px 40px", fontFamily: FONT }}>
-      <div style={{ background: t.surface, padding: 18, borderRadius: 18, border: `1px solid ${t.hair}`, marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Profile card */}
+      <div style={{ background: t.surface, padding: 18, borderRadius: 18, border: `1px solid ${t.hair}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 52, height: 52, borderRadius: 14, background: t.red, color: "#fff", fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {(user?.name || "U")[0].toUpperCase()}
         </div>
@@ -1280,11 +1536,22 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         )}
       </div>
 
+      {/* Guest upgrade prompt — prominent banner */}
       {user?.provider !== "google" && (
-        <button onClick={onSignInGoogle} style={{ width: "100%", padding: 14, border: "none", borderRadius: 14, background: t.red, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Icon name="google" size={16} color="#fff" />
-          Sign in with Google to cloud sync
-        </button>
+        <div style={{ background: t.ink, borderRadius: 16, padding: 18, marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <Icon name="cloud" size={20} color={t.bg} />
+            <div style={{ fontSize: 14, fontWeight: 700, color: t.bg }}>Back up your data</div>
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(245,239,227,0.65)", lineHeight: 1.5, marginBottom: 14 }}>
+            You're currently in guest mode. Data is saved locally only — if you clear your browser or switch devices, it's gone.
+            Sign in with Google to keep your entries safe in the cloud, for free.
+          </div>
+          <button onClick={onSignInGoogle} style={{ width: "100%", padding: "13px 18px", border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Icon name="google" size={16} color="#fff" />
+            Sign in with Google — free
+          </button>
+        </div>
       )}
 
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Appearance</div>
@@ -1302,13 +1569,21 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Data</div>
-      <div onClick={onExport} style={rowStyle}>
+      <div onClick={async () => {
+        if (exporting) return;
+        setExporting(true);
+        try { await onExport(); } finally { setExporting(false); }
+      }} style={rowStyle}>
         <Icon name="download" size={18} color={t.inkSoft} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>Export backup</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Download JSON of your data</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{exporting ? "Exporting…" : "Export backup"}</div>
+          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>
+            {user?.provider === "google" ? "Downloads all years from cloud" : "Download JSON of your local data"}
+          </div>
         </div>
-        <Icon name="chevR" size={14} color={t.inkMute} />
+        {exporting
+          ? <div style={{ width: 16, height: 16, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+          : <Icon name="chevR" size={14} color={t.inkMute} />}
       </div>
       <label style={rowStyle}>
         <Icon name="upload" size={18} color={t.inkSoft} />
@@ -1336,7 +1611,7 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         Sign out
       </button>
       <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 16 }}>
-        Ringgit v4.2 · Powered by Claude · Not financial advice
+        Ringgit v4.3 · Powered by Claude · Not financial advice
       </div>
     </div>
   );
@@ -1344,13 +1619,14 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
 
 // ─────────────────────────────────────────────────────────────
 // SCANNER SHEET
+// AI call goes through /api/scan proxy — key never exposed in browser
 // ─────────────────────────────────────────────────────────────
 function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
-  const [step,   setStep]   = useState("idle");
-  const [desc,   setDesc]   = useState("");
-  const [img,    setImg]    = useState(null);
-  const [err,    setErr]    = useState(null);
-  const [result, setResult] = useState(null);
+  const [step,        setStep]        = useState("idle");
+  const [desc,        setDesc]        = useState("");
+  const [img,         setImg]         = useState(null);
+  const [err,         setErr]         = useState(null);
+  const [result,      setResult]      = useState(null);
   const [compressing, setCompressing] = useState(false);
   const fRef = useRef(null);
 
@@ -1388,7 +1664,6 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
     setStep("analyzing");
     setErr(null);
 
-    // Build category list for the prompt (exclude rental items and auto items)
     const list = allItems
       .filter(i => !i.auto && i.cap < 999999)
       .map(i => `${i.id}: ${i.name} (cap RM${i.cap}) - ${i.desc}`)
@@ -1421,7 +1696,6 @@ If not claimable:
 
     const userContent = [];
     if (img) {
-      // Extract the actual base64 data and media type safely
       const semicolonIdx = img.indexOf(";");
       const commaIdx     = img.indexOf(",");
       if (semicolonIdx === -1 || commaIdx === -1) {
@@ -1429,7 +1703,7 @@ If not claimable:
         setStep("idle");
         return;
       }
-      const mediaType = img.substring(5, semicolonIdx); // e.g. "image/jpeg"
+      const mediaType = img.substring(5, semicolonIdx);
       const b64data   = img.substring(commaIdx + 1);
       userContent.push({ type: "image", source: { type: "base64", media_type: mediaType, data: b64data } });
     }
@@ -1441,14 +1715,10 @@ If not claimable:
     });
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      // POST to /api/scan proxy — Anthropic key stays server-side
+      const res = await fetch("/api/scan", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-5",
           max_tokens: 600,
@@ -1469,26 +1739,20 @@ If not claimable:
       const textBlock = (data.content || []).find(b => b.type === "text");
       if (!textBlock) throw new Error("No text response from Claude");
 
-      // Robustly extract JSON from Claude's response
       let raw = textBlock.text.trim();
-      // Strip any markdown code fences
       raw = raw.replace(/```json/gi, "").replace(/```/g, "");
-      // Find the outermost { … }
       const start = raw.indexOf("{");
       const end   = raw.lastIndexOf("}");
-      if (start === -1 || end === -1 || end <= start) {
-        throw new Error("Claude did not return a valid JSON object.");
-      }
-      const jsonStr = raw.substring(start, end + 1);
-      const parsed  = JSON.parse(jsonStr); // throws SyntaxError if malformed
+      if (start === -1 || end === -1 || end <= start) throw new Error("Claude did not return a valid JSON object.");
+      const parsed = JSON.parse(raw.substring(start, end + 1));
 
       setResult(parsed);
       setStep("result");
     } catch (ex) {
       console.error("Scanner error:", ex);
       let msg = "Analysis failed: " + (ex.message || "Unknown error");
-      if (ex.message?.includes("401")) msg = "Invalid API key — check VITE_ANTHROPIC_API_KEY in Vercel env vars.";
-      else if (ex.message?.includes("403")) msg = "API key doesn't have permission. Check your Anthropic dashboard.";
+      if (ex.message?.includes("401")) msg = "Invalid API key — check ANTHROPIC_API_KEY in Vercel env vars.";
+      else if (ex.message?.includes("403")) msg = "API key lacks permission. Check your Anthropic dashboard.";
       else if (ex.message?.includes("529") || ex.message?.includes("overloaded")) msg = "Claude is overloaded right now. Please try again in a moment.";
       else if (ex instanceof SyntaxError) msg = "Claude returned an unexpected format. Please try again.";
       setErr(msg);
@@ -1502,12 +1766,10 @@ If not claimable:
       <div onClick={e => e.stopPropagation()}
         style={{ width: "100%", maxWidth: 480, background: t.bg, borderRadius: "24px 24px 0 0", padding: "12px 20px 36px", maxHeight: "90vh", overflow: "auto", fontFamily: FONT, animation: "slideup 0.3s cubic-bezier(.2,.8,.2,1)" }}>
 
-        {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
           <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
         </div>
 
-        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: t.red, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1529,7 +1791,6 @@ If not claimable:
           </div>
         )}
 
-        {/* IDLE STATE */}
         {step === "idle" && (
           <>
             <button onClick={() => fRef.current?.click()}
@@ -1578,7 +1839,6 @@ If not claimable:
           </>
         )}
 
-        {/* ANALYZING STATE */}
         {step === "analyzing" && (
           <div style={{ padding: "50px 0", textAlign: "center" }}>
             <div style={{ width: 44, height: 44, border: `3px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", margin: "0 auto", animation: "spin 0.8s linear infinite" }} />
@@ -1587,7 +1847,6 @@ If not claimable:
           </div>
         )}
 
-        {/* RESULT STATE */}
         {step === "result" && result && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
