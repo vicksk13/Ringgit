@@ -693,9 +693,9 @@ export default function Ringgit() {
     if (user?.provider === "google" && user?.id) {
       try {
         // Omit raw base64 from DB row — only store metadata + storage_url
-        const { data: _b64, ...recMeta } = rec;
-        const { error } = await supabase.from("receipts").insert({
-          ...recMeta,
+        const { data: _b64, id: _id, ...recMeta } = rec;
+const { error } = await supabase.from("receipts").insert({
+  ...recMeta,
           storage_url: storageUrl,
           user_id: user.id,
           ya,
