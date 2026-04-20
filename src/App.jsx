@@ -525,7 +525,7 @@ export default function Ringgit() {
       setEntries((cl || []).map(c => ({
         id: c.id || `c-${c.item_id}-${Date.now()}`,
         itemId: c.item_id, amount: c.amount, units: c.units || 1,
-        desc: c.desc || "Entry",
+        desc: c.description || "Entry",
         date: c.created_at ? new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "",
         hasReceipt: !!c.has_receipt,
       })));
@@ -751,7 +751,7 @@ export default function Ringgit() {
           exportData[year] = {
             entries: (cl || []).map(c => ({
               id: c.id, itemId: c.item_id, amount: c.amount,
-              units: c.units || 1, desc: c.desc || "Entry", hasReceipt: !!c.has_receipt,
+              units: c.units || 1, desc: c.description || "Entry", hasReceipt: !!c.has_receipt,
             })),
             incomes: (inc || []).filter(i => i.type !== "rental"),
             rentalIncomes: (inc || []).filter(i => i.type === "rental"),
