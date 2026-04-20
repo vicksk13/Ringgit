@@ -611,7 +611,7 @@ export default function Ringgit() {
       try {
         const { error } = await supabase.from("claims").insert({
           user_id: user.id, ya, item_id: itemId,
-          amount: newEntry.amount, units, desc: newEntry.desc, has_receipt: !!hasReceipt,
+          amount: newEntry.amount, units, description: newEntry.desc, has_receipt: !!hasReceipt,
         });
         if (error) throw error;
       } catch (e) {
