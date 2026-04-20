@@ -646,7 +646,8 @@ export default function Ringgit() {
     setIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
       try {
-        const { error } = await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "employment" });
+        const { id: _id, ...incMeta } = inc;
+const { error } = await supabase.from("incomes").insert({ ...incMeta, user_id: user.id, ya, type: "employment" });
         if (error) throw error;
       } catch (e) { console.error("Income save error:", e); showSyncError("Income saved locally but failed to sync."); }
     }
@@ -665,7 +666,8 @@ export default function Ringgit() {
     setRentalIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
       try {
-        const { error } = await supabase.from("incomes").insert({ ...inc, user_id: user.id, ya, type: "rental" });
+        const { id: _id, ...incMeta } = inc;
+const { error } = await supabase.from("incomes").insert({ ...incMeta, user_id: user.id, ya, type: "rental" });
         if (error) throw error;
       } catch (e) { console.error("Rental save error:", e); showSyncError("Rental income saved locally but failed to sync."); }
     }
