@@ -96,10 +96,13 @@ G16b - Child 18+ in Education: RM2,000 or RM8,000 per child
 G16c - Disabled Child: RM8,000 base + additional RM8,000 if in higher education
 - Maximum RM16,000 if disabled child is in qualifying higher education
 
-G17 - Life Insurance + EPF: Up to RM7,000 combined
-- Life insurance/takaful premiums: sub-limit RM3,000 (on own life or spouse's life, NOT child's life)
-- EPF contributions (compulsory + voluntary): sub-limit RM4,000
-- Total combined cap: RM7,000
+G17ins - Life Insurance / Takaful: Sub-limit RM3,000 (within G17 combined cap RM7,000)
+- Life insurance or takaful premiums on own life or spouse's life
+- NOT claimable on child's life insurance
+
+G17epf - EPF Contributions: Sub-limit RM4,000 (within G17 combined cap RM7,000)
+- Compulsory and voluntary EPF contributions
+- Combined G17ins + G17epf capped at RM7,000 total
 
 G18 - Private Retirement Scheme (PRS) / Deferred Annuity: Up to RM3,000
 - PRS approved by Securities Commission + deferred annuity premiums
@@ -159,38 +162,34 @@ Always respond with ONLY this exact JSON, no other text before or after:
 {"claimable":true,"category_id":"G10","category_name":"Sports & fitness","total_amount":250,"suggested_amount":250,"explanation":"Clear explanation citing the specific LHDN rule that applies","conditions":"Specific conditions, sub-limits, or documentation requirements from LHDN BE2025"}`;
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-  const { prompt, imageBase64, mimeType } = req.body;
-
-  const content = [];
-  if (imageBase64) {
-    content.push({
-      type: "image",
-      source: { type: "base64", media_type: mimeType, data: imageBase64 }
-    });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
-  content.push({ type: "text", text: prompt });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: { message: "ANTHROPIC_API_KEY not set" } });
+  }
 
   try {
+    // Accept the full Anthropic body from App.jsx, but override system prompt
+    // with the authoritative server-side LHDN rules — never trust client system prompts
+    const body = { ...req.body, system: SYSTEM_PROMPT };
+
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5-20251001",
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content }]
-      })
+      body: JSON.stringify(body),
     });
+
     const data = await r.json();
-    const txt = data.content?.[0]?.text || "{}";
-    const clean = txt.replace(/```json/g, "").replace(/```/g, "").trim();
-    res.status(200).json(JSON.parse(clean));
+    return res.status(r.status).json(data);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error("Proxy error:", e);
+    return res.status(500).json({ error: { message: e.message } });
   }
 }
