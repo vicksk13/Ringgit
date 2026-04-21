@@ -1204,8 +1204,8 @@ const { error } = await supabase.from("receipts").insert({
             onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
         )}
         {tab === "income" && (
-          <IncomeTab t={t} incomes={incomes} rentalIncomes={rentalIncomes}
-            onAdd={addIncome} onRemove={removeIncome}
+          <IncomeTab t={t} ya={ya} incomes={incomes} rentalIncomes={rentalIncomes}
+  onAdd={addIncome} onRemove={removeIncome}
             onAddRental={addRentalIncome} onRemoveRental={removeRentalIncome}
             totalEmploymentIncome={totalEmploymentIncome}
             totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
@@ -1625,7 +1625,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 // ─────────────────────────────────────────────────────────────
 // INCOME TAB
 // ─────────────────────────────────────────────────────────────
-function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
+function IncomeTab({ t, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
   totalEmploymentIncome, totalRentalIncome, totalRentalExpenses, netRentalIncome,
   totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
   const [emp,        setEmp]        = useState("");
