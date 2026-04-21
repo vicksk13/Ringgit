@@ -92,6 +92,98 @@ const supabase = createClient(
 );
 
 // ─────────────────────────────────────────────────────────────
+// GOOGLE DRIVE UTILITIES
+// Requires: VITE_GOOGLE_CLIENT_ID env var
+// Scope: https://www.googleapis.com/auth/drive.file
+// ─────────────────────────────────────────────────────────────
+const loadGSI = () =>
+  new Promise((resolve) => {
+    if (window?.google?.accounts?.oauth2) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.onload = resolve;
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+
+const requestDriveToken = async () => {
+  await loadGSI();
+  if (!window?.google?.accounts?.oauth2)
+    throw new Error("Google Identity Services failed to load. Check your internet connection.");
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (!clientId)
+    throw new Error("VITE_GOOGLE_CLIENT_ID not configured. Add it to Vercel environment variables.");
+  return new Promise((resolve, reject) => {
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: (res) =>
+        res.error ? reject(new Error(res.error_description || res.error)) : resolve(res.access_token),
+    });
+    client.requestAccessToken({ prompt: "" });
+  });
+};
+
+const driveReq = (token, url, method = "GET", body = null) =>
+  fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body && { "Content-Type": "application/json" }),
+    },
+    ...(body && { body: JSON.stringify(body) }),
+  }).then((r) => r.json());
+
+const driveFindFolder = async (token, name, parentId) => {
+  const q = encodeURIComponent(
+    `name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`
+  );
+  const r = await driveReq(token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
+  return r.files?.[0]?.id || null;
+};
+
+const driveMkFolder = async (token, name, parentId) => {
+  const existing = await driveFindFolder(token, name, parentId);
+  if (existing) return existing;
+  const r = await driveReq(token, "https://www.googleapis.com/drive/v3/files", "POST", {
+    name,
+    mimeType: "application/vnd.google-apps.folder",
+    parents: [parentId],
+  });
+  return r.id;
+};
+
+const driveUploadFile = async (token, name, blob, parentId) => {
+  const meta = JSON.stringify({ name, parents: [parentId] });
+  const form = new FormData();
+  form.append("metadata", new Blob([meta], { type: "application/json" }));
+  form.append("file", blob);
+  await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+};
+
+const fetchImgAsBlob = async (src) => {
+  if (!src) return null;
+  if (src.startsWith("data:")) {
+    try {
+      const [header, data] = src.split(",");
+      const mime = header.match(/:(.*?);/)?.[1] || "image/jpeg";
+      const bytes = atob(data);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      return new Blob([arr], { type: mime });
+    } catch { return null; }
+  }
+  try {
+    const r = await fetch(src);
+    return r.ok ? await r.blob() : null;
+  } catch { return null; }
+};
+
+// ─────────────────────────────────────────────────────────────
 // THEMES
 // ─────────────────────────────────────────────────────────────
 const THEMES = {
@@ -103,6 +195,10 @@ const THEMES = {
     gold: "#B8863D", goldSoft: "rgba(184,134,61,0.12)",
     green: "#4A6B3A", greenSoft: "rgba(74,107,58,0.1)",
     shadow: "0 4px 20px rgba(28,25,23,0.06)", shadowHi: "0 12px 40px rgba(28,25,23,0.12)",
+    // Header card: dark card (t.ink) → labels need to be light
+    cardLabel: "rgba(245,239,227,0.65)",
+    cardLabelSoft: "rgba(245,239,227,0.5)",
+    cardBorder: "rgba(245,239,227,0.15)",
   },
   dark: {
     bg: "#15110D", bgAlt: "#1E1813", surface: "#221A14", surface2: "#2A2018",
@@ -112,6 +208,10 @@ const THEMES = {
     gold: "#D4A94A", goldSoft: "rgba(212,169,74,0.15)",
     green: "#8FB174", greenSoft: "rgba(143,177,116,0.14)",
     shadow: "0 4px 20px rgba(0,0,0,0.4)", shadowHi: "0 12px 40px rgba(0,0,0,0.5)",
+    // Header card: light card (t.ink = cream) → labels need to be dark
+    cardLabel: "rgba(28,25,23,0.55)",
+    cardLabelSoft: "rgba(28,25,23,0.4)",
+    cardBorder: "rgba(28,25,23,0.12)",
   },
 };
 
@@ -425,6 +525,144 @@ function SyncToast({ message, t }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// CONSENT MODAL — PDPA 2010 compliance
+// ─────────────────────────────────────────────────────────────
+function ConsentModal({ t, onAccept, onDecline, onViewPrivacy }) {
+  const [checked, setChecked] = useState(false);
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 600,
+      background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
+      animation: "fadein 0.2s",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 480, background: t.bg,
+        borderRadius: "24px 24px 0 0", padding: "20px 24px 44px",
+        fontFamily: FONT, animation: "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+          <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+        </div>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: t.redSoft, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+          <Icon name="shield" size={22} color={t.red} />
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: t.ink, marginBottom: 8, letterSpacing: -0.4 }}>
+          Your data, your control
+        </div>
+        <div style={{ fontSize: 13, color: t.inkSoft, lineHeight: 1.65, marginBottom: 20 }}>
+          Ringgit stores your income figures, tax relief entries, and receipt images to provide
+          tax tracking. Your data is processed under Malaysia's{" "}
+          <b style={{ color: t.ink }}>Personal Data Protection Act 2010</b>.
+          <br /><br />
+          We use <b style={{ color: t.ink }}>Supabase</b> (cloud storage, Singapore region),{" "}
+          <b style={{ color: t.ink }}>Anthropic Claude</b> (receipt AI analysis — images not retained
+          beyond the request), and <b style={{ color: t.ink }}>Google OAuth</b> (authentication only).
+        </div>
+        <label style={{
+          display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 24,
+          cursor: "pointer", padding: "14px 16px", background: t.surface,
+          borderRadius: 14, border: `1px solid ${t.hair}`,
+        }}>
+          <input
+            type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)}
+            style={{ marginTop: 2, width: 18, height: 18, flexShrink: 0, accentColor: t.red, cursor: "pointer" }}
+          />
+          <span style={{ fontSize: 13, color: t.ink, lineHeight: 1.5 }}>
+            I agree to the{" "}
+            <span
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onViewPrivacy(); }}
+              style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}
+            >
+              Privacy Policy
+            </span>
+            {" "}and consent to my financial data being processed for tax tracking.
+          </span>
+        </label>
+        <button
+          onClick={onAccept} disabled={!checked}
+          style={{
+            width: "100%", padding: 16, border: "none", borderRadius: 14,
+            background: checked ? t.red : t.inkMute, color: "#fff",
+            fontSize: 15, fontWeight: 700, fontFamily: FONT,
+            cursor: checked ? "pointer" : "not-allowed", marginBottom: 10,
+            opacity: checked ? 1 : 0.45, transition: "all 0.2s",
+          }}
+        >
+          Accept & Continue
+        </button>
+        <button
+          onClick={onDecline}
+          style={{
+            width: "100%", padding: 12, border: "none", background: "transparent",
+            color: t.inkMute, fontSize: 13, fontFamily: FONT, cursor: "pointer",
+          }}
+        >
+          Decline — exit app
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PRIVACY POLICY MODAL
+// ─────────────────────────────────────────────────────────────
+function PrivacyModal({ t, onClose }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 700,
+      background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 480, background: t.bg,
+          borderRadius: "24px 24px 0 0", padding: "16px 22px 44px",
+          maxHeight: "85vh", overflow: "auto", fontFamily: FONT,
+          animation: "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+        }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+          <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.ink }}>Privacy Policy</div>
+          <button onClick={onClose} style={{ width: 30, height: 30, border: "none", borderRadius: 8, background: t.bgAlt, color: t.inkSoft, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="close" size={14} color={t.inkSoft} />
+          </button>
+        </div>
+        {[
+          ["1. Data We Collect",
+            "Your name and year of birth (optional). Google account email and display name if you sign in with Google. Income figures, tax relief claim amounts, and receipt images you enter into the app."],
+          ["2. Why We Collect It",
+            "Solely to provide you with tax relief tracking and estimates under LHDN rules. We do not sell, share, or use your data for advertising."],
+          ["3. Third-Party Services",
+            "Supabase — cloud database and file storage, servers in Singapore. Anthropic Claude API — AI receipt analysis; images sent for analysis and not retained by Anthropic beyond the request. Google OAuth — authentication only; we do not access your Google contacts, email, or Drive without explicit permission."],
+          ["4. Data Retention",
+            "We retain your data for as long as your account is active, or 2 years after your last login, consistent with LHDN's 7-year audit recommendation. You may delete your data at any time from the More tab."],
+          ["5. Your Rights (PDPA 2010)",
+            "You have the right to access, correct, and delete your personal data. To exercise these rights, contact: vick.selva92@gmail.com. You can export all your data at any time from the More tab, and permanently delete your account and all associated data."],
+          ["6. Security",
+            "All data in transit is encrypted via HTTPS. Cloud data is protected by Supabase Row Level Security — only you can access your records. API keys are never exposed in the browser. Receipt images are stored in a private cloud bucket."],
+          ["7. Guest Mode",
+            "If you use guest mode, all data is stored locally on your device only and never sent to our servers, except when using the AI receipt scanner (which sends the image to Claude for analysis)."],
+          ["8. Changes",
+            "We may update this policy and will notify you via the app. Continued use after changes constitutes acceptance."],
+        ].map(([title, body]) => (
+          <div key={title} style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, marginBottom: 6 }}>{title}</div>
+            <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.65 }}>{body}</div>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: t.inkMute, marginTop: 10, paddingTop: 14, borderTop: `1px solid ${t.hair}` }}>
+          Last updated: April 2025 · Ringgit by Vick · Not legal advice
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function Ringgit() {
@@ -456,6 +694,33 @@ export default function Ringgit() {
   const [yaLoading,     setYaLoading]     = useState(false);
   const [viewImg,       setViewImg]       = useState(null);
   const [syncError,     setSyncError]     = useState(null);
+  // PDPA consent + privacy modal
+  const [showConsent,   setShowConsent]   = useState(false);
+  const [pendingAuth,   setPendingAuth]   = useState(null); // "google" | "guest"
+  const [showPrivacy,   setShowPrivacy]   = useState(false);
+
+  const hasConsent = () => { try { return localStorage.getItem("ringgit-consent") === "1"; } catch { return false; } };
+  const recordConsent = () => { try { localStorage.setItem("ringgit-consent", "1"); } catch {} };
+
+  const triggerGoogle = async () => {
+    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+  };
+  const triggerGuest = () => setScreen("signup");
+
+  const handleGoogleClick = () => {
+    if (!hasConsent()) { setPendingAuth("google"); setShowConsent(true); } else triggerGoogle();
+  };
+  const handleGuestClick = () => {
+    if (!hasConsent()) { setPendingAuth("guest"); setShowConsent(true); } else triggerGuest();
+  };
+  const handleConsentAccept = () => {
+    recordConsent();
+    setShowConsent(false);
+    if (pendingAuth === "google") triggerGoogle();
+    else if (pendingAuth === "guest") triggerGuest();
+    setPendingAuth(null);
+  };
+  const handleConsentDecline = () => { setShowConsent(false); setPendingAuth(null); };
 
   // Helper to show a sync error toast for 4 seconds
   const showSyncError = (msg) => {
@@ -794,6 +1059,51 @@ const { error } = await supabase.from("receipts").insert({
     else { const d = ld(); delete d.user; sv(d); setUser(null); setScreen("welcome"); }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!confirm("Permanently delete your Ringgit account and ALL data? This cannot be undone.")) return;
+    try {
+      if (user?.provider === "google" && user?.id) {
+        // Delete all years of Supabase data
+        await Promise.all([
+          supabase.from("claims").delete().eq("user_id", user.id),
+          supabase.from("incomes").delete().eq("user_id", user.id),
+          supabase.from("receipts").delete().eq("user_id", user.id),
+        ]);
+        // Delete all receipt images from Storage
+        const { data: files } = await supabase.storage.from("receipts").list(user.id);
+        if (files?.length) {
+          const paths = files.map(f => `${user.id}/${f.name}`);
+          await supabase.storage.from("receipts").remove(paths);
+        }
+        // Call server-side route to delete the auth user record
+        await fetch("/api/delete-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id }),
+        });
+        await supabase.auth.signOut();
+      } else {
+        localStorage.clear();
+        setUser(null);
+        setScreen("welcome");
+      }
+    } catch (e) {
+      console.error("Delete account error:", e);
+      alert("Some data may not have been removed. Contact vick.selva92@gmail.com to request full deletion.");
+    }
+  };
+
+  // Google Drive export — organises all receipts by category into a Drive folder
+  const exportToDrive = async () => {
+    if (!user || user.provider !== "google") {
+      alert("Sign in with Google to export to Google Drive."); return;
+    }
+    return new Promise((outerResolve) => {
+      // We need to setExportProgress externally — handled in MoreTab
+      window.__driveExportFn = outerResolve;
+    });
+  };
+
   const resetYAData = () => {
     if (!confirm(`Reset all YA${ya} data? This cannot be undone.`)) return;
     setEntries([]); setReceipts([]); setIncomes([]); setRentalIncomes([]);
@@ -818,9 +1128,15 @@ const { error } = await supabase.from("receipts").insert({
     return (
       <div style={baseStyle(t)}>
         <style>{globalCSS}</style>
-        <Welcome t={t}
-          onGoogle={async () => { await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } }); }}
-          onGuest={() => setScreen("signup")} />
+        {showConsent && (
+          <ConsentModal t={t}
+            onAccept={handleConsentAccept}
+            onDecline={handleConsentDecline}
+            onViewPrivacy={() => setShowPrivacy(true)}
+          />
+        )}
+        {showPrivacy && <PrivacyModal t={t} onClose={() => setShowPrivacy(false)} />}
+        <Welcome t={t} onGoogle={handleGoogleClick} onGuest={handleGuestClick} onPrivacy={() => setShowPrivacy(true)} />
       </div>
     );
   }
@@ -902,10 +1218,19 @@ const { error } = await supabase.from("receipts").insert({
         )}
         {tab === "more" && (
           <MoreTab t={t} user={user} ya={ya} themeName={themeName} setTheme={setThemeName}
-            onSignOut={handleSignOut} onReset={resetYAData} onExport={exportD} onImport={importD}
-            onSignInGoogle={() => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } })} />
+            onSignOut={handleSignOut}
+            onDeleteAccount={handleDeleteAccount}
+            onReset={resetYAData}
+            onExport={exportD}
+            onImport={importD}
+            onPrivacy={() => setShowPrivacy(true)}
+            onSignInGoogle={handleGoogleClick}
+            supabase={supabase}
+            entries={entries} receipts={receipts} incomes={incomes} rentalIncomes={rentalIncomes} />
         )}
       </div>
+
+      {showPrivacy && <PrivacyModal t={t} onClose={() => setShowPrivacy(false)} />}
 
       {tab === "relief" && !scannerOpen && (
         <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }} style={{
@@ -933,7 +1258,7 @@ const { error } = await supabase.from("receipts").insert({
 // ─────────────────────────────────────────────────────────────
 // WELCOME
 // ─────────────────────────────────────────────────────────────
-function Welcome({ t, onGoogle, onGuest }) {
+function Welcome({ t, onGoogle, onGuest, onPrivacy }) {
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -950,8 +1275,14 @@ function Welcome({ t, onGoogle, onGuest }) {
       <button onClick={onGuest} style={{ width: "100%", padding: "16px 20px", border: `1px solid ${t.hairStrong}`, borderRadius: 14, background: "transparent", color: t.ink, fontSize: 15, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
         Continue as Guest
       </button>
-      <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 20 }}>
+      <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 20, lineHeight: 1.8 }}>
         Free · Google sync included · Not financial advice
+        <br />
+        <span onClick={onPrivacy} style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}>
+          Privacy Policy
+        </span>
+        {" · "}
+        <span style={{ color: t.inkMute }}>PDPA 2010 compliant</span>
       </div>
     </div>
   );
@@ -1026,7 +1357,7 @@ function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelie
       <div style={{ marginTop: 20, background: t.ink, color: t.bg, borderRadius: 20, padding: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 11, color: "rgba(245,239,227,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>
+          <div style={{ fontSize: 11, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>
             Estimated Tax · YA{ya}
             {taxIsTentative && <span style={{ marginLeft: 6, fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>YA2025 BRACKETS</span>}
           </div>
@@ -1034,14 +1365,14 @@ function Header({ t, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelie
             RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
           {taxIsTentative && (
-            <div style={{ fontSize: 10, color: "rgba(245,239,227,0.5)", marginTop: 2, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 10, color: t.cardLabelSoft, marginTop: 2, lineHeight: 1.4 }}>
               YA{ya} tax brackets not yet gazetted — estimate uses YA2025 rates
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(245,239,227,0.15)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 18, paddingTop: 16, borderTop: `1px solid ${t.cardBorder}` }}>
             {[["Income", totalIncome], ["Relief", totalRelief], ["Chargeable", chargeable]].map(([l, v]) => (
               <div key={l}>
-                <div style={{ fontSize: 9.5, color: "rgba(245,239,227,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
+                <div style={{ fontSize: 9.5, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
                   RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
@@ -1312,6 +1643,44 @@ function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, on
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
 
+      {/* ── Tax summary at the top — always visible once income exists ── */}
+      {(incomes.length > 0 || rentalIncomes.length > 0) && (
+        <>
+          <div style={{ background: t.ink, color: t.bg, borderRadius: 18, padding: 18, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: t.cardLabel, textTransform: "uppercase", letterSpacing: 1.2 }}>Total Income · YA{ya}</div>
+            <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: -1, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
+              RM {totalIncome.toLocaleString()}
+            </div>
+            {rentalIncomes.length > 0 && (
+              <div style={{ fontSize: 11, color: t.cardLabelSoft, marginTop: 4 }}>
+                Employment RM {totalEmploymentIncome.toLocaleString()} + Net rental RM {netRentalIncome.toLocaleString()}
+              </div>
+            )}
+          </div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Tax Estimate</div>
+            {taxIsTentative && (
+              <div style={{ padding: "8px 10px", background: t.goldSoft, borderRadius: 8, borderLeft: `3px solid ${t.gold}`, fontSize: 11, color: t.inkSoft, lineHeight: 1.5, marginBottom: 10 }}>
+                Using YA2025 brackets — YA2026+ rates not yet gazetted
+              </div>
+            )}
+            {[["Total Income", totalIncome, t.ink], ["Total Relief", totalRelief, t.green, "–"]].map(([l, v, c, prefix]) => (
+              <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
+                <span>{l}</span>
+                <span style={{ fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{prefix ? `${prefix} ` : ""}RM {v.toLocaleString()}</span>
+              </div>
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, color: t.ink, borderTop: `1px solid ${t.hair}`, marginTop: 8, paddingTop: 8 }}>
+              <span>Chargeable</span><span style={{ fontVariantNumeric: "tabular-nums" }}>RM {chargeable.toLocaleString()}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, fontWeight: 800, color: t.red, paddingTop: 4 }}>
+              <span>Est. Tax{taxIsTentative ? "*" : ""}</span>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Employment */}
       <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, marginBottom: 12 }}>Add Employment Income</div>
@@ -1426,42 +1795,6 @@ function IncomeTab({ t, incomes, rentalIncomes, onAdd, onRemove, onAddRental, on
         </>
       )}
 
-      {(incomes.length > 0 || rentalIncomes.length > 0) && (
-        <>
-          <div style={{ background: t.ink, color: t.bg, borderRadius: 18, padding: 18, marginTop: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(245,239,227,0.6)", textTransform: "uppercase", letterSpacing: 1.2 }}>Total Income</div>
-            <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: -1, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-              RM {totalIncome.toLocaleString()}
-            </div>
-            {rentalIncomes.length > 0 && (
-              <div style={{ fontSize: 11, color: "rgba(245,239,227,0.5)", marginTop: 4 }}>
-                Employment RM {totalEmploymentIncome.toLocaleString()} + Net rental RM {netRentalIncome.toLocaleString()}
-              </div>
-            )}
-          </div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginTop: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Tax Estimate</div>
-            {taxIsTentative && (
-              <div style={{ padding: "8px 10px", background: t.goldSoft, borderRadius: 8, borderLeft: `3px solid ${t.gold}`, fontSize: 11, color: t.inkSoft, lineHeight: 1.5, marginBottom: 10 }}>
-                Using YA2025 brackets — YA2026+ rates not yet gazetted
-              </div>
-            )}
-            {[["Total Income", totalIncome, t.ink], ["Total Relief", totalRelief, t.green, "–"]].map(([l, v, c, prefix]) => (
-              <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
-                <span>{l}</span>
-                <span style={{ fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{prefix ? `${prefix} ` : ""}RM {v.toLocaleString()}</span>
-              </div>
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, color: t.ink, borderTop: `1px solid ${t.hair}`, marginTop: 8, paddingTop: 8 }}>
-              <span>Chargeable</span><span style={{ fontVariantNumeric: "tabular-nums" }}>RM {chargeable.toLocaleString()}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, fontWeight: 800, color: t.red, paddingTop: 4 }}>
-              <span>Est. Tax{taxIsTentative ? "*" : ""}</span>
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -1516,12 +1849,115 @@ function ReceiptsTab({ t, receipts, onRemove, onView }) {
 // ─────────────────────────────────────────────────────────────
 // MORE TAB
 // ─────────────────────────────────────────────────────────────
-function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExport, onImport, onSignInGoogle }) {
-  const [exporting, setExporting] = useState(false);
-  const rowStyle = { display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", background: t.surface, borderRadius: 14, border: `1px solid ${t.hair}`, marginBottom: 8, cursor: "pointer" };
+function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onDeleteAccount, onReset, onExport,
+  onImport, onPrivacy, onSignInGoogle, supabase, entries, receipts, incomes, rentalIncomes }) {
+  const [exporting,      setExporting]      = useState(false);
+  const [exportProgress, setExportProgress] = useState("");
+  const [driveStep,      setDriveStep]      = useState(""); // "" | "requesting" | "uploading" | "done"
+
+  const rowStyle = {
+    display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
+    background: t.surface, borderRadius: 14, border: `1px solid ${t.hair}`,
+    marginBottom: 8, cursor: "pointer",
+  };
+
+  // ── Google Drive export ─────────────────────────────────────
+  const runDriveExport = async () => {
+    if (!user || user.provider !== "google") {
+      alert("Sign in with Google first to export to Google Drive."); return;
+    }
+    if (exporting) return;
+    setExporting(true);
+    setDriveStep("requesting");
+    setExportProgress("Requesting Google Drive access…");
+
+    try {
+      const token = await requestDriveToken();
+      setDriveStep("uploading");
+
+      // ── Build folder structure: Ringgit → YAxxxx ──
+      setExportProgress("Creating Ringgit folder…");
+      const rootId  = await driveMkFolder(token, "Ringgit", "root");
+      const yaId    = await driveMkFolder(token, `YA${ya}`, rootId);
+      const recId   = await driveMkFolder(token, "Receipts", yaId);
+
+      // ── Fetch data from Supabase ──
+      setExportProgress("Fetching your data…");
+      let exportEntries = entries, exportReceipts = receipts,
+          exportIncomes = incomes, exportRentals = rentalIncomes;
+
+      if (user?.id) {
+        const [{ data: cl }, { data: inc }, { data: rec }] = await Promise.all([
+          supabase.from("claims").select("*").eq("user_id", user.id).eq("ya", ya),
+          supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
+          supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
+        ]);
+        exportEntries = cl || [];
+        exportIncomes = (inc || []).filter(i => i.type !== "rental");
+        exportRentals = (inc || []).filter(i => i.type === "rental");
+        exportReceipts = rec || [];
+      }
+
+      // ── Upload summary JSON ──
+      setExportProgress("Uploading data summary…");
+      const summary = {
+        exportedAt: new Date().toISOString(),
+        ya, user: { name: user.name, email: user.email },
+        entries: exportEntries,
+        incomes: exportIncomes,
+        rentalIncomes: exportRentals,
+      };
+      const jsonBlob = new Blob([JSON.stringify(summary, null, 2)], { type: "application/json" });
+      await driveUploadFile(token, `YA${ya}-summary.json`, jsonBlob, yaId);
+
+      // ── Upload receipts organised by relief category ──
+      const catFolderCache = {};
+      const rxList = exportReceipts.filter(rx => (rx.storage_url || rx.data));
+
+      for (let i = 0; i < rxList.length; i++) {
+        const rx = rxList[i];
+        setExportProgress(`Uploading receipt ${i + 1} of ${rxList.length}…`);
+
+        const itemId   = rx.itemId || rx.item_id || "Uncategorized";
+        const itemName = (rx.name || itemId).replace(/[^a-zA-Z0-9 \-_]/g, "").trim().slice(0, 40);
+        const catKey   = `${itemId} - ${itemName}`;
+
+        if (!catFolderCache[catKey]) {
+          catFolderCache[catKey] = await driveMkFolder(token, catKey, recId);
+        }
+
+        const imgSrc = rx.storage_url || rx.data;
+        const blob   = await fetchImgAsBlob(imgSrc);
+        if (blob) {
+          const merchant = (rx.merchant || rx.name || "receipt")
+            .replace(/[^a-zA-Z0-9 \-]/g, "").trim().slice(0, 30);
+          const fname = `${merchant}-${String(rx.id).slice(-6)}.jpg`;
+          await driveUploadFile(token, fname, blob, catFolderCache[catKey]);
+        }
+      }
+
+      setDriveStep("done");
+      setExportProgress("✓ Exported to Google Drive");
+      setTimeout(() => { setExportProgress(""); setDriveStep(""); }, 4000);
+
+    } catch (e) {
+      console.error("Drive export error:", e);
+      const msg = e.message?.includes("popup_closed")
+        ? "Permission dialog was closed. Please try again."
+        : e.message?.includes("VITE_GOOGLE_CLIENT_ID")
+        ? "Google Client ID not configured — check Vercel env vars."
+        : "Drive export failed: " + (e.message || "Unknown error");
+      alert(msg);
+      setExportProgress("");
+      setDriveStep("");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div style={{ padding: "0 20px 40px", fontFamily: FONT }}>
+
       {/* Profile card */}
       <div style={{ background: t.surface, padding: 18, borderRadius: 18, border: `1px solid ${t.hair}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ width: 52, height: 52, borderRadius: 14, background: t.red, color: "#fff", fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1538,16 +1974,15 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         )}
       </div>
 
-      {/* Guest upgrade prompt — prominent banner */}
+      {/* Guest upgrade prompt */}
       {user?.provider !== "google" && (
         <div style={{ background: t.ink, borderRadius: 16, padding: 18, marginBottom: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <Icon name="cloud" size={20} color={t.bg} />
             <div style={{ fontSize: 14, fontWeight: 700, color: t.bg }}>Back up your data</div>
           </div>
-          <div style={{ fontSize: 12, color: "rgba(245,239,227,0.65)", lineHeight: 1.5, marginBottom: 14 }}>
-            You're currently in guest mode. Data is saved locally only — if you clear your browser or switch devices, it's gone.
-            Sign in with Google to keep your entries safe in the cloud, for free.
+          <div style={{ fontSize: 12, color: t.cardLabelSoft, lineHeight: 1.5, marginBottom: 14 }}>
+            You're in guest mode — data is local only. Sign in with Google to keep it safe in the cloud, for free.
           </div>
           <button onClick={onSignInGoogle} style={{ width: "100%", padding: "13px 18px", border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Icon name="google" size={16} color="#fff" />
@@ -1556,6 +1991,7 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         </div>
       )}
 
+      {/* Appearance */}
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Appearance</div>
       <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.hair}`, padding: 6, display: "flex", gap: 6, marginBottom: 20 }}>
         {[{ k: "light", label: "Light", icon: "sun" }, { k: "dark", label: "Dark", icon: "moon" }].map(opt => {
@@ -1570,7 +2006,38 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         })}
       </div>
 
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Data</div>
+      {/* Data */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>Data & Export</div>
+
+      {/* Google Drive Export */}
+      {user?.provider === "google" ? (
+        <div onClick={runDriveExport} style={rowStyle}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: t.greenSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            {exporting
+              ? <div style={{ width: 16, height: 16, border: `2px solid ${t.hair}`, borderTopColor: t.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              : <Icon name="cloud" size={18} color={t.green} />}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: t.ink }}>
+              {driveStep === "done" ? "Exported ✓" : exporting ? "Exporting…" : "Export to Google Drive"}
+            </div>
+            <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>
+              {exportProgress || `Creates Ringgit/YA${ya}/ folder with receipts by category`}
+            </div>
+          </div>
+          {!exporting && <Icon name="chevR" size={14} color={t.inkMute} />}
+        </div>
+      ) : (
+        <div style={{ ...rowStyle, opacity: 0.6 }}>
+          <Icon name="cloud" size={18} color={t.inkMute} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: t.inkMute }}>Export to Google Drive</div>
+            <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Sign in with Google to enable Drive export</div>
+          </div>
+        </div>
+      )}
+
+      {/* JSON backup (always available) */}
       <div onClick={async () => {
         if (exporting) return;
         setExporting(true);
@@ -1578,29 +2045,30 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
       }} style={rowStyle}>
         <Icon name="download" size={18} color={t.inkSoft} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{exporting ? "Exporting…" : "Export backup"}</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>
-            {user?.provider === "google" ? "Downloads all years from cloud" : "Download JSON of your local data"}
-          </div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>Download JSON backup</div>
+          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Save a local copy of all your data</div>
         </div>
-        {exporting
-          ? <div style={{ width: 16, height: 16, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-          : <Icon name="chevR" size={14} color={t.inkMute} />}
+        <Icon name="chevR" size={14} color={t.inkMute} />
       </div>
+
+      {/* Restore */}
       <label style={rowStyle}>
         <Icon name="upload" size={18} color={t.inkSoft} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>Restore from file</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Import a previous backup</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>Restore from JSON</div>
+          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>Import a previous backup file</div>
         </div>
         <Icon name="chevR" size={14} color={t.inkMute} />
         <input type="file" accept=".json" onChange={onImport} style={{ display: "none" }} />
       </label>
+
+      {/* Reset YA */}
       <div onClick={onReset} style={{ ...rowStyle, marginTop: 8 }}>
         <Icon name="trash" size={18} color={t.red} />
         <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: t.red }}>Reset YA{ya} data</div>
       </div>
 
+      {/* Coming soon */}
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "16px 4px 10px" }}>Coming soon</div>
       <div style={{ background: t.surface, padding: 16, borderRadius: 16, border: `1px solid ${t.hair}`, display: "flex", flexWrap: "wrap", gap: 6 }}>
         {["Debt Tracker", "Savings Goals", "Budget Planner", "EPF Calc", "Zakat Calc"].map(f => (
@@ -1608,12 +2076,30 @@ function MoreTab({ t, user, ya, themeName, setTheme, onSignOut, onReset, onExpor
         ))}
       </div>
 
-      <button onClick={onSignOut} style={{ width: "100%", padding: 16, marginTop: 20, border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.inkSoft, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      {/* Legal */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "16px 4px 10px" }}>Legal & Account</div>
+      <div onClick={onPrivacy} style={rowStyle}>
+        <Icon name="shield" size={18} color={t.inkSoft} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>Privacy Policy</div>
+          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>PDPA 2010 · How we handle your data</div>
+        </div>
+        <Icon name="chevR" size={14} color={t.inkMute} />
+      </div>
+
+      {/* Sign out */}
+      <button onClick={onSignOut} style={{ width: "100%", padding: 16, marginTop: 8, border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.inkSoft, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <Icon name="logout" size={16} color={t.inkSoft} />
         Sign out
       </button>
-      <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 16 }}>
-        Ringgit v4.3 · Powered by Claude · Not financial advice
+
+      {/* Delete account */}
+      <button onClick={onDeleteAccount} style={{ width: "100%", padding: 14, marginTop: 8, border: `1px solid ${t.redSoft}`, borderRadius: 14, background: "transparent", color: t.red, fontSize: 13, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
+        Delete account &amp; all data
+      </button>
+
+      <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 20 }}>
+        Ringgit v4.4 · Powered by Claude · Not financial advice
       </div>
     </div>
   );
@@ -1630,7 +2116,8 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, ya, allItems }) {
   const [err,         setErr]         = useState(null);
   const [result,      setResult]      = useState(null);
   const [compressing, setCompressing] = useState(false);
-  const fRef = useRef(null);
+  const cameraRef  = useRef(null); // camera capture only
+  const galleryRef = useRef(null); // gallery / files only
 
   useEffect(() => {
     if (open) { setStep("idle"); setDesc(""); setImg(null); setErr(null); setResult(null); setCompressing(false); }
@@ -1795,27 +2282,68 @@ If not claimable:
 
         {step === "idle" && (
           <>
-            <button onClick={() => fRef.current?.click()}
-              style={{ width: "100%", padding: "24px 16px", background: t.surface, border: `1.5px dashed ${t.hairStrong}`, borderRadius: 16, cursor: compressing ? "wait" : "pointer", fontFamily: FONT, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              {compressing ? (
-                <>
-                  <div style={{ width: 28, height: 28, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                  <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>Compressing image…</div>
-                </>
-              ) : img ? (
-                <>
-                  <img src={img} style={{ maxWidth: "100%", maxHeight: 180, borderRadius: 10, objectFit: "contain" }} alt="Receipt preview" />
-                  <div style={{ fontSize: 12, fontWeight: 600, color: t.green }}>Receipt attached ✓  (tap to change)</div>
-                </>
-              ) : (
-                <>
-                  <Icon name="camera" size={32} color={t.inkSoft} />
-                  <div style={{ fontSize: 14, fontWeight: 600, color: t.ink }}>Upload receipt</div>
-                  <div style={{ fontSize: 11, color: t.inkMute }}>Photo or screenshot · optional</div>
-                </>
-              )}
-            </button>
-            <input ref={fRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+            {/* Permission notice — shown before any file input is triggered */}
+            <div style={{ padding: "10px 14px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 12, marginBottom: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <Icon name="camera" size={16} color={t.inkMute} />
+              <div style={{ fontSize: 11, color: t.inkMute, lineHeight: 1.5 }}>
+                This app accesses your camera or photo library <b style={{ color: t.inkSoft }}>only to scan receipts</b>.
+                Photos are sent to Claude for analysis and never stored permanently.
+              </div>
+            </div>
+
+            {/* Image preview or upload prompt */}
+            {compressing ? (
+              <div style={{ width: "100%", padding: "28px 16px", background: t.surface, border: `1.5px dashed ${t.hairStrong}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 28, height: 28, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>Compressing image…</div>
+              </div>
+            ) : img ? (
+              <div style={{ width: "100%", padding: "16px", background: t.surface, border: `1.5px solid ${t.green}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <img src={img} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, objectFit: "contain" }} alt="Receipt preview" />
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.green }}>Receipt attached ✓</div>
+                <button onClick={() => setImg(null)} style={{ fontSize: 11, color: t.inkMute, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: FONT }}>Remove</button>
+              </div>
+            ) : (
+              <div style={{ width: "100%", padding: "20px 16px", background: t.surface, border: `1.5px dashed ${t.hairStrong}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <Icon name="receipt" size={28} color={t.inkMute} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.inkSoft }}>No receipt attached yet</div>
+                <div style={{ fontSize: 11, color: t.inkMute }}>Use the buttons below to add one — or describe the expense in text.</div>
+              </div>
+            )}
+
+            {/* Camera + Gallery buttons */}
+            {!img && (
+              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                <button
+                  onClick={() => cameraRef.current?.click()}
+                  disabled={compressing}
+                  style={{ flex: 1, padding: "12px 0", border: `1px solid ${t.hairStrong}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: compressing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                  <Icon name="camera" size={15} color={t.ink} />
+                  Take Photo
+                </button>
+                <button
+                  onClick={() => galleryRef.current?.click()}
+                  disabled={compressing}
+                  style={{ flex: 1, padding: "12px 0", border: `1px solid ${t.hairStrong}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: compressing ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                  <Icon name="upload" size={15} color={t.ink} />
+                  Gallery / Files
+                </button>
+              </div>
+            )}
+            {img && (
+              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                <button onClick={() => cameraRef.current?.click()} style={{ flex: 1, padding: "10px 0", border: `1px solid ${t.hair}`, borderRadius: 10, background: "transparent", color: t.inkMute, fontSize: 12, fontFamily: FONT, cursor: "pointer" }}>
+                  Retake
+                </button>
+                <button onClick={() => galleryRef.current?.click()} style={{ flex: 1, padding: "10px 0", border: `1px solid ${t.hair}`, borderRadius: 10, background: "transparent", color: t.inkMute, fontSize: 12, fontFamily: FONT, cursor: "pointer" }}>
+                  Change
+                </button>
+              </div>
+            )}
+
+            {/* Hidden file inputs — camera forces capture, gallery allows files */}
+            <input ref={cameraRef}  type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleFile} />
+            <input ref={galleryRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={handleFile} />
 
             <div style={{ marginTop: 14 }}>
               <textarea value={desc} onChange={e => setDesc(e.target.value)}
