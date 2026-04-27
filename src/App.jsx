@@ -1,5 +1,5 @@
 // ═════════════════════════════════════════════════════════════
-// RINGGIT — App.jsx
+// MAKECENTSTAX — App.jsx
 // ═════════════════════════════════════════════════════════════
 //
 // VERCEL ENV VARS NEEDED (Settings → Environment Variables):
@@ -277,15 +277,15 @@ const validateReceiptFile = (file) => {
   return { ok: true };
 };
 
-// [Priority 7] Remove only Ringgit-owned localStorage keys — never nuke the whole origin.
-const RINGGIT_LS_KEYS = ["ringgit-v3", "ringgit-v2", "ringgit-theme", "ringgit-lang", "ringgit-consent"];
-const clearRinggitStorage = () => RINGGIT_LS_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+// [Priority 7] Remove only MakeCents-owned localStorage keys — never nuke the whole origin.
+const MAKECENTSTAX_LS_KEYS = ["makecentstax-v3", "makecentstax-v2", "makecentstax-theme", "makecentstax-lang", "makecentstax-consent"];
+const clearMakeCentsStorage = () => MAKECENTSTAX_LS_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
 
 // [Priority 8] PDPA consent record — versioned so re-consent is triggered if policy changes.
 const CONSENT_VERSION = "1.1";
 const recordConsent = () => {
   try {
-    localStorage.setItem("ringgit-consent", JSON.stringify({
+    localStorage.setItem("makecentstax-consent", JSON.stringify({
       version:    CONSENT_VERSION,
       timestamp:  new Date().toISOString(),
       purposes:   ["tax_classification", "cloud_sync", "drive_export"],
@@ -295,7 +295,7 @@ const recordConsent = () => {
 };
 const hasConsentStored = () => {
   try {
-    const r = JSON.parse(localStorage.getItem("ringgit-consent") || "null");
+    const r = JSON.parse(localStorage.getItem("makecentstax-consent") || "null");
     return r?.version === CONSENT_VERSION;
   } catch { return false; }
 };
@@ -436,7 +436,7 @@ const TRANS = {
     language:        "Language",
     data_export:     "Data & Export",
     export_drive:    "Export to Google Drive",
-    export_drive_sub:"Creates Ringgit/YA{0}/ folder with CSVs + receipt images by category",
+    export_drive_sub:"Creates MakeCents/YA{0}/ folder with CSVs + receipt images by category",
     exported:        "Exported ✓",
     exporting:       "Exporting…",
     dl_json:         "Download JSON backup",
@@ -449,7 +449,7 @@ const TRANS = {
     privacy_sub:     "PDPA 2010 · How we handle your data",
     sign_out:        "Sign out",
     delete_account:  "Delete account & all data",
-    not_fin_advice:  "Ringgit · Not financial advice",
+    not_fin_advice:  "MakeCents · Not financial advice",
 
     // Scanner
     ai_receipt:      "AI Receipt Check",
@@ -483,7 +483,7 @@ const TRANS = {
 
     // Consent modal
     your_data_control: "Your data, your control",
-    consent_body:      "Ringgit stores your income figures, tax relief entries, and receipt images to provide tax tracking. Your data is processed under Malaysia's Personal Data Protection Act 2010 (as amended 2024).",
+    consent_body:      "MakeCents stores your income figures, tax relief entries, and receipt images to provide tax tracking. Your data is processed under Malaysia's Personal Data Protection Act 2010 (as amended 2024).",
     consent_providers: "We use Supabase (cloud storage, Singapore region), Anthropic Claude (receipt AI analysis — images not retained beyond the request), and Google OAuth (authentication only).",
     consent_agree:     "I agree to the {0} and consent to my financial data being processed for tax tracking, including cross-border transfer to Supabase (Singapore), Anthropic (United States), and Google (United States).",
     accept_continue:   "Accept & Continue",
@@ -575,7 +575,7 @@ const TRANS = {
     language:        "Bahasa",
     data_export:     "Data & Eksport",
     export_drive:    "Eksport ke Google Drive",
-    export_drive_sub:"Mencipta folder Ringgit/YA{0}/ dengan CSV + imej resit mengikut kategori",
+    export_drive_sub:"Mencipta folder MakeCents/YA{0}/ dengan CSV + imej resit mengikut kategori",
     exported:        "Dieksport ✓",
     exporting:       "Mengeksport…",
     dl_json:         "Muat turun sandaran JSON",
@@ -588,7 +588,7 @@ const TRANS = {
     privacy_sub:     "PDPA 2010 · Cara kami kendalikan data anda",
     sign_out:        "Log keluar",
     delete_account:  "Padam akaun & semua data",
-    not_fin_advice:  "Ringgit · Bukan nasihat kewangan",
+    not_fin_advice:  "MakeCents · Bukan nasihat kewangan",
 
     ai_receipt:      "Semakan Resit AI",
     ai_sub:          "Dikuasakan Claude · Disahkan LHDN",
@@ -620,7 +620,7 @@ const TRANS = {
     scan_another:    "Imbas resit lain",
 
     your_data_control: "Data anda, kawalan anda",
-    consent_body:      "Ringgit menyimpan pendapatan, entri pelepasan cukai, dan imej resit anda untuk menyediakan penjejakan cukai. Data anda diproses di bawah Akta Perlindungan Data Peribadi 2010 (pindaan 2024).",
+    consent_body:      "MakeCents menyimpan pendapatan, entri pelepasan cukai, dan imej resit anda untuk menyediakan penjejakan cukai. Data anda diproses di bawah Akta Perlindungan Data Peribadi 2010 (pindaan 2024).",
     consent_providers: "Kami menggunakan Supabase (storan awan, rantau Singapura), Anthropic Claude (analisis AI resit — imej tidak disimpan selepas permintaan), dan Google OAuth (pengesahan sahaja).",
     consent_agree:     "Saya bersetuju dengan {0} dan membenarkan data kewangan saya diproses untuk penjejakan cukai, termasuk pemindahan rentas sempadan ke Supabase (Singapura), Anthropic (Amerika Syarikat), dan Google (Amerika Syarikat).",
     accept_continue:   "Terima & Teruskan",
@@ -832,13 +832,13 @@ const calcTax = (ci) => {
 // ─────────────────────────────────────────────────────────────
 // LOCAL STORAGE
 // ─────────────────────────────────────────────────────────────
-const SK = "ringgit-v3";
+const SK = "makecentstax-v3";
 const ld = () => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } };
 const sv = (d) => { try { localStorage.setItem(SK, JSON.stringify(d)); } catch {} };
 
 const migrateOld = () => {
   try {
-    const old = JSON.parse(localStorage.getItem("ringgit-v2") || "{}");
+    const old = JSON.parse(localStorage.getItem("makecentstax-v2") || "{}");
     if (!old || Object.keys(old).length === 0) return;
     const out = { user: old.user };
     for (const y of YEARS) {
@@ -858,7 +858,7 @@ const migrateOld = () => {
       out[y] = { entries, receipts: yd.receipts || [], incomes: yd.incomes || [], rentalIncomes: [] };
     }
     localStorage.setItem(SK, JSON.stringify(out));
-    localStorage.removeItem("ringgit-v2");
+    localStorage.removeItem("makecentstax-v2");
   } catch {}
 };
 
@@ -1040,13 +1040,13 @@ function PrivacyModal({ t, L, onClose }) {
 
   const sections = isEN ? [
     ["1. Who we are",
-      "Ringgit is a personal tax tracking tool operated by an individual developer based in Malaysia. Contact: vick.selva92@gmail.com. We act as the data controller for personal data you submit through the app."],
+      "MakeCents is a personal tax tracking tool operated by an individual developer based in Malaysia. Contact: vick.selva92@gmail.com. We act as the data controller for personal data you submit through the app."],
     ["2. Data we collect",
       "Your name and year of birth (optional). If you sign in with Google: your email and display name. Your income figures, tax relief claim amounts, receipt images, and merchant/amount/date metadata extracted from receipts. We do not request or store your NRIC, bank account numbers, or payment card numbers — and we ask you not to photograph these."],
     ["3. Why we collect it",
       "Solely to provide tax relief tracking and tax estimates under LHDN rules. We do not sell, share, or use your data for advertising. We do not build user profiles for third parties."],
     ["4. Third parties and cross-border transfer (PDPA s.129)",
-      "Ringgit uses (a) Supabase for database + image storage, with servers in Singapore — a jurisdiction recognised as having comparable data protection law; (b) Anthropic Claude for on-demand receipt analysis, processed in the United States — receipt images are transmitted for a single inference and are not retained by Anthropic beyond the request; (c) Google OAuth for sign-in, and (optionally, only when you tap Export to Drive) Google Drive, both processed in the United States. By accepting the consent screen you consent to these specific cross-border transfers."],
+      "MakeCents uses (a) Supabase for database + image storage, with servers in Singapore — a jurisdiction recognised as having comparable data protection law; (b) Anthropic Claude for on-demand receipt analysis, processed in the United States — receipt images are transmitted for a single inference and are not retained by Anthropic beyond the request; (c) Google OAuth for sign-in, and (optionally, only when you tap Export to Drive) Google Drive, both processed in the United States. By accepting the consent screen you consent to these specific cross-border transfers."],
     ["5. Retention",
       "We retain your data while your account is active, or up to 2 years after your last sign-in, whichever is shorter. You may export or delete your data at any time from the More tab. LHDN separately recommends keeping your own copies of receipts for 7 years for audit — that is your responsibility, not ours."],
     ["6. Your PDPA rights",
@@ -1058,18 +1058,18 @@ function PrivacyModal({ t, L, onClose }) {
     ["9. Guest mode",
       "If you use guest mode, app data is stored only in your browser's local storage and never sent to our servers — with one exception: if you use the AI receipt scanner, the image is sent to Anthropic Claude for analysis and then discarded. Nothing about your guest-mode entries is stored on our servers."],
     ["10. Children",
-      "Ringgit is intended for Malaysian taxpayers. We do not knowingly collect data from individuals under 18."],
+      "MakeCents is intended for Malaysian taxpayers. We do not knowingly collect data from individuals under 18."],
     ["11. Changes",
       "We may update this policy. The 'Last updated' date below will change and material changes will be announced in-app on your next sign-in."],
   ] : [
     ["1. Siapa kami",
-      "Ringgit ialah alat penjejakan cukai peribadi yang dikendalikan oleh pembangun individu di Malaysia. Hubungi: vick.selva92@gmail.com. Kami bertindak sebagai pengawal data untuk data peribadi yang anda serahkan melalui aplikasi ini."],
+      "MakeCents ialah alat penjejakan cukai peribadi yang dikendalikan oleh pembangun individu di Malaysia. Hubungi: vick.selva92@gmail.com. Kami bertindak sebagai pengawal data untuk data peribadi yang anda serahkan melalui aplikasi ini."],
     ["2. Data yang kami kumpul",
       "Nama dan tahun lahir anda (pilihan). Jika anda log masuk dengan Google: e-mel dan nama paparan anda. Angka pendapatan, amaun tuntutan pelepasan cukai, imej resit, dan metadata peniaga/amaun/tarikh daripada resit. Kami tidak meminta atau menyimpan nombor NRIC, nombor akaun bank, atau nombor kad pembayaran — dan kami meminta anda tidak memotret benda tersebut."],
     ["3. Kenapa kami kumpul",
       "Semata-mata untuk menyediakan penjejakan pelepasan cukai dan anggaran cukai mengikut peraturan LHDN. Kami tidak menjual, berkongsi, atau menggunakan data anda untuk pengiklanan. Kami tidak membina profil pengguna untuk pihak ketiga."],
     ["4. Pihak ketiga dan pemindahan rentas sempadan (PDPA s.129)",
-      "Ringgit menggunakan (a) Supabase untuk pangkalan data + storan imej, dengan pelayan di Singapura — bidang kuasa yang diiktiraf mempunyai undang-undang perlindungan data yang setara; (b) Anthropic Claude untuk analisis resit atas permintaan, diproses di Amerika Syarikat — imej resit dihantar untuk satu inferens sahaja dan tidak disimpan oleh Anthropic selepas permintaan; (c) Google OAuth untuk log masuk, dan (pilihan, hanya apabila anda tekan Eksport ke Drive) Google Drive, kedua-dua diproses di Amerika Syarikat. Dengan menerima skrin persetujuan, anda bersetuju dengan pemindahan rentas sempadan khusus ini."],
+      "MakeCents menggunakan (a) Supabase untuk pangkalan data + storan imej, dengan pelayan di Singapura — bidang kuasa yang diiktiraf mempunyai undang-undang perlindungan data yang setara; (b) Anthropic Claude untuk analisis resit atas permintaan, diproses di Amerika Syarikat — imej resit dihantar untuk satu inferens sahaja dan tidak disimpan oleh Anthropic selepas permintaan; (c) Google OAuth untuk log masuk, dan (pilihan, hanya apabila anda tekan Eksport ke Drive) Google Drive, kedua-dua diproses di Amerika Syarikat. Dengan menerima skrin persetujuan, anda bersetuju dengan pemindahan rentas sempadan khusus ini."],
     ["5. Tempoh penyimpanan",
       "Kami menyimpan data anda selagi akaun anda aktif, atau sehingga 2 tahun selepas log masuk terakhir anda, mengikut mana yang lebih singkat. Anda boleh mengeksport atau memadam data pada bila-bila masa daripada tab Lagi. LHDN secara berasingan mengesyorkan anda menyimpan salinan resit sendiri selama 7 tahun untuk audit — itu tanggungjawab anda, bukan kami."],
     ["6. Hak PDPA anda",
@@ -1081,7 +1081,7 @@ function PrivacyModal({ t, L, onClose }) {
     ["9. Mod tetamu",
       "Jika anda menggunakan mod tetamu, data aplikasi disimpan hanya dalam storan tempatan pelayar anda dan tidak pernah dihantar ke pelayan kami — dengan satu pengecualian: jika anda menggunakan pengimbas resit AI, imej dihantar ke Anthropic Claude untuk analisis dan kemudian dibuang. Tiada apa-apa tentang entri mod tetamu anda disimpan di pelayan kami."],
     ["10. Kanak-kanak",
-      "Ringgit bertujuan untuk pembayar cukai Malaysia. Kami tidak dengan sengaja mengumpul data daripada individu di bawah 18 tahun."],
+      "MakeCents bertujuan untuk pembayar cukai Malaysia. Kami tidak dengan sengaja mengumpul data daripada individu di bawah 18 tahun."],
     ["11. Perubahan",
       "Kami mungkin mengemas kini dasar ini. Tarikh 'Kemas kini terakhir' di bawah akan berubah dan perubahan material akan diumumkan dalam aplikasi pada log masuk anda seterusnya."],
   ];
@@ -1116,8 +1116,8 @@ function PrivacyModal({ t, L, onClose }) {
         ))}
         <div style={{ fontSize: 11, color: t.inkMute, marginTop: 10, paddingTop: 14, borderTop: `1px solid ${t.hair}` }}>
           {isEN
-            ? "Last updated: April 2026 · Ringgit by Vick · Not legal advice"
-            : "Kemas kini terakhir: April 2026 · Ringgit oleh Vick · Bukan nasihat undang-undang"}
+            ? "Last updated: April 2026 · MakeCents by Vick · Not legal advice"
+            : "Kemas kini terakhir: April 2026 · MakeCents oleh Vick · Bukan nasihat undang-undang"}
         </div>
       </div>
     </div>
@@ -1127,18 +1127,18 @@ function PrivacyModal({ t, L, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
-export default function Ringgit() {
+export default function MakeCents() {
   const [themeName, setThemeNameRaw] = useState(() => {
-    try { return localStorage.getItem("ringgit-theme") || "light"; } catch { return "light"; }
+    try { return localStorage.getItem("makecentstax-theme") || "light"; } catch { return "light"; }
   });
-  const setThemeName = (n) => { setThemeNameRaw(n); try { localStorage.setItem("ringgit-theme", n); } catch {} };
+  const setThemeName = (n) => { setThemeNameRaw(n); try { localStorage.setItem("makecentstax-theme", n); } catch {} };
   const t = THEMES[themeName];
 
   // ── Language ────────────────────────────────────────────────
   const [lang, setLangRaw] = useState(() => {
-    try { return localStorage.getItem("ringgit-lang") || "en"; } catch { return "en"; }
+    try { return localStorage.getItem("makecentstax-lang") || "en"; } catch { return "en"; }
   });
-  const setLang = (l) => { setLangRaw(l); try { localStorage.setItem("ringgit-lang", l); } catch {} };
+  const setLang = (l) => { setLangRaw(l); try { localStorage.setItem("makecentstax-lang", l); } catch {} };
   const L = makeL(lang);
 
   useEffect(() => {
@@ -1524,7 +1524,7 @@ export default function Ringgit() {
 
     const b = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
     const u = URL.createObjectURL(b);
-    const a = document.createElement("a"); a.href = u; a.download = "ringgit-backup.json"; a.click();
+    const a = document.createElement("a"); a.href = u; a.download = "makecentstax-backup.json"; a.click();
   };
 
   const importD = (e) => {
@@ -1581,14 +1581,14 @@ export default function Ringgit() {
   const handleSignOut = async () => {
     if (user?.provider === "google") { await supabase.auth.signOut(); }
     else {
-      // [Priority 7] Only touch Ringgit-owned keys
+      // [Priority 7] Only touch MakeCents-owned keys
       const d = ld(); delete d.user; sv(d);
       setUser(null); setScreen("welcome");
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Permanently delete your Ringgit account and ALL data? This cannot be undone.")) return;
+    if (!confirm("Permanently delete your MakeCents account and ALL data? This cannot be undone.")) return;
     try {
       if (user?.provider === "google" && user?.id) {
         // Delete all years of Supabase data
@@ -1616,8 +1616,8 @@ export default function Ringgit() {
         });
         await supabase.auth.signOut();
       } else {
-        // [Priority 7] Only remove Ringgit-owned keys, never clear the whole origin
-        clearRinggitStorage();
+        // [Priority 7] Only remove MakeCents-owned keys, never clear the whole origin
+        clearMakeCentsStorage();
         setUser(null);
         setScreen("welcome");
       }
@@ -1792,7 +1792,7 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ width: 72, height: 72, borderRadius: 20, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 28, color: "#fff", boxShadow: "0 12px 32px rgba(200,68,43,0.3)", marginBottom: 32 }}>RM</div>
-        <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, letterSpacing: -1.5, lineHeight: 1 }}>Ringgit.</div>
+        <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, letterSpacing: -1.5, lineHeight: 1 }}>MakeCents.</div>
         <div style={{ fontSize: 16, color: t.inkMute, marginTop: 12, lineHeight: 1.5, maxWidth: 300 }}>
           {L("welcome_tagline")}
         </div>
@@ -2404,9 +2404,9 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
       const token = await requestDriveToken();
       setDriveStep("uploading");
 
-      // ── Build folder structure: Ringgit → YAxxxx → Receipts ──
-      setExportProgress("Creating Ringgit folder…");
-      const rootId  = await driveMkFolder(token, "Ringgit", "root");
+      // ── Build folder structure: MakeCents → YAxxxx → Receipts ──
+      setExportProgress("Creating MakeCents folder…");
+      const rootId  = await driveMkFolder(token, "MakeCents", "root");
       const yaId    = await driveMkFolder(token, `YA${ya}`, rootId);
       const recId   = await driveMkFolder(token, "Receipts", yaId);
 
@@ -2436,7 +2436,7 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
       // ── Build CSV #1: Summary ───────────────────────────────
       setExportProgress("Building summary spreadsheet…");
       const summaryRows = [
-        ["Ringgit Tax Summary", "", ""],
+        ["MakeCents Tax Summary", "", ""],
         ["Year of Assessment", `YA${ya}`, ""],
         ["Exported", new Date().toLocaleString("en-GB"), ""],
         ["User",  user.name || "", user.email || ""],
@@ -2717,7 +2717,7 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
       </button>
 
       <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 20 }}>
-        Ringgit v4.5 · {L("not_fin_advice")}
+        MakeCents v4.5 · {L("not_fin_advice")}
       </div>
     </div>
   );
