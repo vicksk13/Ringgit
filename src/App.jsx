@@ -27,9 +27,35 @@
 //   2. Create credentials → OAuth 2.0 Client ID → Web application
 //   3. Authorised redirect URI: https://<your-project>.supabase.co/auth/v1/callback
 //   4. Paste Client ID + Secret into Supabase → Auth → Providers → Google
+//
+// ──────────────────────────────────────────────────────────────
+// AES-256-GCM ENCRYPTION — SCHEMA MIGRATION
+// ──────────────────────────────────────────────────────────────
+// Run this SQL ONCE in Supabase → SQL Editor before deploying this version.
+// The enc_payload column holds an AES-256-GCM ciphertext containing all
+// sensitive financial fields (amount, description, employer, merchant, etc.).
+// Non-sensitive index columns (user_id, ya, item_id, has_receipt, storage_url,
+// type) remain in plaintext so that RLS and Storage policies continue to work.
+//
+//   alter table claims   add column if not exists enc_payload text;
+//   alter table incomes  add column if not exists enc_payload text;
+//   alter table receipts add column if not exists enc_payload text;
+//
+// The app handles both old plaintext rows (enc_payload IS NULL) and new
+// encrypted rows transparently — no data migration is required.
+// ──────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
+import {
+  deriveKeyFromUserId,
+  loadOrCreateGuestKey,
+  buildEncPayload,
+  openEncPayload,
+  encryptBlob,
+  decryptBlob,
+  GUEST_DEVICE_KEY_LS,
+} from "./crypto";
 
 // ─────────────────────────────────────────────────────────────
 // IMAGE COMPRESSION
@@ -278,7 +304,18 @@ const validateReceiptFile = (file) => {
 };
 
 // [Priority 7] Remove only MakeCents-owned localStorage keys — never nuke the whole origin.
-const MAKECENTSTAX_LS_KEYS = ["makecentstax-v3", "makecentstax-v2", "makecentstax-theme", "makecentstax-lang", "makecentstax-consent"];
+// SK_ENC is the AES-256-GCM encrypted counterpart of SK (makecentstax-v3).
+// GUEST_DEVICE_KEY_LS ("makecentstax-dk") holds the guest encryption key.
+const SK_ENC = "makecentstax-v3-enc";
+const MAKECENTSTAX_LS_KEYS = [
+  "makecentstax-v3",
+  "makecentstax-v3-enc",  // encrypted guest store (new)
+  "makecentstax-v2",
+  "makecentstax-theme",
+  "makecentstax-lang",
+  "makecentstax-consent",
+  GUEST_DEVICE_KEY_LS,    // guest device encryption key (from crypto.js)
+];
 const clearMakeCentsStorage = () => MAKECENTSTAX_LS_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch {} });
 
 // [Priority 8] PDPA consent record — versioned so re-consent is triggered if policy changes.
@@ -836,6 +873,60 @@ const SK = "makecentstax-v3";
 const ld = () => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch { return {}; } };
 const sv = (d) => { try { localStorage.setItem(SK, JSON.stringify(d)); } catch {} };
 
+// ─────────────────────────────────────────────────────────────
+// ENCRYPTED localStorage HELPERS (guest mode)
+// ─────────────────────────────────────────────────────────────
+// ldAsync / svAsync transparently layer AES-256-GCM encryption over the
+// guest data store when a CryptoKey is available.  If no key is supplied
+// (edge case during initialisation), they fall back to the plaintext ld/sv.
+//
+// The encrypted blob lives in SK_ENC ("makecentstax-v3-enc").  The plaintext
+// SK ("makecentstax-v3") is retained as a legacy read-path fallback so that
+// users who had data before this version can still load it on first run.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Loads and decrypts the guest data store.
+ * Falls back to plaintext SK if no encrypted blob exists (legacy migration path).
+ *
+ * @param   {CryptoKey|null} key
+ * @returns {Promise<object>}
+ */
+const ldAsync = async (key) => {
+  if (!key) return ld();
+  try {
+    const b64 = localStorage.getItem(SK_ENC);
+    if (b64) {
+      const decrypted = await decryptBlob(key, b64);
+      if (decrypted && typeof decrypted === "object") return decrypted;
+    }
+  } catch (e) {
+    console.warn("[MakeCents] ldAsync: encrypted blob unreadable, falling back to plaintext.", e?.message);
+  }
+  // Plaintext fallback — covers first run after the encryption upgrade.
+  return ld();
+};
+
+/**
+ * Encrypts and persists the guest data store.
+ * Also removes the old plaintext key if it exists (one-time migration clean-up).
+ *
+ * @param   {object}         data
+ * @param   {CryptoKey|null} key
+ */
+const svAsync = async (data, key) => {
+  if (!key) { sv(data); return; }
+  try {
+    const b64 = await encryptBlob(key, data);
+    localStorage.setItem(SK_ENC, b64);
+    // Clean up legacy plaintext store after successful encrypted write.
+    try { localStorage.removeItem(SK); } catch {}
+  } catch (e) {
+    console.warn("[MakeCents] svAsync: encryption failed, writing plaintext fallback.", e?.message);
+    sv(data);
+  }
+};
+
 const migrateOld = () => {
   try {
     const old = JSON.parse(localStorage.getItem("makecentstax-v2") || "{}");
@@ -1052,7 +1143,7 @@ function PrivacyModal({ t, L, onClose }) {
     ["6. Your PDPA rights",
       "Access, correct, or withdraw consent: contact vick.selva92@gmail.com. Portability: use the Download JSON backup or Export to Google Drive features in the More tab. Erasure: use Delete account in the More tab — this removes all database rows and stored receipt images. Lodge complaints with the Personal Data Protection Commissioner (pdp.gov.my) if you believe your rights have been breached."],
     ["7. Security",
-      "All network traffic uses HTTPS (TLS). Database access is protected by Supabase Row Level Security — your records are scoped to your user ID and not visible to other users. Receipt images are stored in a private bucket keyed by your user ID. Anthropic API keys are held server-side and never exposed in the browser. Passwords are not used — sign-in is delegated to Google OAuth."],
+      "All network traffic uses HTTPS (TLS). Database access is protected by Supabase Row Level Security — your records are scoped to your user ID and not visible to other users. All sensitive financial fields (income amounts, relief claim amounts, merchant names, descriptions) are encrypted at rest using AES-256-GCM, with a key derived in your browser via PBKDF2-SHA-256 (310 000 iterations) from your user identity — this key is never transmitted to any server. Receipt images are stored in a private bucket keyed by your user ID. Anthropic API keys are held server-side and never exposed in the browser. Passwords are not used — sign-in is delegated to Google OAuth."],
     ["8. Data breach commitment (PDPA amendment 2024)",
       "If we become aware of a personal data breach that is likely to cause significant harm, we will notify the Personal Data Protection Commissioner within 72 hours and notify affected users via email and an in-app notice as soon as practicable, consistent with s.12B of the amended PDPA."],
     ["9. Guest mode",
@@ -1075,7 +1166,7 @@ function PrivacyModal({ t, L, onClose }) {
     ["6. Hak PDPA anda",
       "Akses, betulkan, atau tarik balik persetujuan: hubungi vick.selva92@gmail.com. Kebolehalihan: gunakan ciri Muat turun sandaran JSON atau Eksport ke Google Drive di tab Lagi. Pemadaman: gunakan Padam akaun di tab Lagi — ini membuang semua baris pangkalan data dan imej resit yang disimpan. Failkan aduan dengan Pesuruhjaya Perlindungan Data Peribadi (pdp.gov.my) jika anda percaya hak anda telah dilanggar."],
     ["7. Keselamatan",
-      "Semua trafik rangkaian menggunakan HTTPS (TLS). Akses pangkalan data dilindungi oleh Supabase Row Level Security — rekod anda diskop kepada ID pengguna anda dan tidak kelihatan kepada pengguna lain. Imej resit disimpan dalam baldi peribadi yang dikunci dengan ID pengguna anda. Kekunci API Anthropic disimpan di sisi pelayan dan tidak pernah didedahkan di pelayar. Kata laluan tidak digunakan — log masuk diserahkan kepada Google OAuth."],
+      "Semua trafik rangkaian menggunakan HTTPS (TLS). Akses pangkalan data dilindungi oleh Supabase Row Level Security — rekod anda diskop kepada ID pengguna anda dan tidak kelihatan kepada pengguna lain. Semua medan kewangan sensitif (amaun pendapatan, amaun tuntutan pelepasan, nama peniaga, penerangan) disulitkan semasa rehat menggunakan AES-256-GCM, dengan kunci yang diterbitkan dalam pelayar anda melalui PBKDF2-SHA-256 (310 000 lelaran) daripada identiti pengguna anda — kunci ini tidak pernah dihantar ke mana-mana pelayan. Imej resit disimpan dalam baldi peribadi yang dikunci dengan ID pengguna anda. Kekunci API Anthropic disimpan di sisi pelayan dan tidak pernah didedahkan di pelayar. Kata laluan tidak digunakan — log masuk diserahkan kepada Google OAuth."],
     ["8. Komitmen pelanggaran data (pindaan PDPA 2024)",
       "Jika kami mendapat tahu tentang pelanggaran data peribadi yang mungkin menyebabkan bahaya besar, kami akan memaklumkan Pesuruhjaya Perlindungan Data Peribadi dalam tempoh 72 jam dan memaklumkan pengguna yang terjejas melalui e-mel dan notis dalam aplikasi secepat mungkin, selaras dengan s.12B PDPA yang dipinda."],
     ["9. Mod tetamu",
@@ -1168,6 +1259,16 @@ export default function MakeCents() {
   const [pendingAuth,   setPendingAuth]   = useState(null); // "google" | "guest"
   const [showPrivacy,   setShowPrivacy]   = useState(false);
 
+  // ── AES-256-GCM encryption key ───────────────────────────────────────────
+  // Stored in a ref (not state) so it never triggers a re-render and is never
+  // included in React's reconciliation or serialised into any snapshot.
+  // For Google users: derived ephemerally from the Supabase user UUID via
+  //   PBKDF2-SHA-256 (310 000 iterations).  Never persisted to disk.
+  // For guest users: random 256-bit key loaded from (or generated into)
+  //   localStorage["makecentstax-dk"].
+  // Zeroed (set to null) on sign-out so the key does not linger in memory.
+  const cryptoKeyRef = useRef(null);
+
   const hasConsent = () => hasConsentStored();
 
   const triggerGoogle = async () => {
@@ -1199,23 +1300,47 @@ export default function MakeCents() {
   useEffect(() => { migrateOld(); }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const u = session.user;
+        // Derive the AES-256-GCM key BEFORE setting user/screen so that
+        // loadFromSupabase (triggered by the screen/user state change) can
+        // decrypt enc_payload rows immediately.
+        try {
+          cryptoKeyRef.current = await deriveKeyFromUserId(u.id);
+        } catch (e) {
+          console.error("[MakeCents/crypto] Key derivation failed on session restore:", e?.message);
+        }
         setUser({ id: u.id, name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User", email: u.email, provider: "google" });
         setScreen("app");
       } else {
         const d = ld();
-        if (d.user) { setUser(d.user); setScreen("app"); }
+        if (d.user) {
+          // Guest returning — initialise the device key before restoring data.
+          try {
+            cryptoKeyRef.current = await loadOrCreateGuestKey();
+          } catch (e) {
+            console.error("[MakeCents/crypto] Guest key init failed on session restore:", e?.message);
+          }
+          setUser(d.user); setScreen("app");
+        }
       }
       setLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const u = session.user;
+        // Derive the AES-256-GCM key before any data operations fire.
+        try {
+          cryptoKeyRef.current = await deriveKeyFromUserId(u.id);
+        } catch (e) {
+          console.error("[MakeCents/crypto] Key derivation failed on auth state change:", e?.message);
+        }
         setUser({ id: u.id, name: u.user_metadata?.full_name || u.email?.split("@")[0] || "User", email: u.email, provider: "google" });
         setScreen("app");
       } else if (event === "SIGNED_OUT") {
+        // Zero the key reference so it does not linger in memory post sign-out.
+        cryptoKeyRef.current = null;
         setUser(null); setScreen("welcome");
       }
     });
@@ -1227,21 +1352,24 @@ export default function MakeCents() {
     if (user?.provider === "google" && user?.id) {
       loadFromSupabase();
     } else {
-      const d = ld();
-      const yd = d[ya] || {};
-      setEntries(yd.entries || []);
-      setReceipts(yd.receipts || []);
-      setIncomes(yd.incomes || []);
-      setRentalIncomes(yd.rentalIncomes || []);
+      // Guest mode: load from encrypted localStorage (ldAsync falls back to
+      // plaintext ld() if no encrypted blob exists yet — migration-safe).
+      ldAsync(cryptoKeyRef.current).then(d => {
+        const yd = d[ya] || {};
+        setEntries(yd.entries || []);
+        setReceipts(yd.receipts || []);
+        setIncomes(yd.incomes || []);
+        setRentalIncomes(yd.rentalIncomes || []);
+      });
     }
   }, [ya, screen, user?.id]); // eslint-disable-line
 
   useEffect(() => {
     if (screen === "app" && user?.provider !== "google") {
-      const d = ld();
-      d[ya] = { entries, receipts, incomes, rentalIncomes };
-      d.user = user;
-      sv(d);
+      // Persist guest data to AES-256-GCM encrypted localStorage blob.
+      // svAsync falls back to plaintext sv() if the key is unavailable.
+      const data = { [ya]: { entries, receipts, incomes, rentalIncomes }, user };
+      svAsync(data, cryptoKeyRef.current);
     }
   }, [entries, receipts, incomes, rentalIncomes, user, ya, screen]);
 
@@ -1255,17 +1383,64 @@ export default function MakeCents() {
         supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
       ]);
       if (e1 || e2 || e3) throw e1 || e2 || e3;
-      setEntries((cl || []).map(c => ({
-        id: c.id || newId(),
-        itemId: c.item_id, amount: c.amount, units: c.units || 1,
-        desc: c.description || "Entry",
-        date: c.created_at ? new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "",
-        hasReceipt: !!c.has_receipt,
-      })));
-      setIncomes((inc || []).filter(i => i.type !== "rental"));
-      setRentalIncomes((inc || []).filter(i => i.type === "rental"));
-      // Prefer Supabase Storage URL over stored base64
-      setReceipts((rec || []).map(r => ({ ...r, data: r.storage_url || r.data })));
+
+      const key = cryptoKeyRef.current;
+
+      // ── Decrypt claims ────────────────────────────────────────
+      // If enc_payload is present, decrypt it to recover amount + description + units.
+      // Legacy rows (enc_payload IS NULL) fall back to the plaintext columns.
+      const decryptedClaims = await Promise.all(
+        (cl || []).map(async (c) => {
+          const payload = await openEncPayload(key, c.enc_payload);
+          return {
+            id:         c.id || newId(),
+            itemId:     c.item_id,
+            amount:     payload?.amount     ?? c.amount      ?? 0,
+            units:      payload?.units      ?? c.units       ?? 1,
+            desc:       payload?.description ?? c.description ?? "Entry",
+            date:       c.created_at
+              ? new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })
+              : "",
+            hasReceipt: !!c.has_receipt,
+          };
+        })
+      );
+
+      // ── Decrypt incomes ───────────────────────────────────────
+      const decryptedIncomes = await Promise.all(
+        (inc || []).map(async (i) => {
+          const payload = await openEncPayload(key, i.enc_payload);
+          return {
+            ...i,
+            amount:        payload?.amount        ?? i.amount,
+            employer:      payload?.employer      ?? i.employer,
+            period:        payload?.period        ?? i.period,
+            start:         payload?.start         ?? i.start,
+            end:           payload?.end           ?? i.end,
+            property_desc: payload?.property_desc ?? i.property_desc,
+          };
+        })
+      );
+
+      // ── Decrypt receipts ──────────────────────────────────────
+      const decryptedReceipts = await Promise.all(
+        (rec || []).map(async (r) => {
+          const payload = await openEncPayload(key, r.enc_payload);
+          return {
+            ...r,
+            data:     r.storage_url || r.data,
+            merchant: payload?.merchant ?? r.merchant,
+            amount:   payload?.amount   ?? r.amount,
+            name:     payload?.name     ?? r.name,
+            date:     payload?.date     ?? r.date,
+          };
+        })
+      );
+
+      setEntries(decryptedClaims);
+      setIncomes(decryptedIncomes.filter(i => i.type !== "rental"));
+      setRentalIncomes(decryptedIncomes.filter(i => i.type === "rental"));
+      setReceipts(decryptedReceipts);
     } catch (e) {
       console.error("Supabase load error", e);
       showSyncError("Failed to load cloud data. Check your connection.");
@@ -1343,10 +1518,24 @@ export default function MakeCents() {
     setEntries(p => [newEntry, ...p]);
     if (user?.provider === "google" && user?.id) {
       try {
+        // Encrypt sensitive financial fields into enc_payload.
+        // The plaintext amount column is set to 0 as a non-informative placeholder —
+        // it satisfies NOT NULL constraints while keeping the real value encrypted.
+        const enc_payload = await buildEncPayload(cryptoKeyRef.current, {
+          amount:      newEntry.amount,
+          description: newEntry.desc,
+          units:       units,
+        });
         const { error } = await supabase.from("claims").insert({
-          id: entryId, // [Bug fix] pass client UUID so .delete().eq("id", entryId) works
-          user_id: user.id, ya, item_id: itemId,
-          amount: newEntry.amount, units, description: newEntry.desc, has_receipt: !!hasReceipt,
+          id:          entryId,
+          user_id:     user.id,
+          ya,
+          item_id:     itemId,
+          amount:      0,           // placeholder — real value is in enc_payload
+          units:       1,           // placeholder
+          description: null,        // placeholder
+          has_receipt: !!hasReceipt,
+          enc_payload,
         });
         if (error) throw error;
       } catch (e) {
@@ -1383,10 +1572,21 @@ export default function MakeCents() {
     setIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
       try {
-        const { id: _id, ...incMeta } = inc;
+        const enc_payload = await buildEncPayload(cryptoKeyRef.current, {
+          amount:   inc.amount,
+          employer: inc.employer,
+          period:   inc.period,
+          start:    inc.start,
+          end:      inc.end,
+        });
         const { error } = await supabase.from("incomes").insert({
-          id: inc.id, // [Bug fix] pass client UUID so deletes match
-          ...incMeta, user_id: user.id, ya, type: "employment",
+          id:          inc.id,
+          user_id:     user.id,
+          ya,
+          type:        "employment",
+          amount:      0,       // placeholder — real value in enc_payload
+          employer:    null,    // placeholder
+          enc_payload,
         });
         if (error) throw error;
       } catch (e) { console.error("Income save error:", { ya, msg: e?.message }); showSyncError("Income saved locally but failed to sync."); }
@@ -1406,10 +1606,19 @@ export default function MakeCents() {
     setRentalIncomes(p => [...p, inc]);
     if (user?.provider === "google" && user?.id) {
       try {
-        const { id: _id, ...incMeta } = inc;
+        const enc_payload = await buildEncPayload(cryptoKeyRef.current, {
+          amount:        inc.amount,
+          property_desc: inc.employer || inc.property_desc,
+          period:        inc.period,
+        });
         const { error } = await supabase.from("incomes").insert({
-          id: inc.id, // [Bug fix] pass client UUID so deletes match
-          ...incMeta, user_id: user.id, ya, type: "rental",
+          id:          inc.id,
+          user_id:     user.id,
+          ya,
+          type:        "rental",
+          amount:      0,       // placeholder — real value in enc_payload
+          employer:    null,    // placeholder
+          enc_payload,
         });
         if (error) throw error;
       } catch (e) { console.error("Rental save error:", { ya, msg: e?.message }); showSyncError("Rental income saved locally but failed to sync."); }
@@ -1437,19 +1646,27 @@ export default function MakeCents() {
 
     if (user?.provider === "google" && user?.id) {
       try {
-        // [Bug fix] pass rec.id so deletes via .eq("id", rec.id) match the DB record
+        // Encrypt sensitive receipt metadata.
+        // storage_url, item_id, has_receipt remain cleartext — they are needed
+        // by Storage RLS policies and by the app to fetch the image.
+        const enc_payload = await buildEncPayload(cryptoKeyRef.current, {
+          merchant: rec.merchant || null,
+          amount:   typeof rec.amount === "number" ? rec.amount : parseFloat(rec.amount) || 0,
+          name:     rec.name || null,
+          date:     rec.date || new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        });
         const payload = {
           id:          rec.id,
           user_id:     user.id,
           ya,
-          name:        rec.name || null,
           item_id:     rec.item_id || rec.itemId || null,
-          merchant:    rec.merchant || null,
-          amount:      typeof rec.amount === "number" ? rec.amount : parseFloat(rec.amount) || 0,
-          date:        rec.date || new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
           storage_url: storageUrl,
           has_receipt: !!storageUrl,
-          // Note: raw base64 intentionally omitted — image lives in Storage bucket.
+          amount:      0,     // placeholder — real value in enc_payload
+          merchant:    null,  // placeholder
+          name:        null,  // placeholder
+          date:        null,  // placeholder
+          enc_payload,
         };
         const { error } = await supabase.from("receipts").insert(payload);
         if (error) {
@@ -1493,6 +1710,7 @@ export default function MakeCents() {
   // For Google users: fetches all years from Supabase (not just localStorage)
   const exportD = async () => {
     let exportData = {};
+    const key = cryptoKeyRef.current;
 
     if (user?.provider === "google" && user?.id) {
       exportData.user = user;
@@ -1503,15 +1721,52 @@ export default function MakeCents() {
             supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", year),
             supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", year),
           ]);
+
+          // Decrypt enc_payload for each table before building the export object.
+          const decClaims = await Promise.all(
+            (cl || []).map(async (c) => {
+              const p = await openEncPayload(key, c.enc_payload);
+              return {
+                id:          c.id,
+                itemId:      c.item_id,
+                amount:      p?.amount      ?? c.amount      ?? 0,
+                units:       p?.units       ?? c.units       ?? 1,
+                desc:        p?.description ?? c.description ?? "Entry",
+                hasReceipt:  !!c.has_receipt,
+              };
+            })
+          );
+          const decIncomes = await Promise.all(
+            (inc || []).map(async (i) => {
+              const p = await openEncPayload(key, i.enc_payload);
+              return {
+                ...i,
+                amount:        p?.amount        ?? i.amount,
+                employer:      p?.employer      ?? i.employer,
+                period:        p?.period        ?? i.period,
+                property_desc: p?.property_desc ?? i.property_desc,
+              };
+            })
+          );
+          const decReceipts = await Promise.all(
+            (rec || []).map(async (r) => {
+              const p = await openEncPayload(key, r.enc_payload);
+              return {
+                ...r,
+                merchant: p?.merchant ?? r.merchant,
+                amount:   p?.amount   ?? r.amount,
+                name:     p?.name     ?? r.name,
+                date:     p?.date     ?? r.date,
+                data:     r.storage_url || null,
+              };
+            })
+          );
+
           exportData[year] = {
-            entries: (cl || []).map(c => ({
-              id: c.id, itemId: c.item_id, amount: c.amount,
-              units: c.units || 1, desc: c.description || "Entry", hasReceipt: !!c.has_receipt,
-            })),
-            incomes: (inc || []).filter(i => i.type !== "rental"),
-            rentalIncomes: (inc || []).filter(i => i.type === "rental"),
-            // storage_url kept for reference; base64 not exported (too large)
-            receipts: (rec || []).map(r => ({ ...r, data: r.storage_url || null })),
+            entries:       decClaims,
+            incomes:       decIncomes.filter(i => i.type !== "rental"),
+            rentalIncomes: decIncomes.filter(i => i.type === "rental"),
+            receipts:      decReceipts,
           };
         } catch (e) {
           console.error(`Export error YA${year}:`, e);
@@ -1519,7 +1774,8 @@ export default function MakeCents() {
         }
       }
     } else {
-      exportData = ld();
+      // Guest export: ldAsync decrypts the localStorage blob before returning it.
+      exportData = await ldAsync(key);
     }
 
     const b = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
@@ -1579,6 +1835,10 @@ export default function MakeCents() {
   };
 
   const handleSignOut = async () => {
+    // Zero the key reference immediately — do not wait for Supabase sign-out
+    // to complete before clearing it, so the key is not accessible if the
+    // async operation is interrupted.
+    cryptoKeyRef.current = null;
     if (user?.provider === "google") { await supabase.auth.signOut(); }
     else {
       // [Priority 7] Only touch MakeCents-owned keys
@@ -1675,15 +1935,28 @@ export default function MakeCents() {
       <div style={baseStyle(t)}>
         <style>{globalCSS}</style>
         <Signup t={t} L={L} name={nameIn} setName={setNameIn} yob={yobIn} setYob={setYobIn}
-          onDone={() => {
+          onDone={async () => {
+            // Initialise guest encryption key BEFORE setting user/screen so that
+            // the first localStorage write (triggered by the screen state change)
+            // is already encrypted.
+            try {
+              cryptoKeyRef.current = await loadOrCreateGuestKey();
+            } catch (e) {
+              console.error("[MakeCents/crypto] Guest key init failed on signup:", e?.message);
+            }
             const u = { name: nameIn || "Guest", yob: yobIn, provider: "guest" };
             setUser(u); setScreen("app");
-            const d = ld(); d.user = u; sv(d);
+            await svAsync({ user: u }, cryptoKeyRef.current);
           }}
-          onSkip={() => {
+          onSkip={async () => {
+            try {
+              cryptoKeyRef.current = await loadOrCreateGuestKey();
+            } catch (e) {
+              console.error("[MakeCents/crypto] Guest key init failed on skip:", e?.message);
+            }
             const u = { name: "Guest", provider: "guest" };
             setUser(u); setScreen("app");
-            const d = ld(); d.user = u; sv(d);
+            await svAsync({ user: u }, cryptoKeyRef.current);
           }} />
       </div>
     );
@@ -1755,6 +2028,7 @@ export default function MakeCents() {
             onPrivacy={() => setShowPrivacy(true)}
             onSignInGoogle={handleGoogleClick}
             supabase={supabase}
+            cryptoKey={cryptoKeyRef.current}
             entries={entries} receipts={receipts} incomes={incomes} rentalIncomes={rentalIncomes} />
         )}
       </div>
@@ -2379,7 +2653,7 @@ function ReceiptsTab({ t, receipts, onRemove, onView }) {
 // MORE TAB
 // ─────────────────────────────────────────────────────────────
 function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut, onDeleteAccount, onReset, onExport,
-  onImport, onPrivacy, onSignInGoogle, supabase, entries, receipts, incomes, rentalIncomes }) {
+  onImport, onPrivacy, onSignInGoogle, supabase, cryptoKey, entries, receipts, incomes, rentalIncomes }) {
   const [exporting,      setExporting]      = useState(false);
   const [exportProgress, setExportProgress] = useState("");
   const [driveStep,      setDriveStep]      = useState(""); // "" | "requesting" | "uploading" | "done"
@@ -2421,10 +2695,29 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
           supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
           supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
         ]);
-        exportEntries  = cl || [];
-        exportIncomes  = (inc || []).filter(i => i.type !== "rental");
-        exportRentals  = (inc || []).filter(i => i.type === "rental");
-        exportReceipts = rec || [];
+
+        // Decrypt enc_payload for each row so that CSV columns contain
+        // the real values, not zeros/nulls from the placeholder columns.
+        exportEntries = await Promise.all(
+          (cl || []).map(async (c) => {
+            const p = await openEncPayload(cryptoKey, c.enc_payload);
+            return { ...c, amount: p?.amount ?? c.amount ?? 0, description: p?.description ?? c.description };
+          })
+        );
+        const allInc = await Promise.all(
+          (inc || []).map(async (i) => {
+            const p = await openEncPayload(cryptoKey, i.enc_payload);
+            return { ...i, amount: p?.amount ?? i.amount ?? 0, employer: p?.employer ?? i.employer, period: p?.period ?? i.period };
+          })
+        );
+        exportIncomes  = allInc.filter(i => i.type !== "rental");
+        exportRentals  = allInc.filter(i => i.type === "rental");
+        exportReceipts = await Promise.all(
+          (rec || []).map(async (r) => {
+            const p = await openEncPayload(cryptoKey, r.enc_payload);
+            return { ...r, merchant: p?.merchant ?? r.merchant, amount: p?.amount ?? r.amount ?? 0, name: p?.name ?? r.name, date: p?.date ?? r.date };
+          })
+        );
       }
 
       // Totals for the summary sheet
