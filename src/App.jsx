@@ -713,17 +713,18 @@ const REL = {
       { id: "G17ins", name: "Life insurance / takaful",    cap: 3000, desc: "Life insurance or takaful premiums. Sub-limit of G17 combined RM7,000 cap (shared with EPF)" },
       { id: "G17epf", name: "EPF contributions",           cap: 4000, desc: "Mandatory or voluntary EPF contributions. Sub-limit of G17 combined RM7,000 cap (shared with insurance)" },
       { id: "G18",    name: "PRS / Deferred annuity",      cap: 3000, desc: "Private Retirement Scheme" },
-      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Insurance premiums for education or medical" },
+      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Medical insurance & takaful medical plans (protect against hospital bills)" },
       { id: "G20",    name: "SOCSO / EIS",                  cap: 350,  desc: "SOCSO + Employment Insurance contributions" },
     ]},
     { id: "education", name: "Education & Savings", items: [
-      { id: "G5",  name: "Education fees (self)", cap: 7000, desc: "Postgraduate, professional. Upskilling sub-limit RM2k" },
+      { id: "G5",  name: "Education fees (self)", cap: 7000, desc: "Master's/Doctorate (any field), Professional courses (law, accounting, Islamic financing, technical, vocational, scientific, technology). Upskilling: RM2k sub-limit" },
       { id: "G13", name: "SSPN net savings",      cap: 8000, desc: "Net deposits minus withdrawals" },
     ]},
     { id: "children", name: "Children", items: [
       { id: "G16a", name: "Child under 18",           cap: 2000, desc: "RM2,000 per unmarried child",               perUnit: true, unitName: "children" },
       { id: "G16b", name: "Child 18+ in education",   cap: 8000, desc: "Diploma+ MY / degree+ overseas",            perUnit: true, unitName: "children" },
-      { id: "G16c", name: "Disabled child",           cap: 8000, desc: "Additional RM8k if in higher education",    perUnit: true, unitName: "children" },
+      { id: "G16c", name: "Disabled child",           cap: 8000, desc: "Base RM8,000. If 18+, unmarried, diploma+: additional RM8,000 (total potential RM16,000 per child)"
+,    perUnit: true, unitName: "children" },
       { id: "G12",  name: "Childcare / kindergarten", cap: 3000, desc: "Child aged 6 and below" },
       { id: "G11",  name: "Breastfeeding equipment",  cap: 1000, desc: "Child aged 2 and below. Once every 2 years" },
     ]},
