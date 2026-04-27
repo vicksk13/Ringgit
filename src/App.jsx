@@ -709,7 +709,25 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
   };
   return map[name] || null;
 };
-
+// ─────────────────────────────────────────────────────────────
+// MAKECENTS LOGO
+// ─────────────────────────────────────────────────────────────
+const MakeCentsLogo = ({ size = 72 }) => (
+  <svg
+    width={size} height={size}
+    viewBox="0 0 200 200"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ display: "block", flexShrink: 0 }}
+  >
+    <rect width="200" height="200" rx="36" fill="#E44230" />
+    {/* Dark right c — underneath at the centre crossing */}
+    <path fill="none" stroke="#1E1E1E" strokeWidth="28" strokeLinecap="round"
+      d="M 97,75 C 110,50 132,42 152,42 C 182,42 197,68 197,100 C 197,132 182,158 152,158 C 132,158 110,150 97,125" />
+    {/* White left C — on top so white wins at the crossing */}
+    <path fill="none" stroke="white" strokeWidth="34" strokeLinecap="round"
+      d="M 103,125 C 90,148 65,158 45,158 C 15,158 3,132 3,100 C 3,68 15,42 45,42 C 65,42 90,52 103,75" />
+  </svg>
+);
 const CAT_ICON = {
   personal: "user", medical: "heart", lifestyle: "sparkle",
   insurance: "shield", education: "sparkle", children: "user",
@@ -1908,7 +1926,7 @@ export default function MakeCents() {
     return (
       <div style={{ ...baseStyle(t), display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{globalCSS}</style>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 28, color: "#fff", fontFamily: FONT }}>RM</div>
+        <MakeCentsLogo size={72} />
       </div>
     );
   }
@@ -2065,7 +2083,9 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 28, color: "#fff", boxShadow: "0 12px 32px rgba(200,68,43,0.3)", marginBottom: 32 }}>RM</div>
+        <div style={{ marginBottom: 32, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}>
+  <MakeCentsLogo size={72} />
+</div>
         <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, letterSpacing: -1.5, lineHeight: 1 }}>MakeCents.</div>
         <div style={{ fontSize: 16, color: t.inkMute, marginTop: 12, lineHeight: 1.5, maxWidth: 300 }}>
           {L("welcome_tagline")}
@@ -2097,7 +2117,7 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
 function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "72px 24px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
-      <div style={{ width: 56, height: 56, borderRadius: 16, background: t.red, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", marginBottom: 24 }}>RM</div>
+      <div style={{ marginBottom: 24 }}><MakeCentsLogo size={56} /></div>
       <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{L("setup_profile")}</div>
       <div style={{ fontSize: 14, color: t.inkMute, marginTop: 6, marginBottom: 32 }}>{L("setup_sub")}</div>
       {[
@@ -2129,7 +2149,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: t.red, color: "#fff", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>RM</div>
+          <MakeCentsLogo size={38} />
           <div>
             <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 500 }}>{L("welcome_back")}</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: t.ink, letterSpacing: -0.3 }}>
