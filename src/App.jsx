@@ -2123,28 +2123,37 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* KPI: Est Tax + Relief unclaimed */}
+          {/* KPIs: Total Relief (main) + Unclaimed + Est Tax */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Main: Total Relief Claimed */}
             <div style={{ background: t.ink, borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -18, right: -18, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.8 }} />
               <div style={{ position: "relative" }}>
                 <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-                  Est. Tax · YA{ya}{taxIsTentative && <span style={{ marginLeft: 4, opacity: 0.6 }}>~est</span>}
+                  Total Relief · YA{ya}
                 </div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
+                <div style={{ height: 2, background: "rgba(251,247,238,0.2)", borderRadius: 2, marginTop: 8 }}>
+                  <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
                 </div>
               </div>
             </div>
-            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ fontSize: 9, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Relief unclaimed</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                RM {Math.max(0, eligibleCapTotal - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            {/* Row: Unclaimed + Est Tax */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
+                <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Unclaimed</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  RM {Math.max(0, eligibleCapTotal - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
               </div>
-              <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
-                <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal)) * 100)}%`, height: "100%", background: t.red, borderRadius: 3 }} />
+              <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
+                <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: t.inkMute, marginTop: 4 }}>RM {totalRelief.toLocaleString()} of RM {eligibleCapTotal.toLocaleString()} claimed</div>
             </div>
           </div>
 
@@ -2211,7 +2220,7 @@ export default function MakeCents() {
 
           {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 900, width: "100%", margin: "0 auto" }}>
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
             {yaSpinner}
             {tabContent}
           </div>
@@ -2441,26 +2450,36 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         </div>
       </div>
 
-      {/* KPI cards — Est Tax + Relief Remaining */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-        <div style={{ background: t.ink, borderRadius: 16, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: t.red, opacity: 0.75 }} />
+      {/* KPI cards — Total Relief (main) + Unclaimed + Est Tax */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+        {/* Main: Total Relief */}
+        <div style={{ background: t.ink, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, borderRadius: "50%", background: t.red, opacity: 0.75 }} />
           <div style={{ position: "relative" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.cardLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-              Est. Tax · YA{ya}{taxIsTentative && <span style={{ marginLeft: 4, opacity: 0.6 }}>~est</span>}
+              Total Relief · YA{ya}
             </div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-              RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
+            <div style={{ height: 3, background: "rgba(251,247,238,0.18)", borderRadius: 2, marginTop: 10 }}>
+              <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
             </div>
           </div>
         </div>
-        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Relief unclaimed</div>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-            RM {Math.max(0, (eligibleCapTotal || 0) - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+        {/* Row: Unclaimed + Est Tax */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Unclaimed</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              RM {Math.max(0, (eligibleCapTotal || 0) - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
           </div>
-          <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
-            <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%`, height: "100%", background: t.red, borderRadius: 3 }} />
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
           </div>
         </div>
       </div>
@@ -2542,13 +2561,28 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-          <div style={{ background: `linear-gradient(120deg,${t.red},#dd5a32)`, borderRadius: 14, padding: 18, color: '#fff' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1 }}>ESTIMATED TAX</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 50, lineHeight: 1.04, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
-            <div style={{ fontSize: 13, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+          {/* Hero: Total Relief Claimed */}
+          <div style={{ background: t.ink, borderRadius: 14, padding: 22, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: t.red, opacity: 0.75 }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: t.cardLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>TOTAL RELIEF · YA{ya}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 52, lineHeight: 1.02, color: t.bg, fontVariantNumeric: 'tabular-nums' }}>RM {totalRelief.toLocaleString()}</div>
+              <div style={{ height: 4, background: 'rgba(251,247,238,0.15)', borderRadius: 4, marginTop: 14 }}><div style={{ width: `${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`, height: '100%', background: t.red, borderRadius: 4 }}/></div>
+              <div style={{ fontSize: 12, color: t.cardLabelSoft, marginTop: 6 }}>of RM {totalCap.toLocaleString()} cap · {Math.round((totalRelief/Math.max(1,totalCap))*100)}% utilised</div>
+            </div>
           </div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:FONT_DISPLAY,fontSize:52,lineHeight:1.05,marginTop:2}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared</div></div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:FONT_DISPLAY,fontSize:52,lineHeight:1.05,marginTop:2}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
+          {/* Unclaimed relief */}
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}>
+            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase'}}>UNCLAIMED</div>
+            <div style={{fontFamily:FONT_DISPLAY,fontSize:48,lineHeight:1.05,marginTop:4,color:t.red,fontVariantNumeric:'tabular-nums'}}>RM {remainingRelief.toLocaleString()}</div>
+            <div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>Still available to claim</div>
+          </div>
+          {/* Est. Tax */}
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}>
+            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase'}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
+            <div style={{fontFamily:FONT_DISPLAY,fontSize:48,lineHeight:1.05,marginTop:4,fontVariantNumeric:'tabular-nums'}}>RM {estTax.toLocaleString()}</div>
+            <div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>Based on declared income</div>
+          </div>
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon name="sparkleAi" size={19} color="#fff" /></div>
@@ -2690,6 +2724,7 @@ function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRen
   // ── EA Form AI state ─────────────────────────────────────────
   const [aiLoading,   setAiLoading]   = useState(false);
   const [aiErr,       setAiErr]       = useState(null);
+  const [showManual,  setShowManual]  = useState(false);
   const fileRef = useRef(null);
 
   // ── Rental state ──────────────────────────────────────────────
@@ -2747,6 +2782,7 @@ If a field is not found or unclear, use 0. All values are numbers, no RM prefix.
       if (!textBlock) throw new Error("No response");
       let raw2 = textBlock.text.trim().replace(/```json|```/g, "");
       const parsed = JSON.parse(raw2.substring(raw2.indexOf("{"), raw2.lastIndexOf("}") + 1));
+      setShowManual(true); // auto-expand when AI fills fields
       if (parsed.employer)        setEmployer(parsed.employer);
       if (parsed.grossSalary)     setGrossSalary(String(parsed.grossSalary));
       if (parsed.bonus)           setBonus(String(parsed.bonus));
@@ -2842,37 +2878,46 @@ If a field is not found or unclear, use 0. All values are numbers, no RM prefix.
           <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={readEAForm} />
           {aiErr && <div style={{ padding: "10px 14px", background: t.redSoft, borderRadius: 10, fontSize: 12, color: t.red, marginBottom: 14 }}>{aiErr}</div>}
 
-          <div style={{ borderBottom: `1px solid ${t.hair}`, paddingBottom: 4, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em" }}>OR ENTER MANUALLY</div>
-          </div>
+          {/* Toggle for manual entry */}
+          <button onClick={() => setShowManual(v => !v)} style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10,
+            background: showManual ? t.bgAlt : t.surface, cursor: "pointer",
+            fontFamily: FONT, fontSize: 13, fontWeight: 600, color: t.ink, marginBottom: showManual ? 16 : 0,
+          }}>
+            <span>Enter manually</span>
+            <Icon name={showManual ? "chevD" : "chevR"} size={14} color={t.inkMute} />
+          </button>
 
-          {/* Employer name */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Employer Name</div>
-            <input value={employer} onChange={e => setEmployer(e.target.value)} placeholder="e.g. Acme Sdn Bhd"
-              style={{ width: "100%", padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
-          </div>
+          {showManual && <>
+            {/* Employer name */}
+            <div style={{ marginBottom: 14, marginTop: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Employer Name</div>
+              <input value={employer} onChange={e => setEmployer(e.target.value)} placeholder="e.g. Acme Sdn Bhd"
+                style={{ width: "100%", padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+            </div>
 
-          {/* Section B — Employment Income */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", marginBottom: 10, paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
-            SECTION B · EMPLOYMENT INCOME
-          </div>
-          {field("B1a  Gross Salary / Wages", grossSalary, setGrossSalary, "0", "Your annual gross salary or wages")}
-          {field("B1b  Bonus & Commission", bonus, setBonus, "0", "Annual bonus and commission received")}
-          {field("B1c  Other Allowances", otherAllow, setOtherAllow, "0", "Other allowances and perquisites")}
+            {/* Section B — Employment Income */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", marginBottom: 10, paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+              SECTION B · EMPLOYMENT INCOME
+            </div>
+            {field("B1a  Gross Salary / Wages", grossSalary, setGrossSalary, "0", "Your annual gross salary or wages")}
+            {field("B1b  Bonus & Commission", bonus, setBonus, "0", "Annual bonus and commission received")}
+            {field("B1c  Other Allowances", otherAllow, setOtherAllow, "0", "Other allowances and perquisites")}
 
-          {/* Section D — Tax Deducted */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
-            SECTION D · TAX DEDUCTED
-          </div>
-          {field("D1  MTD / PCB Paid", mtdPaid, setMtdPaid, "0", "Total Monthly Tax Deduction paid throughout the year")}
+            {/* Section D — Tax Deducted */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+              SECTION D · TAX DEDUCTED
+            </div>
+            {field("D1  MTD / PCB Paid", mtdPaid, setMtdPaid, "0", "Total Monthly Tax Deduction paid throughout the year")}
 
-          {/* Section E — Employee Contributions */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
-            SECTION E · EMPLOYEE CONTRIBUTIONS
-          </div>
-          {field("E1  EPF Contributions", epfContrib, setEpfContrib, "0", "Your EPF contributions (employee portion)")}
-          {field("E2  SOCSO / PERKESO", socso, setSocso, "0", "Your SOCSO contributions")}
+            {/* Section E — Employee Contributions */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+              SECTION E · EMPLOYEE CONTRIBUTIONS
+            </div>
+            {field("E1  EPF Contributions", epfContrib, setEpfContrib, "0", "Your EPF contributions (employee portion)")}
+            {field("E2  SOCSO / PERKESO", socso, setSocso, "0", "Your SOCSO contributions")}
+          </>}
         </>}
 
         {empType === "self" && <>
