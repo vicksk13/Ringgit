@@ -2496,6 +2496,7 @@ function TabBar({ t, L, tab, setTab }) {
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
 function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal }) {
+  const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
   const [drawerItemId, setDrawerItemId] = useState(null);
@@ -2531,36 +2532,57 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   };
 
   return (
-    <div style={{ padding: "16px 28px 40px", fontFamily: FONT, maxWidth: 1260, margin: "0 auto" }}>
-      <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>YA2025 <span style={{margin: '0 8px'}}>/</span> Relief</div>
-      <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
-      <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+    <div style={{ padding: wide ? "16px 28px 40px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? 1260 : "100%", margin: "0 auto" }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-        <div style={{ background: 'linear-gradient(120deg,#c8442b,#dd5a32)', borderRadius: 14, padding: 18, color: '#fff' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1 }}>ESTIMATED TAX REFUND</div>
-          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 50, lineHeight: 1.04, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
-          <div style={{ fontSize: 13, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+      {/* ── DESKTOP: big stat header ── */}
+      {wide && <>
+        <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>Relief</div>
+        <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
+        <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+          <div style={{ background: `linear-gradient(120deg,${t.red},#dd5a32)`, borderRadius: 14, padding: 18, color: '#fff' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1 }}>ESTIMATED TAX</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 50, lineHeight: 1.04, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
+            <div style={{ fontSize: 13, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+          </div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:FONT_DISPLAY,fontSize:52,lineHeight:1.05,marginTop:2}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared</div></div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:FONT_DISPLAY,fontSize:52,lineHeight:1.05,marginTop:2}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
         </div>
-        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared for YA2025</div></div>
-        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
-      </div>
+        <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+          <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon name="sparkleAi" size={19} color="#fff" /></div>
+          <div style={{flex:1}}><div style={{fontSize:20,fontFamily:FONT_DISPLAY,lineHeight:1.2}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft,marginTop:4}}>AI matches your receipt to the correct LHDN category.</div></div>
+          <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer',flexShrink:0}}>Scan Receipt</button>
+        </div>
+      </>}
 
-        <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="sparkleAi" size={19} color="#fff" /></div><div style={{flex:1,marginLeft:14}}><div style={{fontSize:36,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.04}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft}}>Our AI matches your receipt to the correct LHDN category and pre-fills the claim entry for you.</div></div>
-        <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>Scan Receipt</button>
-      </div>
+      {/* ── MOBILE: compact 2-col summary ── */}
+      {!wide && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div style={{ background: t.ink, borderRadius: 14, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.cardLabel, marginBottom: 4 }}>Est. Tax</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, lineHeight: 1, color: t.bg, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
+          </div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: '14px 16px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkMute, marginBottom: 4 }}>Relief claimed</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, lineHeight: 1, color: t.ink, fontVariantNumeric: 'tabular-nums' }}>RM {totalRelief.toLocaleString()}</div>
+            <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
+              <div style={{ width: `${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`, height: '100%', background: t.red, borderRadius: 3 }} />
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom: 14 }}>
-        {[{id:'all',name:'All categories'}, ...cats].map(c => {
-          const cnt = c.id === 'all' ? cats.length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
+      {/* ── Category filter chips ── */}
+      <div style={{ display:'flex', gap:8, flexWrap: wide ? 'wrap' : 'nowrap', overflowX: wide ? 'visible' : 'auto', marginBottom: 14, paddingBottom: wide ? 0 : 4 }}>
+        {[{id:'all',name:'All'}, ...cats].map(c => {
+          const cnt = c.id === 'all' ? cats.flatMap(x=>x.items).filter(i => itemTotalRaw(i.id) > 0 || i.auto).length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
           const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
           const active = activeFilter === c.id;
           const icon = c.id === "all" ? "grid" : c.icon;
-          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? '#1e1f28' : t.hair}`,background:active?'#1e1f28':'#f7f6f3',color:active?'#fff':'#6b7080',borderRadius:999,padding:'8px 12px',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:7,lineHeight:1}}>
-            <Icon name={icon} size={14} color={active ? "#fff" : "#7b8090"} />
-            <span>{c.id==='all'?c.name:c.name}</span>
-            <span style={{marginLeft:2,background:active?'rgba(255,255,255,0.16)':'#ebe7de',padding:'3px 6px',borderRadius:999,fontSize:11,color:active?'#fff':'#7f7b71'}}>{cnt}/{total}</span></button>
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? t.ink : t.hair}`,background:active?t.ink:t.surface,color:active?t.bg:t.inkMute,borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:6,lineHeight:1,flexShrink:0,fontFamily:FONT}}>
+            <Icon name={icon} size={13} color={active ? t.bg : t.inkMute} />
+            <span>{c.name}</span>
+            <span style={{background:active?'rgba(255,255,255,0.18)':t.bgAlt,padding:'2px 6px',borderRadius:999,fontSize:11,color:active?t.bg:t.inkMute}}>{cnt}/{total}</span></button>
         })}
       </div>
 
@@ -2577,27 +2599,54 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         const cap = fixedCaps[cat.id] ?? cat.items.reduce((s,i)=> s + (i.cap>=999999?0:i.cap),0);
         const util = cap ? Math.round((claimed/cap)*100) : 0;
         const expanded = openCats.has(cat.id);
-        return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
-          <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding:'14px 16px',display:'flex',alignItems:'center',cursor:'pointer'}}>
-            <div style={{width:38,height:38,borderRadius:12,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:12}}><Icon name={cat.icon} size={17} color={t.red}/></div>
-            <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left',lineHeight:1.18}}>
-              {cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
-              <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginTop:6,lineHeight:1.2}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div>
+        return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:10,overflow:'hidden'}}>
+          <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding: wide ? '14px 16px' : '12px 14px',display:'flex',alignItems:'center',cursor:'pointer'}}>
+            <div style={{width:36,height:36,borderRadius:10,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:10,flexShrink:0}}><Icon name={cat.icon} size={16} color={t.red}/></div>
+            <div style={{flex:1,textAlign:'left',minWidth:0}}>
+              <div style={{fontSize: wide ? 15 : 14,fontWeight:700,color:t.ink,display:'flex',alignItems:'center',gap:6}}>
+                {cat.name}<span style={{fontSize:11,color:t.inkMute,fontWeight:500}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
+              </div>
+              <div style={{fontSize:11,color:t.inkMute,marginTop:4}}>
+                <span style={{fontWeight:600,color: util > 0 ? t.red : t.inkMute}}>{util}%</span> · RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}
+              </div>
+              <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>
             </div>
-            <div style={{width:190,marginRight:14}}><div style={{display:'flex',justifyContent:'space-between',fontSize:15,color:t.inkSoft,fontWeight:600,marginBottom:6}}><span>Utilised</span><span style={{color:t.ink,fontWeight:700}}>{util}%</span></div><div style={{height:7,background:t.bgAlt,borderRadius:5}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:5}}/></div></div>
-            <Icon name={expanded ? "chevD" : "chevR"} size={16} color={t.inkMute} />
+            <Icon name={expanded ? "chevD" : "chevR"} size={15} color={t.inkMute} style={{flexShrink:0}} />
           </button>
-          {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
+          {expanded && <div style={{borderTop:`1px solid ${t.hair}`,padding: wide ? '12px 14px 14px' : '8px 12px 12px',display: wide ? 'grid' : 'flex',gridTemplateColumns: wide ? 'repeat(4,minmax(0,1fr))' : undefined,flexDirection: wide ? undefined : 'column',gap: wide ? 10 : 8}}>
             {cat.items.map(item=>{
               const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
+              if (!wide) {
+                // ── MOBILE: horizontal row layout ──
+                return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,background:t.bg}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                      <span style={{fontSize:9,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:6}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
+                      {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.green,background:t.greenSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
+                    </div>
+                    <div style={{fontSize:13,fontWeight:600,color:t.ink,lineHeight:1.3,marginBottom:2}}>{item.name}</div>
+                    <div style={{fontSize:11,color:t.inkMute,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{item.desc}</div>
+                    <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:3}}/></div>
+                    <div style={{fontSize:10,color:t.inkMute,marginTop:4}}>RM {claimedAmt.toLocaleString()} of RM {capEff.toLocaleString()}</div>
+                  </div>
+                  <div style={{flexShrink:0,textAlign:'right'}}>
+                    <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
+                    {item.auto
+                      ? <div style={{fontSize:10,color:t.green,fontWeight:600,marginTop:4}}>Confirmed</div>
+                      : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length?'View':'Add'}</button>
+                    }
+                  </div>
+                </div>;
+              }
+              // ── DESKTOP: tall card layout ──
               return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:216}}>
                 <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start',marginBottom:8}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
-                <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.1,minHeight:42}}>{item.name}</div>
+                <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{item.name}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
-                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontFamily:FONT_DISPLAY,fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
-                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1}}>{eItems.length? 'View':'Add'}</button>}</div>
+                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}</div>
               </div>
             })}
           </div>}
