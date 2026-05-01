@@ -58,6 +58,19 @@ import {
 } from "./crypto";
 
 // ─────────────────────────────────────────────────────────────
+// RESPONSIVE HOOK — tracks viewport >= 768px
+// ─────────────────────────────────────────────────────────────
+const useIsWide = () => {
+  const [wide, setWide] = useState(() => typeof window !== "undefined" && window.innerWidth >= 768);
+  useEffect(() => {
+    const onResize = () => setWide(window.innerWidth >= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return wide;
+};
+
+// ─────────────────────────────────────────────────────────────
 // IMAGE COMPRESSION
 // ─────────────────────────────────────────────────────────────
 const compressImage = (dataUrl, maxSizeMB = 4.5) => {
@@ -976,6 +989,7 @@ const migrateOld = () => {
 // ─────────────────────────────────────────────────────────────
 const MonthPicker = ({ label, value, onChange, t }) => {
   const [open, setOpen] = useState(false);
+  const wide = useIsWide();
   const now = new Date();
   const parsed = value ? value.split("-") : null;
   const [selY, setSelY] = useState(parsed ? parseInt(parsed[0]) : now.getFullYear());
@@ -994,11 +1008,13 @@ const MonthPicker = ({ label, value, onChange, t }) => {
         <Icon name="chevD" size={12} color={t.inkMute} />
       </button>
       {open && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(4px)" }} onClick={() => setOpen(false)}>
-          <div style={{ background: t.bg, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "18px 20px 28px", fontFamily: FONT, animation: "slideup 0.25s ease-out" }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-              <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
-            </div>
+        <div style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: wide ? "center" : "flex-end", justifyContent: "center", backdropFilter: "blur(4px)" }} onClick={() => setOpen(false)}>
+          <div style={{ background: t.bg, borderRadius: wide ? 18 : "24px 24px 0 0", width: "100%", maxWidth: wide ? 420 : 480, padding: "18px 20px 28px", fontFamily: FONT, animation: wide ? "fadein 0.2s" : "slideup 0.25s ease-out", boxShadow: wide ? "0 20px 60px rgba(0,0,0,0.25)" : "none" }} onClick={e => e.stopPropagation()}>
+            {!wide && (
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+                <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: t.ink }}>{label}</span>
               <button style={{ padding: "8px 18px", border: "none", borderRadius: 10, background: t.red, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}
@@ -1056,21 +1072,25 @@ function SyncToast({ message, t }) {
 // ─────────────────────────────────────────────────────────────
 function ConsentModal({ t, L, onAccept, onDecline, onViewPrivacy }) {
   const [checked, setChecked] = useState(false);
+  const wide = useIsWide();
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 600,
       background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
-      display: "flex", alignItems: "flex-end", justifyContent: "center",
+      display: "flex", alignItems: wide ? "center" : "flex-end", justifyContent: "center",
       animation: "fadein 0.2s",
     }}>
       <div style={{
-        width: "100%", maxWidth: 480, background: t.bg,
-        borderRadius: "24px 24px 0 0", padding: "20px 24px 44px",
-        fontFamily: FONT, animation: "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+        width: "100%", maxWidth: wide ? 480 : 480, background: t.bg,
+        borderRadius: wide ? 20 : "24px 24px 0 0", padding: "20px 24px 44px",
+        fontFamily: FONT, animation: wide ? "fadein 0.2s" : "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+        boxShadow: wide ? "0 20px 60px rgba(0,0,0,0.3)" : "none",
       }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-          <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
-        </div>
+        {!wide && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+            <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+          </div>
+        )}
         <div style={{ width: 44, height: 44, borderRadius: 12, background: t.redSoft, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
           <Icon name="shield" size={22} color={t.red} />
         </div>
@@ -1143,8 +1163,7 @@ function ConsentModal({ t, L, onAccept, onDecline, onViewPrivacy }) {
 // PRIVACY POLICY MODAL
 // ─────────────────────────────────────────────────────────────
 function PrivacyModal({ t, L, onClose }) {
-  // Inline bilingual content — LHDN-adjacent text kept in both languages.
-  // Covers PDPA 2010 as amended in 2024 (phased into force 2025).
+  const wide = useIsWide();
   const isEN = (L("privacy_policy") === "Privacy Policy");
 
   const sections = isEN ? [
@@ -1199,18 +1218,21 @@ function PrivacyModal({ t, L, onClose }) {
     <div style={{
       position: "fixed", inset: 0, zIndex: 700,
       background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
-      display: "flex", alignItems: "flex-end", justifyContent: "center",
+      display: "flex", alignItems: wide ? "center" : "flex-end", justifyContent: "center",
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 480, background: t.bg,
-          borderRadius: "24px 24px 0 0", padding: "16px 22px 44px",
+          width: "100%", maxWidth: wide ? 560 : 480, background: t.bg,
+          borderRadius: wide ? 20 : "24px 24px 0 0", padding: "16px 22px 44px",
           maxHeight: "85vh", overflow: "auto", fontFamily: FONT,
-          animation: "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+          animation: wide ? "fadein 0.2s" : "slideup 0.28s cubic-bezier(.2,.8,.2,1)",
+          boxShadow: wide ? "0 20px 60px rgba(0,0,0,0.3)" : "none",
         }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-          <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
-        </div>
+        {!wide && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+            <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+          </div>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: t.ink }}>{L("privacy_policy")}</div>
           <button onClick={onClose} style={{ width: 30, height: 30, border: "none", borderRadius: 8, background: t.bgAlt, color: t.inkSoft, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1249,6 +1271,7 @@ export default function MakeCents() {
   });
   const setLang = (l) => { setLangRaw(l); try { localStorage.setItem("makecentstax-lang", l); } catch {} };
   const L = makeL(lang);
+  const wide = useIsWide();
 
   useEffect(() => {
     document.body.style.background = t.bg;
@@ -1980,19 +2003,173 @@ export default function MakeCents() {
     );
   }
 
-  return (
-    <div style={baseStyle(t)}>
-      <style>{globalCSS}</style>
+  // ── Shared tab content (used by both desktop and mobile layouts) ──────────
+  const tabContent = (
+    <>
+      {tab === "relief" && (
+        <ReliefTab t={t} L={L} cats={cats} entries={entries}
+          itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
+          onAddEntry={addEntry} onRemoveEntry={removeEntry}
+          onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
+      )}
+      {tab === "income" && (
+        <IncomeTab t={t} L={L} ya={ya} incomes={incomes} rentalIncomes={rentalIncomes}
+          onAdd={addIncome} onRemove={removeIncome}
+          onAddRental={addRentalIncome} onRemoveRental={removeRentalIncome}
+          totalEmploymentIncome={totalEmploymentIncome}
+          totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
+          netRentalIncome={netRentalIncome}
+          totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
+          estTax={estTax} taxIsTentative={taxIsTentative} />
+      )}
+      {tab === "receipts" && (
+        <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} />
+      )}
+      {tab === "more" && (
+        <MoreTab t={t} L={L} lang={lang} setLang={setLang} user={user} ya={ya} themeName={themeName} setTheme={setThemeName}
+          onSignOut={handleSignOut}
+          onDeleteAccount={handleDeleteAccount}
+          onReset={resetYAData}
+          onExport={exportD}
+          onImport={importD}
+          onPrivacy={() => setShowPrivacy(true)}
+          onSignInGoogle={handleGoogleClick}
+          supabase={supabase}
+          cryptoKey={cryptoKeyRef.current}
+          entries={entries} receipts={receipts} incomes={incomes} rentalIncomes={rentalIncomes} />
+      )}
+    </>
+  );
 
-      {/* Full-screen image viewer */}
+  const tabLabel = tab === "income" ? L("tab_income") : tab === "receipts" ? L("tab_receipts") : tab === "more" ? L("tab_more") : L("tab_relief");
+
+  // ── Shared overlays ─────────────────────────────────────────
+  const overlays = (
+    <>
       {viewImg && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setViewImg(null)}>
           <img src={viewImg} style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 16, objectFit: "contain" }} alt="Receipt" />
         </div>
       )}
-
-      {/* Sync error toast */}
       <SyncToast message={syncError} t={t} />
+      {showPrivacy && <PrivacyModal t={t} L={L} onClose={() => setShowPrivacy(false)} />}
+      <ScannerSheet open={scannerOpen} seededItem={scannerSeed} t={t} L={L} ya={ya} allItems={allItems}
+        onClose={() => { setScannerOpen(false); setScannerSeed(null); }}
+        onAdd={addFromScan} />
+    </>
+  );
+
+  // ── YA loading spinner ────────────────────────────────────────
+  const yaSpinner = yaLoading && (
+    <div style={{ position: "absolute", inset: 0, background: t.bg + "cc", zIndex: 30, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, borderRadius: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 36, height: 36, border: `3px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute, fontFamily: FONT }}>Loading YA{ya}…</div>
+      </div>
+    </div>
+  );
+
+  // ── DESKTOP LAYOUT ──────────────────────────────────────────
+  if (wide) {
+    return (
+      <div style={{ display: "flex", height: "100vh", background: t.bg, fontFamily: FONT, color: t.ink, overflow: "hidden" }}>
+        <style>{globalCSS}</style>
+        {overlays}
+
+        {/* Sidebar */}
+        <div style={{ width: 252, flexShrink: 0, height: "100vh", overflow: "auto", borderRight: `1px solid ${t.hair}`, display: "flex", flexDirection: "column", padding: "24px 16px 20px", background: t.bg }}>
+
+          {/* Logo + user info */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+            <MakeCentsLogo size={32} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
+              <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 500 }}>
+                {user?.provider === "google" ? "Google · Cloud synced" : "Guest · Local only"}
+              </div>
+            </div>
+          </div>
+
+          {/* Mini tax summary card */}
+          <div style={{ background: t.ink, borderRadius: 16, padding: "14px 16px", marginBottom: 16, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -16, right: -16, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
+            <div style={{ position: "relative" }}>
+              <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+                {L("est_tax")} · YA{ya}
+                {taxIsTentative && <span style={{ marginLeft: 4, fontSize: 8, background: "rgba(255,255,255,0.15)", padding: "1px 5px", borderRadius: 4 }}>~est</span>}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
+                RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.cardBorder}` }}>
+                {[[L("income"), totalIncome], [L("relief"), totalRelief]].map(([l, v]) => (
+                  <div key={l}>
+                    <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
+                      RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* YA selector */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>Year of Assessment</div>
+            <div style={{ display: "flex", gap: 5 }}>
+              {YEARS.map(y => (
+                <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
+                  style={{ flex: 1, padding: "7px 4px", border: "none", borderRadius: 8, background: y === ya ? t.ink : t.bgAlt, color: y === ya ? t.bg : t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nav links */}
+          <div style={{ flex: 1 }}>
+            {[["relief", L("tab_relief"), "receipt"], ["income", L("tab_income"), "briefcase"], ["receipts", L("tab_receipts"), "camera"], ["more", L("tab_more"), "settings"]].map(([k, l, ic]) => (
+              <button key={k} onClick={() => setTab(k)}
+                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "11px 14px", border: "none", borderRadius: 12, background: tab === k ? t.redSoft : "transparent", color: tab === k ? t.red : t.ink, fontSize: 13, fontWeight: tab === k ? 700 : 500, fontFamily: FONT, cursor: "pointer", marginBottom: 4, textAlign: "left" }}>
+                <Icon name={ic} size={18} color={tab === k ? t.red : t.inkMute} />
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {/* Scan receipt CTA */}
+          {tab === "relief" && (
+            <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }}
+              style={{ width: "100%", padding: "12px 16px", border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(200,68,43,0.35)" }}>
+              <Icon name="sparkleAi" size={16} color="#fff" />
+              {L("scan_receipt")}
+            </button>
+          )}
+        </div>
+
+        {/* Main content */}
+        <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
+          {/* Page title bar */}
+          <div style={{ padding: "26px 32px 18px", background: t.bg, borderBottom: `1px solid ${t.hair}`, flexShrink: 0 }}>
+            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>YA{ya}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
+          </div>
+          {/* Tab content */}
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
+            {yaSpinner}
+            {tabContent}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MOBILE LAYOUT (unchanged) ────────────────────────────────
+  return (
+    <div style={baseStyle(t)}>
+      <style>{globalCSS}</style>
+      {overlays}
 
       {tab === "relief" ? (
         <Header t={t} L={L} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
@@ -2001,57 +2178,14 @@ export default function MakeCents() {
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginTop: 2 }}>
-            {tab === "income" ? L("tab_income") : tab === "receipts" ? L("tab_receipts") : L("tab_more")}
-          </div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginTop: 2 }}>{tabLabel}</div>
         </div>
       )}
 
-      {/* YA loading overlay — shown while fetching Supabase data on YA switch */}
       <div style={{ paddingBottom: 140, position: "relative" }}>
-        {yaLoading && (
-          <div style={{ position: "absolute", inset: 0, background: t.bg + "cc", zIndex: 30, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200, borderRadius: 16 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 36, height: 36, border: `3px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute, fontFamily: FONT }}>Loading YA{ya}…</div>
-            </div>
-          </div>
-        )}
-        {tab === "relief" && (
-          <ReliefTab t={t} L={L} cats={cats} entries={entries}
-            itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
-            onAddEntry={addEntry} onRemoveEntry={removeEntry}
-            onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
-        )}
-        {tab === "income" && (
-          <IncomeTab t={t} L={L} ya={ya} incomes={incomes} rentalIncomes={rentalIncomes}
-  onAdd={addIncome} onRemove={removeIncome}
-            onAddRental={addRentalIncome} onRemoveRental={removeRentalIncome}
-            totalEmploymentIncome={totalEmploymentIncome}
-            totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
-            netRentalIncome={netRentalIncome}
-            totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
-            estTax={estTax} taxIsTentative={taxIsTentative} />
-        )}
-        {tab === "receipts" && (
-          <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} />
-        )}
-        {tab === "more" && (
-          <MoreTab t={t} L={L} lang={lang} setLang={setLang} user={user} ya={ya} themeName={themeName} setTheme={setThemeName}
-            onSignOut={handleSignOut}
-            onDeleteAccount={handleDeleteAccount}
-            onReset={resetYAData}
-            onExport={exportD}
-            onImport={importD}
-            onPrivacy={() => setShowPrivacy(true)}
-            onSignInGoogle={handleGoogleClick}
-            supabase={supabase}
-            cryptoKey={cryptoKeyRef.current}
-            entries={entries} receipts={receipts} incomes={incomes} rentalIncomes={rentalIncomes} />
-        )}
+        {yaSpinner}
+        {tabContent}
       </div>
-
-      {showPrivacy && <PrivacyModal t={t} L={L} onClose={() => setShowPrivacy(false)} />}
 
       {tab === "relief" && !scannerOpen && (
         <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }} style={{
@@ -2068,10 +2202,6 @@ export default function MakeCents() {
       )}
 
       <TabBar t={t} L={L} tab={tab} setTab={setTab} />
-
-      <ScannerSheet open={scannerOpen} seededItem={scannerSeed} t={t} L={L} ya={ya} allItems={allItems}
-        onClose={() => { setScannerOpen(false); setScannerSeed(null); }}
-        onAdd={addFromScan} />
     </div>
   );
 }
@@ -2080,12 +2210,59 @@ export default function MakeCents() {
 // WELCOME
 // ─────────────────────────────────────────────────────────────
 function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
+  const wide = useIsWide();
+
+  if (wide) {
+    return (
+      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", fontFamily: FONT }}>
+        {/* Left branding panel */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", background: t.bgAlt }}>
+          <div style={{ marginBottom: 36, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}>
+            <MakeCentsLogo size={88} />
+          </div>
+          <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
+          <div style={{ fontSize: 18, color: t.inkMute, marginTop: 18, lineHeight: 1.6, maxWidth: 400 }}>
+            {L("welcome_tagline")}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 48, flexWrap: "wrap" }}>
+            {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
+              <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>
+                {f}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Right login panel */}
+        <div style={{ width: 460, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 52px", borderLeft: `1px solid ${t.hair}`, background: t.bg }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginBottom: 6 }}>Get started</div>
+          <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.5 }}>Track your Malaysian income tax reliefs and estimate your annual tax.</div>
+          <button onClick={onGoogle} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
+            <Icon name="google" size={18} color={t.bg} />
+            {L("continue_google")}
+          </button>
+          <button onClick={onGuest} style={{ width: "100%", padding: "16px 20px", border: `1px solid ${t.hairStrong}`, borderRadius: 14, background: "transparent", color: t.ink, fontSize: 15, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
+            {L("continue_guest")}
+          </button>
+          <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 28, lineHeight: 1.8 }}>
+            {L("welcome_footer")}
+            <br />
+            <span onClick={onPrivacy} style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}>
+              {L("privacy_policy")}
+            </span>
+            {" · "}
+            <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ marginBottom: 32, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}>
-  <MakeCentsLogo size={72} />
-</div>
+          <MakeCentsLogo size={72} />
+        </div>
         <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, letterSpacing: -1.5, lineHeight: 1 }}>MakeCents.</div>
         <div style={{ fontSize: 16, color: t.inkMute, marginTop: 12, lineHeight: 1.5, maxWidth: 300 }}>
           {L("welcome_tagline")}
@@ -2115,15 +2292,44 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
 // SIGNUP
 // ─────────────────────────────────────────────────────────────
 function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
+  const wide = useIsWide();
+  const formFields = [
+    { label: L("your_name"), value: name, set: setName, ph: "e.g. Vick",  type: "text"   },
+    { label: L("yob"),       value: yob,  set: setYob,  ph: "e.g. 1990", type: "number" },
+  ];
+
+  if (wide) {
+    return (
+      <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 460, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", padding: "44px 48px" }}>
+          <div style={{ marginBottom: 24 }}><MakeCentsLogo size={48} /></div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{L("setup_profile")}</div>
+          <div style={{ fontSize: 14, color: t.inkMute, marginTop: 6, marginBottom: 32 }}>{L("setup_sub")}</div>
+          {formFields.map(f => (
+            <div key={f.label} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{f.label}</div>
+              <input value={f.value} onChange={e => f.set(e.target.value)} type={f.type} placeholder={f.ph}
+                style={{ width: "100%", padding: "14px 16px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+            </div>
+          ))}
+          <div style={{ marginTop: 8 }} />
+          <button onClick={onDone} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.red, color: "#fff", fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", marginBottom: 8 }}>
+            {L("get_started")}
+          </button>
+          <button onClick={onSkip} style={{ width: "100%", padding: 14, border: "none", background: "transparent", color: t.inkMute, fontSize: 14, fontFamily: FONT, cursor: "pointer" }}>
+            {L("skip_for_now")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "72px 24px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ marginBottom: 24 }}><MakeCentsLogo size={56} /></div>
       <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{L("setup_profile")}</div>
       <div style={{ fontSize: 14, color: t.inkMute, marginTop: 6, marginBottom: 32 }}>{L("setup_sub")}</div>
-      {[
-        { label: L("your_name"), value: name, set: setName, ph: "e.g. Vick",  type: "text"   },
-        { label: L("yob"),       value: yob,  set: setYob,  ph: "e.g. 1990", type: "number" },
-      ].map(f => (
+      {formFields.map(f => (
         <div key={f.label} style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{f.label}</div>
           <input value={f.value} onChange={e => f.set(e.target.value)} type={f.type} placeholder={f.ph}
@@ -3047,8 +3253,9 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, L, ya, allItems }) 
   const [err,         setErr]         = useState(null);
   const [result,      setResult]      = useState(null);
   const [compressing, setCompressing] = useState(false);
-  const cameraRef  = useRef(null); // camera capture only
-  const galleryRef = useRef(null); // gallery / files only
+  const cameraRef  = useRef(null);
+  const galleryRef = useRef(null);
+  const wide = useIsWide();
 
   useEffect(() => {
     if (open) { setStep("idle"); setDesc(""); setImg(null); setErr(null); setResult(null); setCompressing(false); }
@@ -3190,14 +3397,16 @@ If not claimable:
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadein 0.2s" }}
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: wide ? "center" : "flex-end", justifyContent: "center", animation: "fadein 0.2s" }}
       onClick={onClose}>
       <div onClick={e => e.stopPropagation()}
-        style={{ width: "100%", maxWidth: 480, background: t.bg, borderRadius: "24px 24px 0 0", padding: "12px 20px 36px", maxHeight: "90vh", overflow: "auto", fontFamily: FONT, animation: "slideup 0.3s cubic-bezier(.2,.8,.2,1)" }}>
+        style={{ width: "100%", maxWidth: wide ? 520 : 480, background: t.bg, borderRadius: wide ? 20 : "24px 24px 0 0", padding: wide ? "24px 28px 32px" : "12px 20px 36px", maxHeight: wide ? "85vh" : "90vh", overflow: "auto", fontFamily: FONT, animation: wide ? "fadein 0.2s" : "slideup 0.3s cubic-bezier(.2,.8,.2,1)", boxShadow: wide ? "0 24px 80px rgba(0,0,0,0.3)" : "none" }}>
 
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-          <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
-        </div>
+        {!wide && (
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+            <div style={{ width: 40, height: 4, background: t.hairStrong, borderRadius: 2 }} />
+          </div>
+        )}
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -3416,5 +3625,12 @@ button { transition: transform 0.12s, opacity 0.12s, background 0.18s; }
 button:active { transform: scale(0.97); opacity: 0.9; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+@media (min-width: 768px) {
+  html, body { height: 100%; overflow: hidden; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(28,25,23,0.15); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(28,25,23,0.28); }
 }
 `;
