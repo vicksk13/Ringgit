@@ -2010,7 +2010,8 @@ export default function MakeCents() {
         <ReliefTab t={t} L={L} cats={cats} entries={entries}
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
-          onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
+          onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }}
+          estTax={estTax} totalIncome={totalIncome} totalRelief={totalRelief} taxIsTentative={taxIsTentative} />
       )}
       {tab === "income" && (
         <IncomeTab t={t} L={L} ya={ya} incomes={incomes} rentalIncomes={rentalIncomes}
@@ -2086,30 +2087,6 @@ export default function MakeCents() {
               <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
               <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 500 }}>
                 {user?.provider === "google" ? "Google · Cloud synced" : "Guest · Local only"}
-              </div>
-            </div>
-          </div>
-
-          {/* Mini tax summary card */}
-          <div style={{ background: t.ink, borderRadius: 16, padding: "14px 16px", marginBottom: 16, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -16, right: -16, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
-            <div style={{ position: "relative" }}>
-              <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
-                {L("est_tax")} · YA{ya}
-                {taxIsTentative && <span style={{ marginLeft: 4, fontSize: 8, background: "rgba(255,255,255,0.15)", padding: "1px 5px", borderRadius: 4 }}>~est</span>}
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-                RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.cardBorder}` }}>
-                {[[L("income"), totalIncome], [L("relief"), totalRelief]].map(([l, v]) => (
-                  <div key={l}>
-                    <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-                      RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -2443,14 +2420,13 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, estTax, totalIncome, totalRelief, taxIsTentative }) {
   const [expCat,    setExpCat]    = useState("lifestyle");
   const [expItem,   setExpItem]   = useState(null);
   const [addingFor, setAddingFor] = useState(null);
   const [amtIn,     setAmtIn]     = useState("");
   const [descIn,    setDescIn]    = useState("");
   const [unitsIn,   setUnitsIn]   = useState(1);
-  const [search,    setSearch]    = useState("");
   const [vw,        setVw]        = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
 
   useEffect(() => {
@@ -2459,12 +2435,16 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const filtCats = search
-    ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc + i.id).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length)
-    : cats;
-
   const colCount = vw >= 1360 ? 3 : (vw >= 768 ? 2 : 1);
   const gridCols = `repeat(${colCount}, minmax(0, 1fr))`;
+  const unclaimedRelief = cats.reduce((sum, cat) => sum + cat.items.reduce((inner, item) => {
+    if (item.cap >= 999999) return inner;
+    const rawTotal = itemTotalRaw(item.id);
+    const units = itemEntries(item.id)[0]?.units || 1;
+    const capEff = item.perUnit ? item.cap * units : item.cap;
+    const claimed = item.auto ? item.cap : Math.min(rawTotal, capEff);
+    return inner + Math.max(0, capEff - claimed);
+  }, 0), 0);
 
   const handleAdd = async (item) => {
     const amt = parseFloat(amtIn) || 0;
@@ -2477,13 +2457,20 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", width: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 16 }}>
-        <Icon name="search" size={16} color={t.inkMute} />
-        <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 18 }}>
+        {[
+          ["Estimated Tax Refund", `RM ${estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}${taxIsTentative ? "*" : ""}`, true],
+          ["Total Income", `RM ${totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, false],
+          ["Unclaimed Relief Available", `RM ${unclaimedRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, false],
+        ].map(([label, value, featured]) => (
+          <div key={label} style={{ background: t.surface, border: `1px solid ${featured ? t.hairStrong : t.hair}`, borderRadius: 14, padding: "12px 14px", boxShadow: featured ? t.shadowHi : "none" }}>
+            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600 }}>{label}</div>
+            <div style={{ fontSize: featured ? 22 : 18, fontWeight: 700, color: t.ink, marginTop: 6, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+          </div>
+        ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 16, alignItems: "start" }}>
-      {filtCats.map(cat => {
+      {cats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
         const expanded  = expCat === cat.id;
         const isRental  = cat.id === "rental";
@@ -2532,14 +2519,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                   const overCap  = !isUncapped && rawTotal > capEff;
 
                   return (
-                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
+                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 12, padding: 10, marginBottom: 6 }}>
                       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                             <span style={{ fontSize: 10, fontWeight: 700, color: isRental ? t.gold : t.red, background: isRental ? t.goldSoft : t.redSoft, padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{item.id}</span>
                             <span style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{item.name}</span>
                           </div>
-                          <div style={{ fontSize: 12, color: t.inkMute, lineHeight: 1.5, marginBottom: 12 }}>{item.desc}</div>
+                          <div style={{ fontSize: 11, color: t.inkMute, lineHeight: 1.4, marginBottom: 8 }}>{item.desc}</div>
 
                           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                             <div style={{ flex: 1, height: 6, background: t.bgAlt, borderRadius: 4, overflow: "hidden" }}>
@@ -2582,7 +2569,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                       </div>
 
                       {isExp && eItems.length > 0 && !item.auto && (
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
+                        <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.hair}` }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
                             Entries · {eItems.length}
                           </div>
