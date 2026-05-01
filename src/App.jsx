@@ -2486,14 +2486,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
       <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
         <div style={{ background: 'linear-gradient(120deg,#c8442b,#dd5a32)', borderRadius: 14, padding: 18, color: '#fff' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>ESTIMATED TAX REFUND</div>
-          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 54, lineHeight: 1.05, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
-          <div style={{ fontSize: 14, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1 }}>ESTIMATED TAX REFUND</div>
+          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 50, lineHeight: 1.04, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
+          <div style={{ fontSize: 13, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
         </div>
-        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:44}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared for YA2025</div></div>
-        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:44}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared for YA2025</div></div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
       </div>
 
         <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -2522,8 +2522,12 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
           <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding:'14px 16px',display:'flex',alignItems:'center',cursor:'pointer'}}>
             <div style={{width:38,height:38,borderRadius:12,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:12}}><Icon name={cat.icon} size={17} color={t.red}/></div>
-            <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left'}}>{cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span><div style={{fontSize:12,fontWeight:500,color:t.inkMute}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div></div>
-            <div style={{width:160}}><div style={{fontSize:10,color:t.inkMute,textAlign:'right'}}>Utilised {util}%</div><div style={{height:5,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:4}}/></div></div>
+            <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left',lineHeight:1.18}}>
+              {cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
+              <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginTop:6,lineHeight:1.2}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div>
+            </div>
+            <div style={{width:160,marginRight:14}}><div style={{fontSize:10,color:t.inkMute,textAlign:'right'}}>Utilised {util}%</div><div style={{height:5,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:4}}/></div></div>
+            <Icon name={expanded ? "chevD" : "chevR"} size={16} color={t.inkMute} />
           </button>
           {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
             {cat.items.map(item=>{
