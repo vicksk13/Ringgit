@@ -1498,22 +1498,33 @@ export default function MakeCents() {
   const itemEntries  = (id) => entries.filter(e => e.itemId === id);
   const itemTotalRaw = (id) => itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
 
-  // itemTotalCapped — enforces individual caps + combined caps for G6/G7/G8 and G17ins/G17epf
+  const groupRaw = (ids) => ids.reduce((s, id) => s + itemTotalRaw(id), 0);
+  const groupCapped = {
+    med678: Math.min(Math.min(itemTotalRaw("G6"), 10000) + Math.min(itemTotalRaw("G7"), 1000) + Math.min(itemTotalRaw("G8"), 6000), 10000),
+    g9: Math.min(groupRaw(["G9"]), 2500),
+    g10: Math.min(groupRaw(["G10"]), 1000),
+    g17: Math.min(Math.min(itemTotalRaw("G17ins"),3000) + Math.min(itemTotalRaw("G17epf"),4000), 7000),
+    g21: Math.min(groupRaw(["G21"]), 2500),
+    g22: Math.min(itemTotalRaw("G22"), 7000),
+  };
+
+  // itemTotalCapped — enforces individual caps + combined caps
   const itemTotalCapped = (id) => {
     const it = allItems.find(i => i.id === id);
     if (!it) return 0;
     if (it.cap >= 999999) return itemTotalRaw(id);
 
-    // ── G6 + G7 + G8 share a combined RM10,000 cap ───────────
-    // Priority: G7 sub-limit RM1k, G8 sub-limit RM6k, G6 gets remainder
     if (id === "G6" || id === "G7" || id === "G8") {
       const g7Used = Math.min(itemTotalRaw("G7"), 1000);
       const g8Used = Math.min(itemTotalRaw("G8"), 6000);
       if (id === "G7") return g7Used;
       if (id === "G8") return g8Used;
-      // G6 gets whatever RM10k headroom remains after G7 and G8
       return Math.min(itemTotalRaw("G6"), Math.max(0, 10000 - g7Used - g8Used));
     }
+    if (id === "G9") return groupCapped.g9;
+    if (id === "G10") return groupCapped.g10;
+    if (id === "G21") return groupCapped.g21;
+    if (id === "G22") return groupCapped.g22;
 
     // ── G17ins / G17epf individual sub-limits ────────────────
     // Combined RM7k cap enforced separately in totalRelief
@@ -1524,18 +1535,15 @@ export default function MakeCents() {
     return Math.min(itemTotalRaw(id), cap);
   };
 
-  // G17 combined cap — capped at RM7k total regardless of sub-limits
-  const g17Combined = (() => {
-    const ins = allItems.some(i => i.id === "G17ins") ? itemTotalCapped("G17ins") : 0;
-    const epf = allItems.some(i => i.id === "G17epf") ? itemTotalCapped("G17epf") : 0;
-    return Math.min(ins + epf, 7000);
-  })();
+  const g17Combined = groupCapped.g17;
 
   const totalRelief = allItems.reduce((s, i) => {
     if (i.id.startsWith("R")) return s;
     if (i.id === "G17ins" || i.id === "G17epf") return s; // rolled into g17Combined
     return s + (i.auto ? i.cap : itemTotalCapped(i.id));
   }, 0) + g17Combined;
+
+  const eligibleCapTotal = 9000 + 8000 + 6000 + 10000 + 2500 + 1000 + 2500 + 7000 + 8000 + 4000 + 6000 + 7000 + 3000 + 4000 + 350 + 7000;
 
   const totalRentalIncome     = rentalIncomes.reduce((s, i) => s + (i.amount || 0), 0);
   const totalRentalExpenses   = ["R1","R2","R3","R4","R5"].reduce((s, id) => s + itemTotalRaw(id), 0);
@@ -2011,7 +2019,7 @@ export default function MakeCents() {
         <ReliefTab t={t} L={L} cats={cats} entries={entries}
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
-          totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax}
+          totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2439,7 +2447,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal }) {
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
   const [drawerItemId, setDrawerItemId] = useState(null);
@@ -2449,7 +2457,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   const [dateIn, setDateIn] = useState(() => new Date().toISOString().slice(0, 10));
   const [unitsIn, setUnitsIn] = useState(1);
 
-  const totalCap = cats.flatMap(c => c.items).reduce((s, i) => s + (i.cap >= 999999 ? 0 : i.cap), 0);
+  const totalCap = eligibleCapTotal || 0;
   const remainingRelief = Math.max(0, totalCap - totalRelief);
 
   const shownCats = activeFilter === "all" ? cats : cats.filter(c => c.id === activeFilter);
@@ -2509,8 +2517,16 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       </div>
 
       {shownCats.map(cat => {
-        const claimed = cat.items.reduce((s,i)=> s + (i.auto?i.cap:Math.min(itemTotalRaw(i.id), i.cap>=999999?itemTotalRaw(i.id):(i.perUnit ? i.cap * (itemEntries(i.id)[0]?.units || 1) : i.cap))),0);
-        const cap = cat.items.reduce((s,i)=> s + (i.cap>=999999?0:i.cap),0);
+        const fixedCaps = { personal: 26000, medical: 24000, lifestyle: 6000, insurance: 14350, education: 15000, housing: 7000 };
+        const medGroup = Math.min(Math.min(itemTotalRaw("G6"),10000) + Math.min(itemTotalRaw("G7"),1000) + Math.min(itemTotalRaw("G8"),6000), 10000);
+        const claimed = cat.id === "medical"
+          ? Math.min(itemTotalRaw("G2"),8000) + Math.min(itemTotalRaw("G3"),6000) + medGroup
+          : cat.id === "insurance"
+            ? Math.min(Math.min(itemTotalRaw("G17ins"),3000)+Math.min(itemTotalRaw("G17epf"),4000),7000) + Math.min(itemTotalRaw("G18"),3000)+Math.min(itemTotalRaw("G19"),4000)+Math.min(itemTotalRaw("G20"),350)
+            : cat.id === "lifestyle"
+              ? Math.min(itemTotalRaw("G9"),2500)+Math.min(itemTotalRaw("G10"),1000)+Math.min(itemTotalRaw("G21"),2500)
+              : cat.items.reduce((s,i)=> s + (i.auto?i.cap:Math.min(itemTotalRaw(i.id), i.cap>=999999?itemTotalRaw(i.id):(i.perUnit ? i.cap * (itemEntries(i.id)[0]?.units || 1) : i.cap))),0);
+        const cap = fixedCaps[cat.id] ?? cat.items.reduce((s,i)=> s + (i.cap>=999999?0:i.cap),0);
         const util = cap ? Math.round((claimed/cap)*100) : 0;
         const expanded = openCats.has(cat.id);
         return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
