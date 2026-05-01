@@ -2123,31 +2123,28 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* Mini tax summary card — dark pill */}
-          <div style={{
-            background: t.ink, borderRadius: 14, padding: "14px 16px",
-            position: "relative", overflow: "hidden",
-            boxShadow: t.shadowHi,
-          }}>
-            <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: t.red, opacity: 0.85 }} />
-            <div style={{ position: "relative" }}>
-              <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                {L("est_tax")} · YA{ya}
-                {taxIsTentative && <span style={{ marginLeft: 4, fontSize: 8, background: "rgba(255,255,255,0.15)", padding: "1px 5px", borderRadius: 4 }}>~est</span>}
+          {/* KPI: Est Tax + Relief unclaimed */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ background: t.ink, borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -18, right: -18, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.8 }} />
+              <div style={{ position: "relative" }}>
+                <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
+                  Est. Tax · YA{ya}{taxIsTentative && <span style={{ marginLeft: 4, opacity: 0.6 }}>~est</span>}
+                </div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                  RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums", fontFamily: FONT_DISPLAY, letterSpacing: "-0.02em" }}>
-                RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
+            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 9, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Relief unclaimed</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                RM {Math.max(0, eligibleCapTotal - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.cardBorder}` }}>
-                {[[L("income"), totalIncome], [L("relief"), totalRelief]].map(([l, v]) => (
-                  <div key={l}>
-                    <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{l}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-                      RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </div>
-                  </div>
-                ))}
+              <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
+                <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal)) * 100)}%`, height: "100%", background: t.red, borderRadius: 3 }} />
               </div>
+              <div style={{ fontSize: 10, color: t.inkMute, marginTop: 4 }}>RM {totalRelief.toLocaleString()} of RM {eligibleCapTotal.toLocaleString()} claimed</div>
             </div>
           </div>
 
@@ -2232,7 +2229,7 @@ export default function MakeCents() {
       {tab === "relief" ? (
         <Header t={t} L={L} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
-          estTax={estTax} taxIsTentative={taxIsTentative} />
+          estTax={estTax} taxIsTentative={taxIsTentative} eligibleCapTotal={eligibleCapTotal} />
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
@@ -2273,37 +2270,46 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
   if (wide) {
     return (
       <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 980, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", padding: "44px 48px", display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 44 }}>
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <div style={{ marginBottom: 28, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}><MakeCentsLogo size={72} /></div>
-            <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
-            <div style={{ fontSize: 18, color: t.inkMute, marginTop: 14, lineHeight: 1.55, maxWidth: 440 }}>{L("welcome_tagline")}</div>
-            <div style={{ display: "flex", gap: 10, marginTop: 30, flexWrap: "wrap" }}>
-              {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
-                <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>{f}</div>
-              ))}
+        <div style={{ width: "100%", maxWidth: 880, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 24px 80px rgba(28,25,23,0.12)", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          {/* Left — brand */}
+          <div style={{ padding: "52px 48px", display: "flex", flexDirection: "column", justifyContent: "center", background: t.ink, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: t.red, opacity: 0.8 }} />
+            <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.15 }} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ marginBottom: 28 }}><MakeCentsLogo size={64} /></div>
+              <div style={{ fontSize: 48, fontWeight: 700, color: t.bg, letterSpacing: -1.5, lineHeight: 1, fontFamily: FONT_DISPLAY }}>MakeCents.</div>
+              <div style={{ fontSize: 16, color: "rgba(251,247,238,0.7)", marginTop: 14, lineHeight: 1.55 }}>{L("welcome_tagline")}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 32 }}>
+                {[["sparkleAi", "AI receipt scanning & classification"], ["receipt", "Every LHDN relief category covered"], ["key", "AES-256 encrypted · PDPA compliant"]].map(([ic, label]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(251,247,238,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Icon name={ic} size={13} color="rgba(251,247,238,0.8)" />
+                    </div>
+                    <span style={{ fontSize: 13, color: "rgba(251,247,238,0.75)", fontWeight: 500 }}>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 10 }}>
-          <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginBottom: 6 }}>Get started</div>
-          <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.5 }}>Track your Malaysian income tax reliefs and estimate your annual tax.</div>
-          <button onClick={onGoogle} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
-            <Icon name="google" size={18} color={t.bg} />
-            {L("continue_google")}
-          </button>
-          <button onClick={onGuest} style={{ width: "100%", padding: "16px 20px", border: `1px solid ${t.hairStrong}`, borderRadius: 14, background: "transparent", color: t.ink, fontSize: 15, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
-            {L("continue_guest")}
-          </button>
-          <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 28, lineHeight: 1.8 }}>
-            {L("welcome_footer")}
-            <br />
-            <span onClick={onPrivacy} style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}>
-              {L("privacy_policy")}
-            </span>
-            {" · "}
-            <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
+          {/* Right — auth */}
+          <div style={{ padding: "52px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Get started</div>
+            <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.6 }}>Track your Malaysian income tax reliefs and estimate your annual tax. Free, private, and encrypted.</div>
+            <button onClick={onGoogle} style={{ width: "100%", padding: "15px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
+              <Icon name="google" size={17} color={t.bg} />
+              {L("continue_google")}
+            </button>
+            <button onClick={onGuest} style={{ width: "100%", padding: "15px 20px", border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.ink, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
+              {L("continue_guest")}
+            </button>
+            <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 28, lineHeight: 1.9 }}>
+              {L("welcome_footer")}
+              <br />
+              <span onClick={onPrivacy} style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}>{L("privacy_policy")}</span>
+              {" · "}
+              <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
+            </div>
           </div>
-        </div>
         </div>
       </div>
     );
@@ -2402,7 +2408,7 @@ function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
 // ─────────────────────────────────────────────────────────────
 // HEADER
 // ─────────────────────────────────────────────────────────────
-function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
+function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal }) {
   return (
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2435,30 +2441,26 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         </div>
       </div>
 
-      <div style={{ marginTop: 20, background: t.ink, color: t.bg, borderRadius: 20, padding: 22, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ fontSize: 11, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>
-            {L("est_tax")} · YA{ya}
-            {taxIsTentative && <span style={{ marginLeft: 6, fontSize: 9, background: "rgba(255,255,255,0.15)", padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{L("ya_brackets")}</span>}
-          </div>
-          <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: -1.2, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-            RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
-          {taxIsTentative && (
-            <div style={{ fontSize: 10, color: t.cardLabelSoft, marginTop: 2, lineHeight: 1.4 }}>
-              YA{ya} {L("brackets_warn")}
+      {/* KPI cards — Est Tax + Relief Remaining */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+        <div style={{ background: t.ink, borderRadius: 16, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: t.red, opacity: 0.75 }} />
+          <div style={{ position: "relative" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.cardLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
+              Est. Tax · YA{ya}{taxIsTentative && <span style={{ marginLeft: 4, opacity: 0.6 }}>~est</span>}
             </div>
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 18, paddingTop: 16, borderTop: `1px solid ${t.cardBorder}` }}>
-            {[[L("income"), totalIncome], [L("relief"), totalRelief], [L("chargeable"), chargeable]].map(([l, v]) => (
-              <div key={l}>
-                <div style={{ fontSize: 9.5, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, marginTop: 3, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-                  RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-              </div>
-            ))}
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+        </div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Relief unclaimed</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            RM {Math.max(0, (eligibleCapTotal || 0) - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </div>
+          <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
+            <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%`, height: "100%", background: t.red, borderRadius: 3 }} />
           </div>
         </div>
       </div>
@@ -2555,22 +2557,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         </div>
       </>}
 
-      {/* ── MOBILE: compact 2-col summary ── */}
-      {!wide && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-          <div style={{ background: t.ink, borderRadius: 14, padding: '14px 16px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.cardLabel, marginBottom: 4 }}>Est. Tax</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, lineHeight: 1, color: t.bg, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
-          </div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: '14px 16px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkMute, marginBottom: 4 }}>Relief claimed</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, lineHeight: 1, color: t.ink, fontVariantNumeric: 'tabular-nums' }}>RM {totalRelief.toLocaleString()}</div>
-            <div style={{ height: 3, background: t.bgAlt, borderRadius: 3, marginTop: 8 }}>
-              <div style={{ width: `${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`, height: '100%', background: t.red, borderRadius: 3 }} />
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ── Category filter chips ── */}
       <div style={{ display:'flex', gap:8, flexWrap: wide ? 'wrap' : 'nowrap', overflowX: wide ? 'visible' : 'auto', marginBottom: 14, paddingBottom: wide ? 0 : 4 }}>
@@ -2655,8 +2642,17 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
       {drawerItem && (
         <div style={{ position:'fixed', inset:0, zIndex:700 }}>
-          <div onClick={closeDrawer} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)', animation: `${drawerClosing ? "" : "fadein 180ms ease"}`, opacity: drawerClosing ? 0 : 1, transition: "opacity 180ms ease"}} />
-          <div style={{position:'absolute', right:0, top:0, height:'100%', width:420, background:t.surface, borderLeft:`1px solid ${t.hair}`, display:'flex', flexDirection:'column', transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease"}}>
+          <div onClick={closeDrawer} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)', opacity: drawerClosing ? 0 : 1, transition: "opacity 180ms ease"}} />
+          {!wide && <div style={{position:'absolute', left:'50%', top:12, transform:'translateX(-50%)', width:40, height:4, background:'rgba(255,255,255,0.3)', borderRadius:2, zIndex:1}} />}
+          <div style={{
+            position:'absolute',
+            ...(wide
+              ? { right:0, top:0, height:'100%', width:440, borderLeft:`1px solid ${t.hair}`, transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease" }
+              : { left:0, right:0, bottom:0, maxHeight:'88vh', borderRadius:'20px 20px 0 0', transform: drawerClosing ? "translateY(100%)" : "translateY(0)", transition: "transform 240ms cubic-bezier(0.32,0,0,1)" }
+            ),
+            background:t.surface, display:'flex', flexDirection:'column', overflow:'hidden'
+          }}>
+          {!wide && <div style={{display:'flex', justifyContent:'center', padding:'12px 0 0'}}><div style={{width:40, height:4, background:t.hair, borderRadius:2}}/></div>}
             <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
             <div style={{padding:18, overflow:'auto', flex:1}}><div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8}}>ENTRIES · {drawerEntries.length}</div>{drawerEntries.length===0?<div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute}}>No claim entries yet. Add your first one below.</div>:drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{e.desc}</div><div style={{fontSize:12,color:t.inkMute}}>{e.date}</div></div><div style={{fontWeight:700}}>RM {e.amount.toLocaleString()}</div><button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:8,cursor:'pointer'}}>🗑</button></div>)}
               <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:14}}><div style={{fontSize:28,fontFamily:"'DM Serif Display', Georgia, serif",marginBottom:8}}>Add a new entry</div><div style={{fontSize:12,marginBottom:4}}>Description</div><input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ' style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:8,fontFamily:FONT}}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><div style={{fontSize:12,marginBottom:4}}>Date</div><input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div><div><div style={{fontSize:12,marginBottom:4}}>Amount (RM)</div><input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div></div><button onClick={handleDrawerAdd} style={{width:'100%',marginTop:10,padding:'10px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>+ Add entry</button></div>
@@ -2672,143 +2668,304 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 // ─────────────────────────────────────────────────────────────
 // INCOME TAB
 // ─────────────────────────────────────────────────────────────
+// INCOME TAB — EA Form + AI reader + Employed/Self-Employed
+// ─────────────────────────────────────────────────────────────
 function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
   totalEmploymentIncome, totalRentalIncome, totalRentalExpenses, netRentalIncome,
   totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
-  const [emp,        setEmp]        = useState("");
-  const [amt,        setAmt]        = useState("");
-  const [start,      setStart]      = useState("");
-  const [end,        setEnd]        = useState("");
-  const [rentalAddr, setRentalAddr] = useState("");
-  const [rentalAmt,  setRentalAmt]  = useState("");
+  const wide = useIsWide();
 
-  const fmtPeriod = (s, e) => {
-    const fmt = (d) => { if (!d) return ""; const [y, m] = d.split("-"); return MONTHS[parseInt(m) - 1] + " " + y; };
-    return (s && e) ? fmt(s) + " – " + fmt(e) : "Full year";
+  // ── Form state ──────────────────────────────────────────────
+  const [empType,     setEmpType]     = useState("employed"); // "employed" | "self"
+  const [employer,    setEmployer]    = useState("");
+  const [grossSalary, setGrossSalary] = useState("");
+  const [bonus,       setBonus]       = useState("");
+  const [otherAllow,  setOtherAllow]  = useState("");
+  const [mtdPaid,     setMtdPaid]     = useState("");
+  const [epfContrib,  setEpfContrib]  = useState("");
+  const [socso,       setSocso]       = useState("");
+  const [bizIncome,   setBizIncome]   = useState("");
+  const [cp500,       setCp500]       = useState("");
+
+  // ── EA Form AI state ─────────────────────────────────────────
+  const [aiLoading,   setAiLoading]   = useState(false);
+  const [aiErr,       setAiErr]       = useState(null);
+  const fileRef = useRef(null);
+
+  // ── Rental state ──────────────────────────────────────────────
+  const [rentalAddr, setRentalAddr]  = useState("");
+  const [rentalAmt,  setRentalAmt]   = useState("");
+
+  const totalForEntry = empType === "self"
+    ? (parseFloat(bizIncome) || 0)
+    : (parseFloat(grossSalary) || 0) + (parseFloat(bonus) || 0) + (parseFloat(otherAllow) || 0);
+
+  // ── AI EA Form reader ─────────────────────────────────────────
+  const readEAForm = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    e.target.value = "";
+    setAiErr(null);
+    setAiLoading(true);
+    try {
+      const raw = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = ev => res(ev.target.result);
+        r.onerror = rej;
+        r.readAsDataURL(f);
+      });
+      const semicolonIdx = raw.indexOf(";");
+      const commaIdx = raw.indexOf(",");
+      const mediaType = raw.substring(5, semicolonIdx);
+      const b64data = raw.substring(commaIdx + 1);
+
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 600,
+          system: `You are an expert at reading Malaysian EA forms (Borang EA / CP8A). Extract the following fields exactly and return ONLY valid JSON with no markdown:
+{"employer":"company name","grossSalary":0,"bonus":0,"otherAllowances":0,"mtdPaid":0,"epfContrib":0,"socso":0}
+Fields:
+- employer: Company name from the EA form
+- grossSalary: Section B1a — Gross salary/wages
+- bonus: Section B1b — Bonus and commission  
+- otherAllowances: Section B1c — Other allowances and perquisites
+- mtdPaid: Section D1 — MTD/PCB deducted
+- epfContrib: Section E1 — EPF employee contributions
+- socso: Section E2 — SOCSO/PERKESO contributions
+If a field is not found or unclear, use 0. All values are numbers, no RM prefix.`,
+          messages: [{ role: "user", content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: b64data } },
+            { type: "text", text: "Extract all the income and deduction fields from this EA form." }
+          ]}],
+        }),
+      });
+      const data = await res.json();
+      const textBlock = (data.content || []).find(b => b.type === "text");
+      if (!textBlock) throw new Error("No response");
+      let raw2 = textBlock.text.trim().replace(/```json|```/g, "");
+      const parsed = JSON.parse(raw2.substring(raw2.indexOf("{"), raw2.lastIndexOf("}") + 1));
+      if (parsed.employer)        setEmployer(parsed.employer);
+      if (parsed.grossSalary)     setGrossSalary(String(parsed.grossSalary));
+      if (parsed.bonus)           setBonus(String(parsed.bonus));
+      if (parsed.otherAllowances) setOtherAllow(String(parsed.otherAllowances));
+      if (parsed.mtdPaid)         setMtdPaid(String(parsed.mtdPaid));
+      if (parsed.epfContrib)      setEpfContrib(String(parsed.epfContrib));
+      if (parsed.socso)           setSocso(String(parsed.socso));
+    } catch (ex) {
+      setAiErr("Could not read EA form. Please fill in manually.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
+  const handleSave = async () => {
+    if (totalForEntry <= 0) return;
+    const inc = {
+      id: newId(),
+      employer: employer || (empType === "self" ? "Self-employment" : "Employer"),
+      amount: totalForEntry,
+      type: empType,
+      grossSalary:   parseFloat(grossSalary)  || 0,
+      bonus:         parseFloat(bonus)         || 0,
+      otherAllow:    parseFloat(otherAllow)    || 0,
+      mtdPaid:       parseFloat(mtdPaid)       || 0,
+      epfContrib:    parseFloat(epfContrib)    || 0,
+      socso:         parseFloat(socso)         || 0,
+      bizIncome:     parseFloat(bizIncome)     || 0,
+      cp500:         parseFloat(cp500)         || 0,
+      period: `YA${ya}`,
+    };
+    await onAdd(inc);
+    setEmployer(""); setGrossSalary(""); setBonus(""); setOtherAllow("");
+    setMtdPaid(""); setEpfContrib(""); setSocso(""); setBizIncome(""); setCp500("");
+    setAiErr(null);
+  };
+
+  const inp = (val, set, ph, prefix = "RM") => (
+    <div style={{ display: "flex", alignItems: "center", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, overflow: "hidden" }}>
+      {prefix && <span style={{ padding: "0 10px", fontSize: 13, color: t.inkMute, borderRight: `1px solid ${t.hair}`, height: "100%", display: "flex", alignItems: "center", background: t.bgAlt, fontFamily: FONT }}>{prefix}</span>}
+      <input value={val} onChange={e => set(e.target.value)} type="number" placeholder={ph}
+        style={{ flex: 1, padding: "11px 12px", border: "none", background: "transparent", color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none" }} />
+    </div>
+  );
+
+  const field = (label, val, set, ph, hint) => (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{label}</div>
+      {inp(val, set, ph)}
+      {hint && <div style={{ fontSize: 11, color: t.inkMute, marginTop: 4, lineHeight: 1.4 }}>{hint}</div>}
+    </div>
+  );
+
+  const cardStyle = { background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: wide ? 24 : 18, marginBottom: 16 };
+  const tabBtn = (id, label) => (
+    <button onClick={() => setEmpType(id)} style={{
+      flex: 1, padding: "10px 0", border: "none", borderRadius: 10,
+      background: empType === id ? t.ink : "transparent",
+      color: empType === id ? t.bg : t.inkMute,
+      fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer", transition: "all 0.15s"
+    }}>{label}</button>
+  );
+
   return (
-    <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
+    <div style={{ padding: wide ? "24px 28px 60px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? 800 : "100%", margin: "0 auto" }}>
 
-      {/* ── Tax summary at the top — always visible once income exists ── */}
-      {(incomes.length > 0 || rentalIncomes.length > 0) && (
-        <>
-          <div style={{ background: t.ink, color: t.bg, borderRadius: 18, padding: 18, marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: t.cardLabel, textTransform: "uppercase", letterSpacing: 1.2 }}>Total Income · YA{ya}</div>
-            <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: -1, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
-              RM {totalIncome.toLocaleString()}
-            </div>
-            {rentalIncomes.length > 0 && (
-              <div style={{ fontSize: 11, color: t.cardLabelSoft, marginTop: 4 }}>
-                Employment RM {totalEmploymentIncome.toLocaleString()} + Net rental RM {netRentalIncome.toLocaleString()}
-              </div>
-            )}
-          </div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Tax Estimate</div>
-            {taxIsTentative && (
-              <div style={{ padding: "8px 10px", background: t.goldSoft, borderRadius: 8, borderLeft: `3px solid ${t.gold}`, fontSize: 11, color: t.inkSoft, lineHeight: 1.5, marginBottom: 10 }}>
-                Using YA2025 brackets — YA2026+ rates not yet gazetted
-              </div>
-            )}
-            {[["Total Income", totalIncome, t.ink], ["Total Relief", totalRelief, t.green, "–"]].map(([l, v, c, prefix]) => (
-              <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: t.inkSoft, padding: "4px 0" }}>
-                <span>{l}</span>
-                <span style={{ fontWeight: 600, color: c, fontVariantNumeric: "tabular-nums" }}>{prefix ? `${prefix} ` : ""}RM {v.toLocaleString()}</span>
-              </div>
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700, color: t.ink, borderTop: `1px solid ${t.hair}`, marginTop: 8, paddingTop: 8 }}>
-              <span>Chargeable</span><span style={{ fontVariantNumeric: "tabular-nums" }}>RM {chargeable.toLocaleString()}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 20, fontWeight: 800, color: t.red, paddingTop: 4 }}>
-              <span>Est. Tax{taxIsTentative ? "*" : ""}</span>
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-            </div>
-          </div>
-        </>
-      )}
+      {/* ── Income entry form ── */}
+      <div style={cardStyle}>
+        <div style={{ fontSize: wide ? 20 : 17, fontWeight: 700, color: t.ink, marginBottom: 4 }}>Employment Income</div>
+        <div style={{ fontSize: 13, color: t.inkMute, marginBottom: 18 }}>Update your income information for YA{ya}</div>
 
-      {/* Employment */}
-      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, marginBottom: 12 }}>{L("add_emp_income")}</div>
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{L("employer")}</div>
-          <input value={emp} onChange={e => setEmp(e.target.value)} placeholder="e.g. Grab Malaysia"
-            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        {/* Employed / Self-Employed toggle */}
+        <div style={{ display: "flex", gap: 4, background: t.bgAlt, borderRadius: 12, padding: 4, marginBottom: 20 }}>
+          {tabBtn("employed", "Employed")}
+          {tabBtn("self", "Self-Employed")}
         </div>
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{L("annual_gross")}</div>
-          <input value={amt} onChange={e => setAmt(e.target.value)} type="number" placeholder="0"
-            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+
+        {empType === "employed" && <>
+          {/* EA Form AI upload */}
+          <div style={{ border: `1.5px dashed ${t.hair}`, borderRadius: 14, padding: "16px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", background: aiLoading ? t.bgAlt : t.bg }}
+            onClick={() => fileRef.current?.click()}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: t.redSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {aiLoading
+                ? <div style={{ width: 20, height: 20, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                : <Icon name="sparkleAi" size={18} color={t.red} />}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: t.ink }}>{aiLoading ? "Reading EA form…" : "Upload EA Form"}</div>
+              <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2 }}>Upload image or PDF — AI will auto-fill the fields below</div>
+            </div>
+            {!aiLoading && <span style={{ fontSize: 12, fontWeight: 600, color: t.red }}>Browse</span>}
+          </div>
+          <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={readEAForm} />
+          {aiErr && <div style={{ padding: "10px 14px", background: t.redSoft, borderRadius: 10, fontSize: 12, color: t.red, marginBottom: 14 }}>{aiErr}</div>}
+
+          <div style={{ borderBottom: `1px solid ${t.hair}`, paddingBottom: 4, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em" }}>OR ENTER MANUALLY</div>
+          </div>
+
+          {/* Employer name */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Employer Name</div>
+            <input value={employer} onChange={e => setEmployer(e.target.value)} placeholder="e.g. Acme Sdn Bhd"
+              style={{ width: "100%", padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+          </div>
+
+          {/* Section B — Employment Income */}
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", marginBottom: 10, paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+            SECTION B · EMPLOYMENT INCOME
+          </div>
+          {field("B1a  Gross Salary / Wages", grossSalary, setGrossSalary, "0", "Your annual gross salary or wages")}
+          {field("B1b  Bonus & Commission", bonus, setBonus, "0", "Annual bonus and commission received")}
+          {field("B1c  Other Allowances", otherAllow, setOtherAllow, "0", "Other allowances and perquisites")}
+
+          {/* Section D — Tax Deducted */}
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+            SECTION D · TAX DEDUCTED
+          </div>
+          {field("D1  MTD / PCB Paid", mtdPaid, setMtdPaid, "0", "Total Monthly Tax Deduction paid throughout the year")}
+
+          {/* Section E — Employee Contributions */}
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", margin: "18px 0 10px", paddingBottom: 4, borderBottom: `1px solid ${t.hair}` }}>
+            SECTION E · EMPLOYEE CONTRIBUTIONS
+          </div>
+          {field("E1  EPF Contributions", epfContrib, setEpfContrib, "0", "Your EPF contributions (employee portion)")}
+          {field("E2  SOCSO / PERKESO", socso, setSocso, "0", "Your SOCSO contributions")}
+        </>}
+
+        {empType === "self" && <>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Business / Freelance Description</div>
+            <input value={employer} onChange={e => setEmployer(e.target.value)} placeholder="e.g. Freelance design, consulting"
+              style={{ width: "100%", padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+          </div>
+          {field("Total Business Income", bizIncome, setBizIncome, "0", "Your total annual business or freelance income")}
+          {field("CP500 Tax Installments Paid", cp500, setCp500, "0", "Total CP500 installment payments made this year")}
+          <div style={{ padding: "12px 14px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: "#2563EB", lineHeight: 1.5 }}>
+              <strong>Note:</strong> Voluntary EPF (i-Saraan) and SOCSO contributions can be claimed as tax relief. Add them as transactions in the Relief tab to track your reliefs.
+            </div>
+          </div>
+        </>}
+
+        {/* Total + Save */}
+        <div style={{ background: t.bgAlt, borderRadius: 12, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Annual Income</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
+              RM {totalForEntry.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <button onClick={handleSave} disabled={totalForEntry <= 0}
+            style={{ padding: "12px 24px", border: "none", borderRadius: 12, background: totalForEntry > 0 ? t.red : t.bgAlt, color: totalForEntry > 0 ? "#fff" : t.inkMute, fontSize: 14, fontWeight: 700, fontFamily: FONT, cursor: totalForEntry > 0 ? "pointer" : "not-allowed" }}>
+            Save Changes
+          </button>
         </div>
-        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-          <MonthPicker label="Start" value={start} onChange={setStart} t={t} />
-          <MonthPicker label="End"   value={end}   onChange={setEnd}   t={t} />
-        </div>
-        <button onClick={async () => {
-          if (!emp || !amt) return;
-          await onAdd({ id: newId(), employer: emp, amount: parseFloat(amt) || 0, period: fmtPeriod(start, end) });
-          setEmp(""); setAmt(""); setStart(""); setEnd("");
-        }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Icon name="plus" size={16} color="#fff" /> {L("add_income_source")}
-        </button>
       </div>
 
+      {/* ── Saved employment sources ── */}
       {incomes.length > 0 && (
-        <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
-            {L("employment_sources")} · {incomes.length}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+            Employment Sources · {incomes.length}
           </div>
           {incomes.map(inc => (
-            <div key={inc.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name="briefcase" size={18} color={t.red} />
+            <div key={inc.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: t.ink }}>{inc.employer || "Employer"}</div>
+                  <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>{inc.type === "self" ? "Self-employed" : "Employed"} · YA{ya}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(inc.amount || 0).toLocaleString()}</div>
+                  <button onClick={() => onRemove(inc.id)} style={{ fontSize: 11, color: t.red, background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 4 }}>Remove</button>
+                </div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: t.ink }}>{inc.employer}</div>
-                <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>{inc.period}</div>
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {inc.amount.toLocaleString()}</div>
-              <button onClick={() => onRemove(inc.id)} style={{ width: 28, height: 28, border: "none", borderRadius: 8, background: t.redSoft, color: t.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name="close" size={14} color={t.red} />
-              </button>
+              {/* Breakdown */}
+              {inc.grossSalary > 0 && (
+                <div style={{ borderTop: `1px solid ${t.hair}`, paddingTop: 10, display: "grid", gridTemplateColumns: wide ? "1fr 1fr 1fr" : "1fr 1fr", gap: "6px 12px" }}>
+                  {[["Gross salary", inc.grossSalary], ["Bonus", inc.bonus], ["Other allow.", inc.otherAllow], ["MTD paid", inc.mtdPaid], ["EPF", inc.epfContrib], ["SOCSO", inc.socso]].filter(([,v]) => v > 0).map(([l, v]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.inkMute }}>
+                      <span>{l}</span><span style={{ fontWeight: 600, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(v||0).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
-        </>
+        </div>
       )}
 
-      {/* Rental */}
-      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 18, padding: 18, marginTop: 20, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <Icon name="key" size={16} color={t.gold} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: t.ink }}>{L("add_rental_income")}</div>
-        </div>
-        <div style={{ fontSize: 12, color: t.inkMute, marginBottom: 14, lineHeight: 1.5 }}>
-          {L("rental_hint_income")}
-        </div>
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{L("property_desc")}</div>
+      {/* ── Rental Income section ── */}
+      <div style={cardStyle}>
+        <div style={{ fontSize: wide ? 18 : 15, fontWeight: 700, color: t.ink, marginBottom: 4 }}>Rental Income</div>
+        <div style={{ fontSize: 12, color: t.inkMute, marginBottom: 16, lineHeight: 1.5 }}>Gross rent received. Add deductible expenses under Relief → Rental to reduce your net rental income.</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Property description</div>
           <input value={rentalAddr} onChange={e => setRentalAddr(e.target.value)} placeholder="e.g. Condo Unit A-12-3, PJ"
-            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+            style={{ width: "100%", padding: "11px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
         </div>
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{L("annual_gross_rental")}</div>
-          <input value={rentalAmt} onChange={e => setRentalAmt(e.target.value)} type="number" placeholder="0"
-            style={{ width: "100%", padding: "12px 14px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Annual gross rental income</div>
+          {inp(rentalAmt, setRentalAmt, "0")}
         </div>
         <button onClick={async () => {
           if (!rentalAddr || !rentalAmt) return;
           await onAddRental({ id: newId(), employer: rentalAddr, amount: parseFloat(rentalAmt) || 0, period: "Rental income" });
           setRentalAddr(""); setRentalAmt("");
         }} style={{ width: "100%", padding: 14, border: "none", borderRadius: 12, background: t.gold, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Icon name="plus" size={16} color="#fff" /> {L("add_rental_income")}
+          <Icon name="plus" size={16} color="#fff" /> Add Rental Income
         </button>
       </div>
 
+      {/* ── Saved rental properties ── */}
       {rentalIncomes.length > 0 && (
         <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
-            {L("rental_props")} · {rentalIncomes.length}
+          <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>
+            Rental Properties · {rentalIncomes.length}
           </div>
           {rentalIncomes.map(inc => (
             <div key={inc.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
@@ -2825,30 +2982,19 @@ function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRen
               </button>
             </div>
           ))}
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft, padding: "4px 0" }}>
-              <span>Gross rental income</span>
-              <span style={{ fontWeight: 600, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalRentalIncome.toLocaleString()}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft, padding: "4px 0" }}>
-              <span>Deductible expenses</span>
-              <span style={{ fontWeight: 600, color: t.green, fontVariantNumeric: "tabular-nums" }}>– RM {totalRentalExpenses.toLocaleString()}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: t.ink, borderTop: `1px solid ${t.hair}`, marginTop: 6, paddingTop: 8 }}>
-              <span>Net rental income</span>
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>RM {netRentalIncome.toLocaleString()}</span>
-            </div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 16 }}>
+            {[["Gross rental income", totalRentalIncome, t.ink], ["Deductible expenses", -totalRentalExpenses, t.green], ["Net rental income", netRentalIncome, t.ink]].map(([l, v, c], i) => (
+              <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: i === 2 ? 13 : 12, fontWeight: i === 2 ? 700 : 500, color: i === 2 ? t.ink : t.inkSoft, padding: "4px 0", borderTop: i === 2 ? `1px solid ${t.hair}` : "none", marginTop: i === 2 ? 6 : 0, paddingTop: i === 2 ? 8 : 4 }}>
+                <span>{l}</span><span style={{ fontVariantNumeric: "tabular-nums", color: c }}>RM {Math.abs(v).toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         </>
       )}
-
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// RECEIPTS TAB
-// ─────────────────────────────────────────────────────────────
 function ReceiptsTab({ t, receipts, onRemove, onView }) {
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
