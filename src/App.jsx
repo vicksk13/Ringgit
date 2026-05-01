@@ -717,6 +717,7 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
     sparkleAi:  <svg viewBox="0 0 24 24" style={s}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" {...p}/></svg>,
     home:       <svg viewBox="0 0 24 24" style={s}><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" {...p}/></svg>,
     key:        <svg viewBox="0 0 24 24" style={s}><circle cx="8" cy="15" r="4" {...p}/><path d="M12 11l8-8M18 6l2 2M15 9l2 2" {...p}/></svg>,
+    grid:       <svg viewBox="0 0 24 24" style={s}><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" {...p}/></svg>,
     cloud:      <svg viewBox="0 0 24 24" style={s}><path d="M18 10a6 6 0 0 0-12 0 4 4 0 0 0 0 8h12a4 4 0 0 0 0-8z" {...p}/></svg>,
     warn:       <svg viewBox="0 0 24 24" style={s}><path d="M12 9v4M12 17h.01M10.3 3.6L2.5 17a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" {...p}/></svg>,
   };
@@ -2448,6 +2449,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
   const [drawerItemId, setDrawerItemId] = useState(null);
+  const [drawerClosing, setDrawerClosing] = useState(false);
   const [amtIn, setAmtIn] = useState("");
   const [descIn, setDescIn] = useState("");
   const [dateIn, setDateIn] = useState(() => new Date().toISOString().slice(0, 10));
@@ -2473,11 +2475,16 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
     setAmtIn(""); setDescIn(""); setUnitsIn(1);
   };
 
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    setTimeout(() => { setDrawerItemId(null); setDrawerClosing(false); }, 180);
+  };
+
   return (
-    <div style={{ padding: "18px 20px 40px", fontFamily: FONT, maxWidth: 980, margin: "0 auto" }}>
+    <div style={{ padding: "16px 28px 40px", fontFamily: FONT, maxWidth: 1260, margin: "0 auto" }}>
       <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>YA2025 <span style={{margin: '0 8px'}}>/</span> Relief</div>
-      <div style={{ fontSize: 52, fontWeight: 700, color: t.ink, letterSpacing: -1, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
-      <div style={{ fontSize: 15, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+      <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
+      <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
         <div style={{ background: 'linear-gradient(120deg,#c8442b,#dd5a32)', borderRadius: 14, padding: 18, color: '#fff' }}>
@@ -2489,8 +2496,8 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:44}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
       </div>
 
-      <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <div><div style={{fontSize:34}}>✣</div></div><div style={{flex:1,marginLeft:12}}><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif"}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft}}>Our AI matches your receipt to the correct LHDN category and pre-fills the claim entry for you.</div></div>
+        <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="sparkleAi" size={19} color="#fff" /></div><div style={{flex:1,marginLeft:14}}><div style={{fontSize:36,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.04}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft}}>Our AI matches your receipt to the correct LHDN category and pre-fills the claim entry for you.</div></div>
         <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>Scan Receipt</button>
       </div>
 
@@ -2499,7 +2506,11 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
           const cnt = c.id === 'all' ? cats.length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
           const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
           const active = activeFilter === c.id;
-          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? '#1e1f28' : t.hair}`,background:active?'#1e1f28':t.surface,color:active?'#fff':t.inkSoft,borderRadius:999,padding:'7px 12px',fontSize:13,fontWeight:600,cursor:'pointer'}}>{c.id==='all'?c.name:c.name} <span style={{marginLeft:6,opacity:0.75,fontSize:11}}>{cnt}/{total}</span></button>
+          const icon = c.id === "all" ? "grid" : c.icon;
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? '#1e1f28' : t.hair}`,background:active?'#1e1f28':'#f7f6f3',color:active?'#fff':'#6b7080',borderRadius:999,padding:'8px 12px',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:7,lineHeight:1}}>
+            <Icon name={icon} size={14} color={active ? "#fff" : "#7b8090"} />
+            <span>{c.id==='all'?c.name:c.name}</span>
+            <span style={{marginLeft:2,background:active?'rgba(255,255,255,0.16)':'#ebe7de',padding:'3px 6px',borderRadius:999,fontSize:11,color:active?'#fff':'#7f7b71'}}>{cnt}/{total}</span></button>
         })}
       </div>
 
@@ -2510,6 +2521,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         const expanded = openCats.has(cat.id);
         return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
           <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding:'14px 16px',display:'flex',alignItems:'center',cursor:'pointer'}}>
+            <div style={{width:38,height:38,borderRadius:12,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:12}}><Icon name={cat.icon} size={17} color={t.red}/></div>
             <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left'}}>{cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span><div style={{fontSize:12,fontWeight:500,color:t.inkMute}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div></div>
             <div style={{width:160}}><div style={{fontSize:10,color:t.inkMute,textAlign:'right'}}>Utilised {util}%</div><div style={{height:5,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:4}}/></div></div>
           </button>
@@ -2518,9 +2530,9 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
               return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:182}}>
                 <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start'}}>{item.id}</div>
-                <div style={{fontSize:22,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:6,lineHeight:1.1}}>{item.name}</div>
+                <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:6,lineHeight:1.1}}>{item.name}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.desc}</div>
-                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:40,marginTop:8}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:8}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:-8,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
                 <div style={{marginTop:'auto',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:t.inkMute}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{eItems.length? 'View':'Add'}</button>}</div>
@@ -2532,13 +2544,13 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
       {drawerItem && (
         <div style={{ position:'fixed', inset:0, zIndex:700 }}>
-          <div onClick={()=>setDrawerItemId(null)} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)'}} />
-          <div style={{position:'absolute', right:0, top:0, height:'100%', width:420, background:t.surface, borderLeft:`1px solid ${t.hair}`, display:'flex', flexDirection:'column'}}>
-            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={()=>setDrawerItemId(null)} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:36,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:44,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
+          <div onClick={closeDrawer} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)', animation: `${drawerClosing ? "" : "fadein 180ms ease"}`, opacity: drawerClosing ? 0 : 1, transition: "opacity 180ms ease"}} />
+          <div style={{position:'absolute', right:0, top:0, height:'100%', width:420, background:t.surface, borderLeft:`1px solid ${t.hair}`, display:'flex', flexDirection:'column', transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease"}}>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
             <div style={{padding:18, overflow:'auto', flex:1}}><div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8}}>ENTRIES · {drawerEntries.length}</div>{drawerEntries.length===0?<div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute}}>No claim entries yet. Add your first one below.</div>:drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{e.desc}</div><div style={{fontSize:12,color:t.inkMute}}>{e.date}</div></div><div style={{fontWeight:700}}>RM {e.amount.toLocaleString()}</div><button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:8,cursor:'pointer'}}>🗑</button></div>)}
               <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:14}}><div style={{fontSize:28,fontFamily:"'DM Serif Display', Georgia, serif",marginBottom:8}}>Add a new entry</div><div style={{fontSize:12,marginBottom:4}}>Description</div><input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ' style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:8,fontFamily:FONT}}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><div style={{fontSize:12,marginBottom:4}}>Date</div><input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div><div><div style={{fontSize:12,marginBottom:4}}>Amount (RM)</div><input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div></div><button onClick={handleDrawerAdd} style={{width:'100%',marginTop:10,padding:'10px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>+ Add entry</button></div>
             </div>
-            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={()=>setDrawerItemId(null)} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
+            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={closeDrawer} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
           </div>
         </div>
       )}
