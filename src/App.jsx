@@ -382,7 +382,7 @@ const THEMES = {
   },
 };
 
-const FONT  = "'Poppins', -apple-system, system-ui, sans-serif";
+const FONT  = "'Inter', -apple-system, system-ui, sans-serif";
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -717,6 +717,7 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
     sparkleAi:  <svg viewBox="0 0 24 24" style={s}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8" {...p}/></svg>,
     home:       <svg viewBox="0 0 24 24" style={s}><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10" {...p}/></svg>,
     key:        <svg viewBox="0 0 24 24" style={s}><circle cx="8" cy="15" r="4" {...p}/><path d="M12 11l8-8M18 6l2 2M15 9l2 2" {...p}/></svg>,
+    grid:       <svg viewBox="0 0 24 24" style={s}><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" {...p}/></svg>,
     cloud:      <svg viewBox="0 0 24 24" style={s}><path d="M18 10a6 6 0 0 0-12 0 4 4 0 0 0 0 8h12a4 4 0 0 0 0-8z" {...p}/></svg>,
     warn:       <svg viewBox="0 0 24 24" style={s}><path d="M12 9v4M12 17h.01M10.3 3.6L2.5 17a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" {...p}/></svg>,
   };
@@ -1497,22 +1498,33 @@ export default function MakeCents() {
   const itemEntries  = (id) => entries.filter(e => e.itemId === id);
   const itemTotalRaw = (id) => itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
 
-  // itemTotalCapped — enforces individual caps + combined caps for G6/G7/G8 and G17ins/G17epf
+  const groupRaw = (ids) => ids.reduce((s, id) => s + itemTotalRaw(id), 0);
+  const groupCapped = {
+    med678: Math.min(Math.min(itemTotalRaw("G6"), 10000) + Math.min(itemTotalRaw("G7"), 1000) + Math.min(itemTotalRaw("G8"), 6000), 10000),
+    g9: Math.min(groupRaw(["G9"]), 2500),
+    g10: Math.min(groupRaw(["G10"]), 1000),
+    g17: Math.min(Math.min(itemTotalRaw("G17ins"),3000) + Math.min(itemTotalRaw("G17epf"),4000), 7000),
+    g21: Math.min(groupRaw(["G21"]), 2500),
+    g22: Math.min(itemTotalRaw("G22"), 7000),
+  };
+
+  // itemTotalCapped — enforces individual caps + combined caps
   const itemTotalCapped = (id) => {
     const it = allItems.find(i => i.id === id);
     if (!it) return 0;
     if (it.cap >= 999999) return itemTotalRaw(id);
 
-    // ── G6 + G7 + G8 share a combined RM10,000 cap ───────────
-    // Priority: G7 sub-limit RM1k, G8 sub-limit RM6k, G6 gets remainder
     if (id === "G6" || id === "G7" || id === "G8") {
       const g7Used = Math.min(itemTotalRaw("G7"), 1000);
       const g8Used = Math.min(itemTotalRaw("G8"), 6000);
       if (id === "G7") return g7Used;
       if (id === "G8") return g8Used;
-      // G6 gets whatever RM10k headroom remains after G7 and G8
       return Math.min(itemTotalRaw("G6"), Math.max(0, 10000 - g7Used - g8Used));
     }
+    if (id === "G9") return groupCapped.g9;
+    if (id === "G10") return groupCapped.g10;
+    if (id === "G21") return groupCapped.g21;
+    if (id === "G22") return groupCapped.g22;
 
     // ── G17ins / G17epf individual sub-limits ────────────────
     // Combined RM7k cap enforced separately in totalRelief
@@ -1523,18 +1535,15 @@ export default function MakeCents() {
     return Math.min(itemTotalRaw(id), cap);
   };
 
-  // G17 combined cap — capped at RM7k total regardless of sub-limits
-  const g17Combined = (() => {
-    const ins = allItems.some(i => i.id === "G17ins") ? itemTotalCapped("G17ins") : 0;
-    const epf = allItems.some(i => i.id === "G17epf") ? itemTotalCapped("G17epf") : 0;
-    return Math.min(ins + epf, 7000);
-  })();
+  const g17Combined = groupCapped.g17;
 
   const totalRelief = allItems.reduce((s, i) => {
     if (i.id.startsWith("R")) return s;
     if (i.id === "G17ins" || i.id === "G17epf") return s; // rolled into g17Combined
     return s + (i.auto ? i.cap : itemTotalCapped(i.id));
   }, 0) + g17Combined;
+
+  const eligibleCapTotal = 9000 + 8000 + 6000 + 10000 + 2500 + 1000 + 2500 + 7000 + 8000 + 4000 + 6000 + 7000 + 3000 + 4000 + 350 + 7000;
 
   const totalRentalIncome     = rentalIncomes.reduce((s, i) => s + (i.amount || 0), 0);
   const totalRentalExpenses   = ["R1","R2","R3","R4","R5"].reduce((s, id) => s + itemTotalRaw(id), 0);
@@ -2010,6 +2019,7 @@ export default function MakeCents() {
         <ReliefTab t={t} L={L} cats={cats} entries={entries}
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
+          totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2081,7 +2091,7 @@ export default function MakeCents() {
 
           {/* Logo + user info */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
-            <MakeCentsLogo size={32} />
+            <div style={{width:32,height:32,borderRadius:10,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontFamily:"'DM Serif Display', Georgia, serif",fontSize:20,fontWeight:700}}>R</div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
               <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 500 }}>
@@ -2148,14 +2158,8 @@ export default function MakeCents() {
           )}
         </div>
 
-        {/* Main content */}
+          {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          {/* Page title bar */}
-          <div style={{ padding: "26px 32px 18px", background: t.bg, borderBottom: `1px solid ${t.hair}`, flexShrink: 0 }}>
-            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>YA{ya}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
-          </div>
-          {/* Tab content */}
           <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
             {yaSpinner}
             {tabContent}
@@ -2214,26 +2218,19 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
 
   if (wide) {
     return (
-      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", fontFamily: FONT }}>
-        {/* Left branding panel */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", background: t.bgAlt }}>
-          <div style={{ marginBottom: 36, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}>
-            <MakeCentsLogo size={88} />
+      <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 980, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", padding: "44px 48px", display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 44 }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ marginBottom: 28, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}><MakeCentsLogo size={72} /></div>
+            <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
+            <div style={{ fontSize: 18, color: t.inkMute, marginTop: 14, lineHeight: 1.55, maxWidth: 440 }}>{L("welcome_tagline")}</div>
+            <div style={{ display: "flex", gap: 10, marginTop: 30, flexWrap: "wrap" }}>
+              {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
+                <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>{f}</div>
+              ))}
+            </div>
           </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
-          <div style={{ fontSize: 18, color: t.inkMute, marginTop: 18, lineHeight: 1.6, maxWidth: 400 }}>
-            {L("welcome_tagline")}
-          </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 48, flexWrap: "wrap" }}>
-            {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
-              <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>
-                {f}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Right login panel */}
-        <div style={{ width: 460, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 52px", borderLeft: `1px solid ${t.hair}`, background: t.bg }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 10 }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginBottom: 6 }}>Get started</div>
           <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.5 }}>Track your Malaysian income tax reliefs and estimate your annual tax.</div>
           <button onClick={onGoogle} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
@@ -2252,6 +2249,7 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
             {" · "}
             <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
           </div>
+        </div>
         </div>
       </div>
     );
@@ -2443,210 +2441,127 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner }) {
-  const [expCat,    setExpCat]    = useState("lifestyle");
-  const [expItem,   setExpItem]   = useState(null);
-  const [addingFor, setAddingFor] = useState(null);
-  const [amtIn,     setAmtIn]     = useState("");
-  const [descIn,    setDescIn]    = useState("");
-  const [unitsIn,   setUnitsIn]   = useState(1);
-  const [search,    setSearch]    = useState("");
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal }) {
+  const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [drawerItemId, setDrawerItemId] = useState(null);
+  const [drawerClosing, setDrawerClosing] = useState(false);
+  const [amtIn, setAmtIn] = useState("");
+  const [descIn, setDescIn] = useState("");
+  const [dateIn, setDateIn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [unitsIn, setUnitsIn] = useState(1);
 
-  const filtCats = search
-    ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc + i.id).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length)
-    : cats;
+  const totalCap = eligibleCapTotal || 0;
+  const remainingRelief = Math.max(0, totalCap - totalRelief);
 
-  const handleAdd = async (item) => {
+  const shownCats = activeFilter === "all" ? cats : cats.filter(c => c.id === activeFilter);
+  const toggleCat = (id) => setOpenCats(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const drawerItem = cats.flatMap(c => c.items).find(i => i.id === drawerItemId) || null;
+  const drawerEntries = drawerItem ? itemEntries(drawerItem.id) : [];
+  const drawerRaw = drawerItem ? itemTotalRaw(drawerItem.id) : 0;
+  const drawerCap = drawerItem ? (drawerItem.cap >= 999999 ? drawerRaw : (drawerItem.perUnit ? drawerItem.cap * (drawerEntries[0]?.units || 1) : drawerItem.cap)) : 0;
+  const drawerClaimed = drawerItem ? (drawerItem.auto ? drawerItem.cap : Math.min(drawerRaw, drawerCap || drawerRaw)) : 0;
+
+  const handleDrawerAdd = async () => {
+    if (!drawerItem) return;
     const amt = parseFloat(amtIn) || 0;
     if (amt <= 0) return;
-    await onAddEntry(item.id, amt, descIn || item.name, unitsIn || 1, false, null);
-    setAmtIn(""); setDescIn(""); setUnitsIn(1); setAddingFor(null);
-    setExpItem(item.id);
+    await onAddEntry(drawerItem.id, amt, descIn || drawerItem.name, unitsIn || 1, false, null);
+    setAmtIn(""); setDescIn(""); setUnitsIn(1);
+  };
+
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    setTimeout(() => { setDrawerItemId(null); setDrawerClosing(false); }, 180);
   };
 
   return (
-    <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14 }}>
-        <Icon name="search" size={16} color={t.inkMute} />
-        <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
+    <div style={{ padding: "16px 28px 40px", fontFamily: FONT, maxWidth: 1260, margin: "0 auto" }}>
+      <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>YA2025 <span style={{margin: '0 8px'}}>/</span> Relief</div>
+      <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
+      <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div style={{ background: 'linear-gradient(120deg,#c8442b,#dd5a32)', borderRadius: 14, padding: 18, color: '#fff' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.1 }}>ESTIMATED TAX REFUND</div>
+          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 50, lineHeight: 1.04, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
+          <div style={{ fontSize: 13, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+        </div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared for YA2025</div></div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1.1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:52,lineHeight:1.05,marginTop:2}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
       </div>
 
-      {filtCats.map(cat => {
-        const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-        const expanded  = expCat === cat.id || !!search;
-        const isRental  = cat.id === "rental";
+        <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="sparkleAi" size={19} color="#fff" /></div><div style={{flex:1,marginLeft:14}}><div style={{fontSize:36,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.04}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft}}>Our AI matches your receipt to the correct LHDN category and pre-fills the claim entry for you.</div></div>
+        <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>Scan Receipt</button>
+      </div>
 
-        return (
-          <div key={cat.id} style={{ marginBottom: 12 }}>
-            <button onClick={() => setExpCat(expanded && !search ? null : cat.id)}
-              style={{ width: "100%", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: isRental ? t.goldSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={cat.icon} size={18} color={isRental ? t.gold : t.red} />
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom: 14 }}>
+        {[{id:'all',name:'All categories'}, ...cats].map(c => {
+          const cnt = c.id === 'all' ? cats.length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
+          const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
+          const active = activeFilter === c.id;
+          const icon = c.id === "all" ? "grid" : c.icon;
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? '#1e1f28' : t.hair}`,background:active?'#1e1f28':'#f7f6f3',color:active?'#fff':'#6b7080',borderRadius:999,padding:'8px 12px',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:7,lineHeight:1}}>
+            <Icon name={icon} size={14} color={active ? "#fff" : "#7b8090"} />
+            <span>{c.id==='all'?c.name:c.name}</span>
+            <span style={{marginLeft:2,background:active?'rgba(255,255,255,0.16)':'#ebe7de',padding:'3px 6px',borderRadius:999,fontSize:11,color:active?'#fff':'#7f7b71'}}>{cnt}/{total}</span></button>
+        })}
+      </div>
+
+      {shownCats.map(cat => {
+        const fixedCaps = { personal: 26000, medical: 24000, lifestyle: 6000, insurance: 14350, education: 15000, housing: 7000 };
+        const medGroup = Math.min(Math.min(itemTotalRaw("G6"),10000) + Math.min(itemTotalRaw("G7"),1000) + Math.min(itemTotalRaw("G8"),6000), 10000);
+        const claimed = cat.id === "medical"
+          ? Math.min(itemTotalRaw("G2"),8000) + Math.min(itemTotalRaw("G3"),6000) + medGroup
+          : cat.id === "insurance"
+            ? Math.min(Math.min(itemTotalRaw("G17ins"),3000)+Math.min(itemTotalRaw("G17epf"),4000),7000) + Math.min(itemTotalRaw("G18"),3000)+Math.min(itemTotalRaw("G19"),4000)+Math.min(itemTotalRaw("G20"),350)
+            : cat.id === "lifestyle"
+              ? Math.min(itemTotalRaw("G9"),2500)+Math.min(itemTotalRaw("G10"),1000)+Math.min(itemTotalRaw("G21"),2500)
+              : cat.items.reduce((s,i)=> s + (i.auto?i.cap:Math.min(itemTotalRaw(i.id), i.cap>=999999?itemTotalRaw(i.id):(i.perUnit ? i.cap * (itemEntries(i.id)[0]?.units || 1) : i.cap))),0);
+        const cap = fixedCaps[cat.id] ?? cat.items.reduce((s,i)=> s + (i.cap>=999999?0:i.cap),0);
+        const util = cap ? Math.round((claimed/cap)*100) : 0;
+        const expanded = openCats.has(cat.id);
+        return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
+          <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding:'14px 16px',display:'flex',alignItems:'center',cursor:'pointer'}}>
+            <div style={{width:38,height:38,borderRadius:12,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:12}}><Icon name={cat.icon} size={17} color={t.red}/></div>
+            <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left',lineHeight:1.18}}>
+              {cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
+              <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginTop:6,lineHeight:1.2}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div>
+            </div>
+            <div style={{width:190,marginRight:14}}><div style={{display:'flex',justifyContent:'space-between',fontSize:15,color:t.inkSoft,fontWeight:600,marginBottom:6}}><span>Utilised</span><span style={{color:t.ink,fontWeight:700}}>{util}%</span></div><div style={{height:7,background:t.bgAlt,borderRadius:5}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:5}}/></div></div>
+            <Icon name={expanded ? "chevD" : "chevR"} size={16} color={t.inkMute} />
+          </button>
+          {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
+            {cat.items.map(item=>{
+              const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
+              return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:216}}>
+                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start',marginBottom:8}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
+                <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.1,minHeight:42}}>{item.name}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
+                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
+                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
+                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1}}>{eItems.length? 'View':'Add'}</button>}</div>
               </div>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{cat.name}</div>
-                <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2, fontWeight: 500 }}>
-                  {isRental ? "Track deductible rental expenses" : `${doneCount} of ${cat.items.length} claimed`}
-                </div>
-              </div>
-              {!isRental && (
-                <div style={{ padding: "4px 10px", borderRadius: 8, background: doneCount === cat.items.length ? t.greenSoft : t.bgAlt, color: doneCount === cat.items.length ? t.green : t.inkSoft, fontSize: 11, fontWeight: 700 }}>
-                  {doneCount}/{cat.items.length}
-                </div>
-              )}
-              <div style={{ transform: expanded ? "rotate(90deg)" : "none", transition: "transform .2s" }}>
-                <Icon name="chevR" size={14} color={t.inkMute} />
-              </div>
-            </button>
-
-            {expanded && (
-              <div style={{ marginTop: 8 }}>
-                {isRental && (
-                  <div style={{ padding: "10px 14px", background: t.goldSoft, borderRadius: 12, borderLeft: `3px solid ${t.gold}`, fontSize: 12, color: t.inkSoft, marginBottom: 8, lineHeight: 1.5 }}>
-                    Add rental expenses below. These are deducted from your gross rental income (entered in the <b>Income</b> tab) to arrive at net rental income.
-                  </div>
-                )}
-                {cat.items.map(item => {
-                  const eItems   = itemEntries(item.id);
-                  const rawTotal = itemTotalRaw(item.id);
-                  const units    = eItems[0]?.units || 1;
-                  const isUncapped = item.cap >= 999999;
-                  const capEff   = isUncapped ? (rawTotal || 1) : (item.perUnit ? item.cap * units : item.cap);
-                  const claimed  = item.auto ? item.cap : (isUncapped ? rawTotal : Math.min(rawTotal, capEff));
-                  const pct      = isUncapped ? 100 : Math.round((claimed / capEff) * 100);
-                  const done     = claimed > 0;
-                  const isExp    = expItem === item.id;
-                  const isAdding = addingFor === item.id;
-                  const overCap  = !isUncapped && rawTotal > capEff;
-
-                  return (
-                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
-                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: isRental ? t.gold : t.red, background: isRental ? t.goldSoft : t.redSoft, padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{item.id}</span>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{item.name}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: t.inkMute, lineHeight: 1.5, marginBottom: 12 }}>{item.desc}</div>
-
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                            <div style={{ flex: 1, height: 6, background: t.bgAlt, borderRadius: 4, overflow: "hidden" }}>
-                              <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: item.auto ? t.green : (done ? (isRental ? t.gold : t.red) : t.inkMute), borderRadius: 4, transition: "width .3s" }} />
-                            </div>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: t.inkSoft, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>
-                              {isUncapped ? "" : `${pct}%`}
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.inkMute, fontWeight: 500 }}>
-                            <span style={{ color: done ? t.ink : t.inkMute, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                              RM {claimed.toLocaleString()}
-                            </span>
-                            {!isUncapped && (
-                              <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                                / RM {capEff.toLocaleString()} cap{item.perUnit ? ` (${units} ${item.unitName})` : ""}
-                              </span>
-                            )}
-                            {isUncapped && <span style={{ color: t.inkMute }}>No cap — full deduction</span>}
-                          </div>
-                          {overCap && (
-                            <div style={{ fontSize: 10, color: t.gold, fontWeight: 600, marginTop: 6 }}>
-                              Capped — entered RM{rawTotal.toLocaleString()} but cap is RM{capEff.toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                          {item.auto ? (
-                            <div style={{ padding: "6px 10px", borderRadius: 8, background: t.greenSoft, color: t.green, fontSize: 9, fontWeight: 700, letterSpacing: 0.5 }}>AUTO</div>
-                          ) : (
-                            <button onClick={() => {
-                              if (eItems.length === 0) { setAddingFor(isAdding ? null : item.id); setAmtIn(""); setDescIn(""); setUnitsIn(1); }
-                              else { setExpItem(isExp ? null : item.id); }
-                            }} style={{ padding: "8px 14px", border: "none", borderRadius: 10, background: done ? t.ink : (isRental ? t.gold : t.red), color: done ? t.bg : "#fff", fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                              {done ? (<>View <Icon name={isExp ? "chevD" : "chevR"} size={10} color={t.bg} /></>) : "Add"}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {isExp && eItems.length > 0 && !item.auto && (
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                            Entries · {eItems.length}
-                          </div>
-                          {eItems.map(e => (
-                            <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${t.hair}` }}>
-                              <div style={{ width: 30, height: 30, borderRadius: 8, background: e.hasReceipt ? t.greenSoft : t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Icon name={e.hasReceipt ? "receipt" : "plus"} size={14} color={e.hasReceipt ? t.green : t.inkMute} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.desc}</div>
-                                <div style={{ fontSize: 10, color: t.inkMute, marginTop: 1 }}>
-                                  {e.date}{e.hasReceipt ? " · Receipt attached" : ""}
-                                </div>
-                              </div>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {e.amount.toLocaleString()}</div>
-                              <button onClick={() => onRemoveEntry(e.id)} style={{ width: 22, height: 22, border: "none", borderRadius: 6, background: "transparent", color: t.inkMute, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Icon name="close" size={12} color={t.inkMute} />
-                              </button>
-                            </div>
-                          ))}
-                          <button onClick={() => { setAddingFor(item.id); setAmtIn(""); setDescIn(""); setUnitsIn(units); }}
-                            style={{ width: "100%", marginTop: 10, padding: "10px 12px", border: `1.5px dashed ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: isRental ? t.gold : t.red, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                            <Icon name="plus" size={14} color={isRental ? t.gold : t.red} />
-                            Add another entry
-                          </button>
-                        </div>
-                      )}
-
-                      {isAdding && (
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                            New entry — {item.id}
-                          </div>
-                          <input autoFocus value={descIn} onChange={e => setDescIn(e.target.value)}
-                            placeholder="Description (e.g. Plumbing repair)"
-                            style={{ width: "100%", padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
-                          {item.perUnit && (
-                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                              <span style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>Number of {item.unitName}:</span>
-                              <input type="number" min="1" value={unitsIn} onChange={e => setUnitsIn(parseInt(e.target.value) || 1)}
-                                style={{ width: 60, padding: "8px 10px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", textAlign: "center" }} />
-                            </div>
-                          )}
-                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: t.inkMute }}>RM</span>
-                            <input type="number" value={amtIn} onChange={e => setAmtIn(e.target.value)} placeholder="0.00"
-                              style={{ flex: 1, padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
-                            {!isRental && (
-                              <button onClick={() => { onOpenScanner(item); setAddingFor(null); }}
-                                style={{ padding: "10px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                                <Icon name="camera" size={13} color={t.ink} />
-                                Scan
-                              </button>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <button onClick={() => handleAdd(item)}
-                              style={{ flex: 1, padding: "10px 14px", border: "none", borderRadius: 10, background: isRental ? t.gold : t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>
-                              Save entry
-                            </button>
-                            <button onClick={() => { setAddingFor(null); setAmtIn(""); setDescIn(""); }}
-                              style={{ padding: "10px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: "transparent", color: t.inkSoft, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
+            })}
+          </div>}
+        </div>
       })}
+
+      {drawerItem && (
+        <div style={{ position:'fixed', inset:0, zIndex:700 }}>
+          <div onClick={closeDrawer} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)', animation: `${drawerClosing ? "" : "fadein 180ms ease"}`, opacity: drawerClosing ? 0 : 1, transition: "opacity 180ms ease"}} />
+          <div style={{position:'absolute', right:0, top:0, height:'100%', width:420, background:t.surface, borderLeft:`1px solid ${t.hair}`, display:'flex', flexDirection:'column', transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease"}}>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
+            <div style={{padding:18, overflow:'auto', flex:1}}><div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8}}>ENTRIES · {drawerEntries.length}</div>{drawerEntries.length===0?<div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute}}>No claim entries yet. Add your first one below.</div>:drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{e.desc}</div><div style={{fontSize:12,color:t.inkMute}}>{e.date}</div></div><div style={{fontWeight:700}}>RM {e.amount.toLocaleString()}</div><button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:8,cursor:'pointer'}}>🗑</button></div>)}
+              <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:14}}><div style={{fontSize:28,fontFamily:"'DM Serif Display', Georgia, serif",marginBottom:8}}>Add a new entry</div><div style={{fontSize:12,marginBottom:4}}>Description</div><input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ' style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:8,fontFamily:FONT}}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><div style={{fontSize:12,marginBottom:4}}>Date</div><input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div><div><div style={{fontSize:12,marginBottom:4}}>Amount (RM)</div><input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div></div><button onClick={handleDrawerAdd} style={{width:'100%',marginTop:10,padding:'10px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>+ Add entry</button></div>
+            </div>
+            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={closeDrawer} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3613,11 +3528,12 @@ const baseStyle = (t) => ({
 });
 
 const globalCSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
 input::placeholder, textarea::placeholder { color: rgba(139,130,117,0.7); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
