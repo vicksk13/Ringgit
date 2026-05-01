@@ -382,7 +382,7 @@ const THEMES = {
   },
 };
 
-const FONT  = "'Poppins', -apple-system, system-ui, sans-serif";
+const FONT  = "'Inter', -apple-system, system-ui, sans-serif";
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -2445,242 +2445,103 @@ function TabBar({ t, L, tab, setTab }) {
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
 function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax }) {
-  const [expCat,    setExpCat]    = useState("lifestyle");
-  const [expItem,   setExpItem]   = useState(null);
-  const [addingFor, setAddingFor] = useState(null);
-  const [amtIn,     setAmtIn]     = useState("");
-  const [descIn,    setDescIn]    = useState("");
-  const [unitsIn,   setUnitsIn]   = useState(1);
-  const [search,    setSearch]    = useState("");
+  const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [drawerItemId, setDrawerItemId] = useState(null);
+  const [amtIn, setAmtIn] = useState("");
+  const [descIn, setDescIn] = useState("");
+  const [dateIn, setDateIn] = useState(() => new Date().toISOString().slice(0, 10));
+  const [unitsIn, setUnitsIn] = useState(1);
 
-  const filtCats = search
-    ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc + i.id).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length)
-    : cats;
+  const totalCap = cats.flatMap(c => c.items).reduce((s, i) => s + (i.cap >= 999999 ? 0 : i.cap), 0);
+  const remainingRelief = Math.max(0, totalCap - totalRelief);
 
-  const handleAdd = async (item) => {
+  const shownCats = activeFilter === "all" ? cats : cats.filter(c => c.id === activeFilter);
+  const toggleCat = (id) => setOpenCats(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const drawerItem = cats.flatMap(c => c.items).find(i => i.id === drawerItemId) || null;
+  const drawerEntries = drawerItem ? itemEntries(drawerItem.id) : [];
+  const drawerRaw = drawerItem ? itemTotalRaw(drawerItem.id) : 0;
+  const drawerCap = drawerItem ? (drawerItem.cap >= 999999 ? drawerRaw : (drawerItem.perUnit ? drawerItem.cap * (drawerEntries[0]?.units || 1) : drawerItem.cap)) : 0;
+  const drawerClaimed = drawerItem ? (drawerItem.auto ? drawerItem.cap : Math.min(drawerRaw, drawerCap || drawerRaw)) : 0;
+
+  const handleDrawerAdd = async () => {
+    if (!drawerItem) return;
     const amt = parseFloat(amtIn) || 0;
     if (amt <= 0) return;
-    await onAddEntry(item.id, amt, descIn || item.name, unitsIn || 1, false, null);
-    setAmtIn(""); setDescIn(""); setUnitsIn(1); setAddingFor(null);
-    setExpItem(item.id);
+    await onAddEntry(drawerItem.id, amt, descIn || drawerItem.name, unitsIn || 1, false, null);
+    setAmtIn(""); setDescIn(""); setUnitsIn(1);
   };
 
-  const remainingRelief = Math.max(0, totalIncome - totalRelief);
-  const selectedCategory = filtCats.find(c => c.id === expCat) || filtCats[0];
-
   return (
-    <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
-        {[
-          { label: "Estimated Tax Refund", value: estTax, strong: true, tone: t.red, bg: t.redSoft },
-          { label: "Total Income", value: totalIncome, tone: t.ink, bg: t.surface },
-          { label: "Remaining Claimable Relief", value: remainingRelief, tone: t.green, bg: t.greenSoft },
-        ].map((kpi) => (
-          <div key={kpi.label} style={{ background: kpi.bg, border: `1px solid ${kpi.strong ? t.red : t.hair}`, borderRadius: 14, padding: kpi.strong ? "16px 14px" : "14px", boxShadow: kpi.strong ? "0 8px 22px rgba(200,68,43,0.2)" : "none" }}>
-            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>{kpi.label}</div>
-            <div style={{ fontSize: kpi.strong ? 24 : 20, fontWeight: 800, color: kpi.tone, letterSpacing: -0.4, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
-              RM {Number(kpi.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14 }}>
-        <Icon name="search" size={16} color={t.inkMute} />
-        <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
+    <div style={{ padding: "18px 20px 40px", fontFamily: FONT, maxWidth: 980, margin: "0 auto" }}>
+      <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>YA2025 <span style={{margin: '0 8px'}}>/</span> Relief</div>
+      <div style={{ fontSize: 52, fontWeight: 700, color: t.ink, letterSpacing: -1, fontFamily: "'DM Serif Display', Georgia, serif" }}>Relief overview</div>
+      <div style={{ fontSize: 15, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div style={{ background: 'linear-gradient(120deg,#c8442b,#dd5a32)', borderRadius: 14, padding: 18, color: '#fff' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>ESTIMATED TAX REFUND</div>
+          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 54, lineHeight: 1.05, marginTop: 6 }}>RM {estTax.toLocaleString()}</div>
+          <div style={{ fontSize: 14, opacity: 0.92, marginTop: 8 }}>Based on your declared income and current claims.</div>
+        </div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1,fontWeight:700,color:t.inkMute}}>TOTAL INCOME</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:44}}>RM {totalIncome.toLocaleString()}</div><div style={{fontSize:13,color:t.inkSoft}}>As declared for YA2025</div></div>
+        <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}><div style={{fontSize:12,letterSpacing:1,fontWeight:700,color:t.inkMute}}>REMAINING RELIEF</div><div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:44}}>RM {remainingRelief.toLocaleString()}</div><div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10}}><div style={{width:`${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>RM {totalRelief.toLocaleString()} claimed of RM {totalCap.toLocaleString()} cap</div></div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 300px) 1fr", gap: 12 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {filtCats.map(cat => {
-        const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-        const expanded  = expCat === cat.id;
-        const isRental  = cat.id === "rental";
+      <div style={{ background: '#f8eae4', border: `1px solid ${t.redSoft}`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div><div style={{fontSize:34}}>✣</div></div><div style={{flex:1,marginLeft:12}}><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif"}}>Scan a receipt to add relief automatically</div><div style={{fontSize:13,color:t.inkSoft}}>Our AI matches your receipt to the correct LHDN category and pre-fills the claim entry for you.</div></div>
+        <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>Scan Receipt</button>
+      </div>
 
-        return (
-          <div key={cat.id}>
-            <button onClick={() => setExpCat(cat.id)}
-              style={{ width: "100%", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: isRental ? t.goldSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={cat.icon} size={18} color={isRental ? t.gold : t.red} />
-              </div>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{cat.name}</div>
-                <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2, fontWeight: 500 }}>
-                  {isRental ? "Track deductible rental expenses" : `${doneCount} of ${cat.items.length} claimed`}
-                </div>
-              </div>
-              {!isRental && (
-                <div style={{ padding: "4px 10px", borderRadius: 8, background: doneCount === cat.items.length ? t.greenSoft : t.bgAlt, color: doneCount === cat.items.length ? t.green : t.inkSoft, fontSize: 11, fontWeight: 700 }}>
-                  {doneCount}/{cat.items.length}
-                </div>
-              )}
-              <div style={{ transform: expanded ? "rotate(90deg)" : "none", transition: "transform .2s" }}>
-                <Icon name="chevR" size={14} color={t.inkMute} />
-              </div>
-            </button>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom: 14 }}>
+        {[{id:'all',name:'All categories'}, ...cats].map(c => {
+          const cnt = c.id === 'all' ? cats.length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
+          const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
+          const active = activeFilter === c.id;
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? '#1e1f28' : t.hair}`,background:active?'#1e1f28':t.surface,color:active?'#fff':t.inkSoft,borderRadius:999,padding:'7px 12px',fontSize:13,fontWeight:600,cursor:'pointer'}}>{c.id==='all'?c.name:c.name} <span style={{marginLeft:6,opacity:0.75,fontSize:11}}>{cnt}/{total}</span></button>
+        })}
+      </div>
 
-          </div>
-        );
+      {shownCats.map(cat => {
+        const claimed = cat.items.reduce((s,i)=> s + (i.auto?i.cap:Math.min(itemTotalRaw(i.id), i.cap>=999999?itemTotalRaw(i.id):(i.perUnit ? i.cap * (itemEntries(i.id)[0]?.units || 1) : i.cap))),0);
+        const cap = cat.items.reduce((s,i)=> s + (i.cap>=999999?0:i.cap),0);
+        const util = cap ? Math.round((claimed/cap)*100) : 0;
+        const expanded = openCats.has(cat.id);
+        return <div key={cat.id} style={{background:t.surface,border:`1px solid ${t.hair}`,borderRadius:14,marginBottom:12,overflow:'hidden'}}>
+          <button onClick={()=>toggleCat(cat.id)} style={{width:'100%',background:'transparent',border:'none',padding:'14px 16px',display:'flex',alignItems:'center',cursor:'pointer'}}>
+            <div style={{fontSize:15,fontWeight:700,color:t.ink,flex:1,textAlign:'left'}}>{cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span><div style={{fontSize:12,fontWeight:500,color:t.inkMute}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div></div>
+            <div style={{width:160}}><div style={{fontSize:10,color:t.inkMute,textAlign:'right'}}>Utilised {util}%</div><div style={{height:5,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:4}}/></div></div>
+          </button>
+          {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
+            {cat.items.map(item=>{
+              const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
+              return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:182}}>
+                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start'}}>{item.id}</div>
+                <div style={{fontSize:22,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:6,lineHeight:1.1}}>{item.name}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.desc}</div>
+                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:40,marginTop:8}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:-8,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
+                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
+                <div style={{marginTop:'auto',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:t.inkMute}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{eItems.length? 'View':'Add'}</button>}</div>
+              </div>
+            })}
+          </div>}
+        </div>
       })}
-      </div>
-      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: 10, minHeight: 280 }}>
-      {selectedCategory && (
-        <div>
-          <div style={{ padding: "4px 6px 10px", borderBottom: `1px solid ${t.hair}`, marginBottom: 10 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: t.ink }}>{selectedCategory.name}</div>
-            <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2 }}>{selectedCategory.items.length} relief items</div>
+
+      {drawerItem && (
+        <div style={{ position:'fixed', inset:0, zIndex:700 }}>
+          <div onClick={()=>setDrawerItemId(null)} style={{position:'absolute', inset:0, background:'rgba(20,20,24,0.62)'}} />
+          <div style={{position:'absolute', right:0, top:0, height:'100%', width:420, background:t.surface, borderLeft:`1px solid ${t.hair}`, display:'flex', flexDirection:'column'}}>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={()=>setDrawerItemId(null)} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:36,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:44,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
+            <div style={{padding:18, overflow:'auto', flex:1}}><div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8}}>ENTRIES · {drawerEntries.length}</div>{drawerEntries.length===0?<div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute}}>No claim entries yet. Add your first one below.</div>:drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{e.desc}</div><div style={{fontSize:12,color:t.inkMute}}>{e.date}</div></div><div style={{fontWeight:700}}>RM {e.amount.toLocaleString()}</div><button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:8,cursor:'pointer'}}>🗑</button></div>)}
+              <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:14}}><div style={{fontSize:28,fontFamily:"'DM Serif Display', Georgia, serif",marginBottom:8}}>Add a new entry</div><div style={{fontSize:12,marginBottom:4}}>Description</div><input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ' style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:8,fontFamily:FONT}}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><div style={{fontSize:12,marginBottom:4}}>Date</div><input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div><div><div style={{fontSize:12,marginBottom:4}}>Amount (RM)</div><input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div></div><button onClick={handleDrawerAdd} style={{width:'100%',marginTop:10,padding:'10px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>+ Add entry</button></div>
+            </div>
+            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={()=>setDrawerItemId(null)} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
           </div>
-          <div style={{ marginTop: 8 }}>
-                {(() => {
-                  const isRental = selectedCategory.id === "rental";
-                  return isRental ? (
-                    <div style={{ padding: "10px 14px", background: t.goldSoft, borderRadius: 12, borderLeft: `3px solid ${t.gold}`, fontSize: 12, color: t.inkSoft, marginBottom: 8, lineHeight: 1.5 }}>
-                      Add rental expenses below. These are deducted from your gross rental income (entered in the <b>Income</b> tab) to arrive at net rental income.
-                    </div>
-                  ) : null;
-                })()}
-                {selectedCategory.items.map(item => {
-                  const isRental = selectedCategory.id === "rental";
-                  const eItems   = itemEntries(item.id);
-                  const rawTotal = itemTotalRaw(item.id);
-                  const units    = eItems[0]?.units || 1;
-                  const isUncapped = item.cap >= 999999;
-                  const capEff   = isUncapped ? (rawTotal || 1) : (item.perUnit ? item.cap * units : item.cap);
-                  const claimed  = item.auto ? item.cap : (isUncapped ? rawTotal : Math.min(rawTotal, capEff));
-                  const pct      = isUncapped ? 100 : Math.round((claimed / capEff) * 100);
-                  const done     = claimed > 0;
-                  const isExp    = expItem === item.id;
-                  const isAdding = addingFor === item.id;
-                  const overCap  = !isUncapped && rawTotal > capEff;
-
-                  return (
-                    <div key={item.id} style={{ background: t.surface, border: `1px solid ${done ? (isRental ? t.goldSoft : t.redSoft) : t.hair}`, borderRadius: 14, padding: 14, marginBottom: 6 }}>
-                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: isRental ? t.gold : t.red, background: isRental ? t.goldSoft : t.redSoft, padding: "2px 7px", borderRadius: 5, letterSpacing: 0.3 }}>{item.id}</span>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: t.ink, letterSpacing: -0.2 }}>{item.name}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: t.inkMute, lineHeight: 1.5, marginBottom: 12 }}>{item.desc}</div>
-
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                            <div style={{ flex: 1, height: 6, background: t.bgAlt, borderRadius: 4, overflow: "hidden" }}>
-                              <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: item.auto ? t.green : (done ? (isRental ? t.gold : t.red) : t.inkMute), borderRadius: 4, transition: "width .3s" }} />
-                            </div>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: t.inkSoft, fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>
-                              {isUncapped ? "" : `${pct}%`}
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.inkMute, fontWeight: 500 }}>
-                            <span style={{ color: done ? t.ink : t.inkMute, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                              RM {claimed.toLocaleString()}
-                            </span>
-                            {!isUncapped && (
-                              <span style={{ fontVariantNumeric: "tabular-nums" }}>
-                                / RM {capEff.toLocaleString()} cap{item.perUnit ? ` (${units} ${item.unitName})` : ""}
-                              </span>
-                            )}
-                            {isUncapped && <span style={{ color: t.inkMute }}>No cap — full deduction</span>}
-                          </div>
-                          {overCap && (
-                            <div style={{ fontSize: 10, color: t.gold, fontWeight: 600, marginTop: 6 }}>
-                              Capped — entered RM{rawTotal.toLocaleString()} but cap is RM{capEff.toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                          {item.auto ? (
-                            <div style={{ padding: "6px 10px", borderRadius: 8, background: t.greenSoft, color: t.green, fontSize: 9, fontWeight: 700, letterSpacing: 0.5 }}>AUTO</div>
-                          ) : (
-                            <button onClick={() => {
-                              if (eItems.length === 0) { setAddingFor(isAdding ? null : item.id); setAmtIn(""); setDescIn(""); setUnitsIn(1); }
-                              else { setExpItem(isExp ? null : item.id); }
-                            }} style={{ padding: "8px 14px", border: "none", borderRadius: 10, background: done ? t.ink : (isRental ? t.gold : t.red), color: done ? t.bg : "#fff", fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                              {done ? (<>View <Icon name={isExp ? "chevD" : "chevR"} size={10} color={t.bg} /></>) : "Add"}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {isExp && eItems.length > 0 && !item.auto && (
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                            Entries · {eItems.length}
-                          </div>
-                          {eItems.map(e => (
-                            <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${t.hair}` }}>
-                              <div style={{ width: 30, height: 30, borderRadius: 8, background: e.hasReceipt ? t.greenSoft : t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Icon name={e.hasReceipt ? "receipt" : "plus"} size={14} color={e.hasReceipt ? t.green : t.inkMute} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.desc}</div>
-                                <div style={{ fontSize: 10, color: t.inkMute, marginTop: 1 }}>
-                                  {e.date}{e.hasReceipt ? " · Receipt attached" : ""}
-                                </div>
-                              </div>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {e.amount.toLocaleString()}</div>
-                              <button onClick={() => onRemoveEntry(e.id)} style={{ width: 22, height: 22, border: "none", borderRadius: 6, background: "transparent", color: t.inkMute, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                <Icon name="close" size={12} color={t.inkMute} />
-                              </button>
-                            </div>
-                          ))}
-                          <button onClick={() => { setAddingFor(item.id); setAmtIn(""); setDescIn(""); setUnitsIn(units); }}
-                            style={{ width: "100%", marginTop: 10, padding: "10px 12px", border: `1.5px dashed ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: isRental ? t.gold : t.red, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                            <Icon name="plus" size={14} color={isRental ? t.gold : t.red} />
-                            Add another entry
-                          </button>
-                        </div>
-                      )}
-
-                      {isAdding && (
-                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.hair}` }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-                            New entry — {item.id}
-                          </div>
-                          <input autoFocus value={descIn} onChange={e => setDescIn(e.target.value)}
-                            placeholder="Description (e.g. Plumbing repair)"
-                            style={{ width: "100%", padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
-                          {item.perUnit && (
-                            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                              <span style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>Number of {item.unitName}:</span>
-                              <input type="number" min="1" value={unitsIn} onChange={e => setUnitsIn(parseInt(e.target.value) || 1)}
-                                style={{ width: 60, padding: "8px 10px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", textAlign: "center" }} />
-                            </div>
-                          )}
-                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: t.inkMute }}>RM</span>
-                            <input type="number" value={amtIn} onChange={e => setAmtIn(e.target.value)} placeholder="0.00"
-                              style={{ flex: 1, padding: "10px 12px", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.bg, color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
-                            {!isRental && (
-                              <button onClick={() => { onOpenScanner(item); setAddingFor(null); }}
-                                style={{ padding: "10px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: "transparent", color: t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-                                <Icon name="camera" size={13} color={t.ink} />
-                                Scan
-                              </button>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <button onClick={() => handleAdd(item)}
-                              style={{ flex: 1, padding: "10px 14px", border: "none", borderRadius: 10, background: isRental ? t.gold : t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>
-                              Save entry
-                            </button>
-                            <button onClick={() => { setAddingFor(null); setAmtIn(""); setDescIn(""); }}
-                              style={{ padding: "10px 14px", border: `1px solid ${t.hair}`, borderRadius: 10, background: "transparent", color: t.inkSoft, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
         </div>
       )}
-      </div>
-      </div>
     </div>
   );
 }
@@ -3647,11 +3508,12 @@ const baseStyle = (t) => ({
 });
 
 const globalCSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
 input::placeholder, textarea::placeholder { color: rgba(139,130,117,0.7); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
