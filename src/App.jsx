@@ -2218,26 +2218,19 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
 
   if (wide) {
     return (
-      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", fontFamily: FONT }}>
-        {/* Left branding panel */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", background: t.bgAlt }}>
-          <div style={{ marginBottom: 36, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}>
-            <MakeCentsLogo size={88} />
+      <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
+        <div style={{ width: "100%", maxWidth: 980, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", padding: "44px 48px", display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 44 }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ marginBottom: 28, filter: "drop-shadow(0 12px 24px rgba(200,68,43,0.35))" }}><MakeCentsLogo size={72} /></div>
+            <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
+            <div style={{ fontSize: 18, color: t.inkMute, marginTop: 14, lineHeight: 1.55, maxWidth: 440 }}>{L("welcome_tagline")}</div>
+            <div style={{ display: "flex", gap: 10, marginTop: 30, flexWrap: "wrap" }}>
+              {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
+                <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>{f}</div>
+              ))}
+            </div>
           </div>
-          <div style={{ fontSize: 56, fontWeight: 700, color: t.ink, letterSpacing: -2, lineHeight: 1 }}>MakeCents.</div>
-          <div style={{ fontSize: 18, color: t.inkMute, marginTop: 18, lineHeight: 1.6, maxWidth: 400 }}>
-            {L("welcome_tagline")}
-          </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 48, flexWrap: "wrap" }}>
-            {["Malaysian tax reliefs", "AI receipt scanning", "AES-256 encrypted"].map(f => (
-              <div key={f} style={{ padding: "8px 16px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 20, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>
-                {f}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Right login panel */}
-        <div style={{ width: 460, display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 52px", borderLeft: `1px solid ${t.hair}`, background: t.bg }}>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 10 }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginBottom: 6 }}>Get started</div>
           <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.5 }}>Track your Malaysian income tax reliefs and estimate your annual tax.</div>
           <button onClick={onGoogle} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
@@ -2256,6 +2249,7 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
             {" · "}
             <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
           </div>
+        </div>
         </div>
       </div>
     );
