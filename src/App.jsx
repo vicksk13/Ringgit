@@ -355,34 +355,42 @@ const hasConsentStored = () => {
 // ─────────────────────────────────────────────────────────────
 const THEMES = {
   light: {
-    bg: "#F5EFE3", bgAlt: "#EDE5D3", surface: "#FFFBF3", surface2: "#F0E8D6",
-    ink: "#1C1917", inkSoft: "#44403C", inkMute: "#8B8275",
-    hair: "rgba(28,25,23,0.1)", hairStrong: "rgba(28,25,23,0.2)",
-    red: "#C8442B", redDeep: "#A3341F", redSoft: "rgba(200,68,43,0.1)",
+    // ── Canvas (Lovable warm cream) ──────────────────────────
+    bg: "#FBF7EE", bgAlt: "#EDE5D5", surface: "#FFFFFF", surface2: "#F0E8D6",
+    // ── Text ────────────────────────────────────────────────
+    ink: "#1C1A2C", inkSoft: "#44403C", inkMute: "#676672",
+    // ── Borders ─────────────────────────────────────────────
+    hair: "rgba(28,26,44,0.08)", hairStrong: "rgba(28,26,44,0.16)",
+    // ── Brand maroon-red (Lovable --brand) ──────────────────
+    red: "#B83A2C", redDeep: "#8E2A1E", redSoft: "#FAE8DF", redSoftFg: "#7D271D",
+    // ── Accents ─────────────────────────────────────────────
     gold: "#B8863D", goldSoft: "rgba(184,134,61,0.12)",
-    green: "#4A6B3A", greenSoft: "rgba(74,107,58,0.1)",
-    shadow: "0 4px 20px rgba(28,25,23,0.06)", shadowHi: "0 12px 40px rgba(28,25,23,0.12)",
-    // Header card: dark card (t.ink) → labels need to be light
-    cardLabel: "rgba(245,239,227,0.65)",
-    cardLabelSoft: "rgba(245,239,227,0.5)",
-    cardBorder: "rgba(245,239,227,0.15)",
+    green: "#3A6B3A", greenSoft: "rgba(58,107,58,0.10)",
+    // ── Shadows (Lovable shadow-card / shadow-pop) ───────────
+    shadow:   "0 1px 2px rgba(180,150,100,0.18), 0 8px 24px -12px rgba(120,90,50,0.18)",
+    shadowHi: "0 12px 40px -12px rgba(90,25,15,0.28)",
+    // ── Sidebar/header card text (dark bg → light labels) ───
+    cardLabel:     "rgba(251,247,238,0.65)",
+    cardLabelSoft: "rgba(251,247,238,0.5)",
+    cardBorder:    "rgba(251,247,238,0.15)",
   },
   dark: {
     bg: "#15110D", bgAlt: "#1E1813", surface: "#221A14", surface2: "#2A2018",
     ink: "#F5EFE3", inkSoft: "#D6CDBE", inkMute: "#8B8275",
     hair: "rgba(245,239,227,0.08)", hairStrong: "rgba(245,239,227,0.18)",
-    red: "#E35A40", redDeep: "#C8442B", redSoft: "rgba(227,90,64,0.15)",
+    red: "#E35A40", redDeep: "#C8442B", redSoft: "rgba(227,90,64,0.18)", redSoftFg: "#F5A090",
     gold: "#D4A94A", goldSoft: "rgba(212,169,74,0.15)",
     green: "#8FB174", greenSoft: "rgba(143,177,116,0.14)",
-    shadow: "0 4px 20px rgba(0,0,0,0.4)", shadowHi: "0 12px 40px rgba(0,0,0,0.5)",
-    // Header card: light card (t.ink = cream) → labels need to be dark
-    cardLabel: "rgba(28,25,23,0.55)",
+    shadow:   "0 4px 20px rgba(0,0,0,0.4)",
+    shadowHi: "0 12px 40px rgba(0,0,0,0.5)",
+    cardLabel:     "rgba(28,25,23,0.55)",
     cardLabelSoft: "rgba(28,25,23,0.4)",
-    cardBorder: "rgba(28,25,23,0.12)",
+    cardBorder:    "rgba(28,25,23,0.12)",
   },
 };
 
-const FONT  = "'Inter', -apple-system, system-ui, sans-serif";
+const FONT         = "'Inter', -apple-system, system-ui, sans-serif";
+const FONT_DISPLAY = "'Fraunces', 'Georgia', ui-serif, serif";
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -2086,35 +2094,54 @@ export default function MakeCents() {
         <style>{globalCSS}</style>
         {overlays}
 
-        {/* Sidebar */}
-        <div style={{ width: 252, flexShrink: 0, height: "100vh", overflow: "auto", borderRight: `1px solid ${t.hair}`, display: "flex", flexDirection: "column", padding: "24px 16px 20px", background: t.bg }}>
+        {/* ── DESKTOP SIDEBAR — Lovable design ── */}
+        <div style={{
+          width: 256, flexShrink: 0, height: "100vh", overflow: "auto",
+          borderRight: `1px solid ${t.hair}`,
+          display: "flex", flexDirection: "column", gap: "1.5rem",
+          padding: "20px 16px",
+          background: t.surface,
+        }}>
 
-          {/* Logo + user info */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
-            <div style={{width:32,height:32,borderRadius:10,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontFamily:"'DM Serif Display', Georgia, serif",fontSize:20,fontWeight:700}}>R</div>
+          {/* Brand mark + user info */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 14, flexShrink: 0,
+              background: `linear-gradient(135deg, ${t.red}, #E05A44)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#FBF7EE", fontFamily: FONT_DISPLAY,
+              fontSize: 20, fontWeight: 700,
+              boxShadow: t.shadowHi,
+            }}>M</div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
-              <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 500 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {user?.name}
+              </div>
+              <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 500 }}>
                 {user?.provider === "google" ? "Google · Cloud synced" : "Guest · Local only"}
               </div>
             </div>
           </div>
 
-          {/* Mini tax summary card */}
-          <div style={{ background: t.ink, borderRadius: 16, padding: "14px 16px", marginBottom: 16, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -16, right: -16, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.9 }} />
+          {/* Mini tax summary card — dark pill */}
+          <div style={{
+            background: t.ink, borderRadius: 14, padding: "14px 16px",
+            position: "relative", overflow: "hidden",
+            boxShadow: t.shadowHi,
+          }}>
+            <div style={{ position: "absolute", top: -16, right: -16, width: 60, height: 60, borderRadius: "50%", background: t.red, opacity: 0.85 }} />
             <div style={{ position: "relative" }}>
-              <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+              <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 {L("est_tax")} · YA{ya}
                 {taxIsTentative && <span style={{ marginLeft: 4, fontSize: 8, background: "rgba(255,255,255,0.15)", padding: "1px 5px", borderRadius: 4 }}>~est</span>}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
+              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4, color: t.bg, fontVariantNumeric: "tabular-nums", fontFamily: FONT_DISPLAY, letterSpacing: "-0.02em" }}>
                 RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${t.cardBorder}` }}>
                 {[[L("income"), totalIncome], [L("relief"), totalRelief]].map(([l, v]) => (
                   <div key={l}>
-                    <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{l}</div>
+                    <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{l}</div>
                     <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: t.bg, fontVariantNumeric: "tabular-nums" }}>
                       RM {v.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
@@ -2124,43 +2151,70 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* YA selector */}
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>Year of Assessment</div>
-            <div style={{ display: "flex", gap: 5 }}>
+          {/* YA selector — Lovable pill tabs */}
+          <div>
+            <div style={{ fontSize: "0.625rem", fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8 }}>
+              Year of Assessment
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4, background: t.bgAlt, borderRadius: 14, padding: 4 }}>
               {YEARS.map(y => (
-                <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
-                  style={{ flex: 1, padding: "7px 4px", border: "none", borderRadius: 8, background: y === ya ? t.ink : t.bgAlt, color: y === ya ? t.bg : t.ink, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
+                <button key={y} onClick={() => setYa(y)}
+                  style={{
+                    padding: "7px 4px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: FONT,
+                    fontSize: 11, fontWeight: 600, transition: "background 0.15s, color 0.15s",
+                    background: y === ya ? t.ink    : "transparent",
+                    color:      y === ya ? t.bg     : t.inkMute,
+                    boxShadow:  y === ya ? "0 1px 3px rgba(0,0,0,0.12)" : "none",
+                  }}>
                   {y}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Nav links */}
-          <div style={{ flex: 1 }}>
-            {[["relief", L("tab_relief"), "receipt"], ["income", L("tab_income"), "briefcase"], ["receipts", L("tab_receipts"), "camera"], ["more", L("tab_more"), "settings"]].map(([k, l, ic]) => (
-              <button key={k} onClick={() => setTab(k)}
-                style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "11px 14px", border: "none", borderRadius: 12, background: tab === k ? t.redSoft : "transparent", color: tab === k ? t.red : t.ink, fontSize: 13, fontWeight: tab === k ? 700 : 500, fontFamily: FONT, cursor: "pointer", marginBottom: 4, textAlign: "left" }}>
-                <Icon name={ic} size={18} color={tab === k ? t.red : t.inkMute} />
-                {l}
-              </button>
-            ))}
-          </div>
+          {/* Nav links — Lovable rounded active style */}
+          <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+            {[
+              ["relief",   L("tab_relief"),   "receipt"],
+              ["income",   L("tab_income"),   "briefcase"],
+              ["receipts", L("tab_receipts"), "camera"],
+              ["more",     L("tab_more"),     "settings"],
+            ].map(([k, l, ic]) => {
+              const active = tab === k;
+              return (
+                <button key={k} onClick={() => setTab(k)} style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  width: "100%", padding: "10px 14px",
+                  border: "none", borderRadius: 14, cursor: "pointer",
+                  fontFamily: FONT, fontSize: 13, fontWeight: active ? 600 : 500,
+                  textAlign: "left", transition: "background 0.15s, color 0.15s",
+                  background: active ? t.redSoft : "transparent",
+                  color:      active ? t.redSoftFg ?? t.red : t.inkMute,
+                }}>
+                  <Icon name={ic} size={17} color={active ? t.red : t.inkMute} />
+                  {l}
+                </button>
+              );
+            })}
+          </nav>
 
-          {/* Scan receipt CTA */}
-          {tab === "relief" && (
-            <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }}
-              style={{ width: "100%", padding: "12px 16px", border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(200,68,43,0.35)" }}>
-              <Icon name="sparkleAi" size={16} color="#fff" />
-              {L("scan_receipt")}
-            </button>
-          )}
+          {/* Scan CTA — always visible, Lovable style */}
+          <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }}
+            style={{
+              width: "100%", padding: "12px 16px", border: "none", borderRadius: 14,
+              background: t.red, color: "#FBF7EE",
+              fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              boxShadow: t.shadowHi,
+            }}>
+            <Icon name="sparkleAi" size={16} color="#FBF7EE" />
+            {L("scan_receipt")}
+          </button>
         </div>
 
           {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 900, width: "100%", margin: "0 auto" }}>
             {yaSpinner}
             {tabContent}
           </div>
@@ -2428,8 +2482,8 @@ function TabBar({ t, L, tab, setTab }) {
         const active = tab === k;
         return (
           <button key={k} onClick={() => setTab(k)}
-            style={{ flex: 1, padding: "10px 4px", border: "none", borderRadius: 16, background: active ? t.ink : "transparent", color: active ? t.bg : t.inkMute, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <Icon name={ic} size={18} color={active ? t.bg : t.inkMute} />
+            style={{ flex: 1, padding: "10px 4px", border: "none", borderRadius: 16, background: active ? t.redSoft : "transparent", color: active ? t.red : t.inkMute, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <Icon name={ic} size={18} color={active ? t.red : t.inkMute} />
             {l}
           </button>
         );
@@ -3528,7 +3582,7 @@ const baseStyle = (t) => ({
 });
 
 const globalCSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap');
 @keyframes spin    { to { transform: rotate(360deg); } }
 @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
