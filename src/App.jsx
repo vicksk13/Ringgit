@@ -2083,7 +2083,7 @@ export default function MakeCents() {
 
           {/* Logo + user info */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
-            <MakeCentsLogo size={32} />
+            <div style={{width:32,height:32,borderRadius:10,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontFamily:"'DM Serif Display', Georgia, serif",fontSize:20,fontWeight:700}}>R</div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, letterSpacing: -0.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
               <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 500 }}>
@@ -2150,14 +2150,8 @@ export default function MakeCents() {
           )}
         </div>
 
-        {/* Main content */}
+          {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          {/* Page title bar */}
-          <div style={{ padding: "26px 32px 18px", background: t.bg, borderBottom: `1px solid ${t.hair}`, flexShrink: 0 }}>
-            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 4 }}>YA{ya}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
-          </div>
-          {/* Tab content */}
           <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
             {yaSpinner}
             {tabContent}
@@ -2526,14 +2520,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               {cat.name}<span style={{marginLeft:8,fontSize:11,color:t.inkMute}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
               <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginTop:6,lineHeight:1.2}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()} claimed</div>
             </div>
-            <div style={{width:160,marginRight:14}}><div style={{fontSize:10,color:t.inkMute,textAlign:'right'}}>Utilised {util}%</div><div style={{height:5,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:4}}/></div></div>
+            <div style={{width:190,marginRight:14}}><div style={{display:'flex',justifyContent:'space-between',fontSize:15,color:t.inkSoft,fontWeight:600,marginBottom:6}}><span>Utilised</span><span style={{color:t.ink,fontWeight:700}}>{util}%</span></div><div style={{height:7,background:t.bgAlt,borderRadius:5}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:5}}/></div></div>
             <Icon name={expanded ? "chevD" : "chevR"} size={16} color={t.inkMute} />
           </button>
           {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
             {cat.items.map(item=>{
               const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
               return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:182}}>
-                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start'}}>{item.id}</div>
+                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start'}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
                 <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:6,lineHeight:1.1}}>{item.name}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.desc}</div>
                 <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:8}}>RM {claimedAmt.toLocaleString()}</div>
