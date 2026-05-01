@@ -2010,6 +2010,7 @@ export default function MakeCents() {
         <ReliefTab t={t} L={L} cats={cats} entries={entries}
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
+          totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2443,7 +2444,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax }) {
   const [expCat,    setExpCat]    = useState("lifestyle");
   const [expItem,   setExpItem]   = useState(null);
   const [addingFor, setAddingFor] = useState(null);
@@ -2464,22 +2465,41 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
     setExpItem(item.id);
   };
 
+  const remainingRelief = Math.max(0, totalIncome - totalRelief);
+  const selectedCategory = filtCats.find(c => c.id === expCat) || filtCats[0];
+
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
+        {[
+          { label: "Estimated Tax Refund", value: estTax, strong: true, tone: t.red, bg: t.redSoft },
+          { label: "Total Income", value: totalIncome, tone: t.ink, bg: t.surface },
+          { label: "Remaining Claimable Relief", value: remainingRelief, tone: t.green, bg: t.greenSoft },
+        ].map((kpi) => (
+          <div key={kpi.label} style={{ background: kpi.bg, border: `1px solid ${kpi.strong ? t.red : t.hair}`, borderRadius: 14, padding: kpi.strong ? "16px 14px" : "14px", boxShadow: kpi.strong ? "0 8px 22px rgba(200,68,43,0.2)" : "none" }}>
+            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>{kpi.label}</div>
+            <div style={{ fontSize: kpi.strong ? 24 : 20, fontWeight: 800, color: kpi.tone, letterSpacing: -0.4, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
+              RM {Number(kpi.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+        ))}
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14 }}>
         <Icon name="search" size={16} color={t.inkMute} />
         <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
       </div>
 
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 300px) 1fr", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {filtCats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-        const expanded  = expCat === cat.id || !!search;
+        const expanded  = expCat === cat.id;
         const isRental  = cat.id === "rental";
 
         return (
-          <div key={cat.id} style={{ marginBottom: 12 }}>
-            <button onClick={() => setExpCat(expanded && !search ? null : cat.id)}
+          <div key={cat.id}>
+            <button onClick={() => setExpCat(cat.id)}
               style={{ width: "100%", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: isRental ? t.goldSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Icon name={cat.icon} size={18} color={isRental ? t.gold : t.red} />
@@ -2500,14 +2520,28 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               </div>
             </button>
 
-            {expanded && (
-              <div style={{ marginTop: 8 }}>
-                {isRental && (
-                  <div style={{ padding: "10px 14px", background: t.goldSoft, borderRadius: 12, borderLeft: `3px solid ${t.gold}`, fontSize: 12, color: t.inkSoft, marginBottom: 8, lineHeight: 1.5 }}>
-                    Add rental expenses below. These are deducted from your gross rental income (entered in the <b>Income</b> tab) to arrive at net rental income.
-                  </div>
-                )}
-                {cat.items.map(item => {
+          </div>
+        );
+      })}
+      </div>
+      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: 10, minHeight: 280 }}>
+      {selectedCategory && (
+        <div>
+          <div style={{ padding: "4px 6px 10px", borderBottom: `1px solid ${t.hair}`, marginBottom: 10 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: t.ink }}>{selectedCategory.name}</div>
+            <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2 }}>{selectedCategory.items.length} relief items</div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+                {(() => {
+                  const isRental = selectedCategory.id === "rental";
+                  return isRental ? (
+                    <div style={{ padding: "10px 14px", background: t.goldSoft, borderRadius: 12, borderLeft: `3px solid ${t.gold}`, fontSize: 12, color: t.inkSoft, marginBottom: 8, lineHeight: 1.5 }}>
+                      Add rental expenses below. These are deducted from your gross rental income (entered in the <b>Income</b> tab) to arrive at net rental income.
+                    </div>
+                  ) : null;
+                })()}
+                {selectedCategory.items.map(item => {
+                  const isRental = selectedCategory.id === "rental";
                   const eItems   = itemEntries(item.id);
                   const rawTotal = itemTotalRaw(item.id);
                   const units    = eItems[0]?.units || 1;
@@ -2643,10 +2677,10 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                   );
                 })}
               </div>
-            )}
-          </div>
-        );
-      })}
+        </div>
+      )}
+      </div>
+      </div>
     </div>
   );
 }
