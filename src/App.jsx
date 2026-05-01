@@ -2450,11 +2450,6 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   const [amtIn,     setAmtIn]     = useState("");
   const [descIn,    setDescIn]    = useState("");
   const [unitsIn,   setUnitsIn]   = useState(1);
-  const [search,    setSearch]    = useState("");
-
-  const filtCats = search
-    ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc + i.id).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length)
-    : cats;
 
   const handleAdd = async (item) => {
     const amt = parseFloat(amtIn) || 0;
@@ -2466,20 +2461,15 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14 }}>
-        <Icon name="search" size={16} color={t.inkMute} />
-        <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
-      </div>
-
-      {filtCats.map(cat => {
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+      {cats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-        const expanded  = expCat === cat.id || !!search;
+        const expanded  = expCat === cat.id;
         const isRental  = cat.id === "rental";
 
         return (
-          <div key={cat.id} style={{ marginBottom: 12 }}>
-            <button onClick={() => setExpCat(expanded && !search ? null : cat.id)}
+          <div key={cat.id}>
+            <button onClick={() => setExpCat(expanded ? null : cat.id)}
               style={{ width: "100%", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: isRental ? t.goldSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Icon name={cat.icon} size={18} color={isRental ? t.gold : t.red} />
@@ -2647,6 +2637,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
