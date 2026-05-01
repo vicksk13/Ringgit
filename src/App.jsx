@@ -2516,7 +2516,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative }) {
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
