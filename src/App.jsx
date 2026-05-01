@@ -2450,6 +2450,21 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   const [amtIn,     setAmtIn]     = useState("");
   const [descIn,    setDescIn]    = useState("");
   const [unitsIn,   setUnitsIn]   = useState(1);
+  const [search,    setSearch]    = useState("");
+  const [vw,        setVw]        = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
+
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const filtCats = search
+    ? cats.map(c => ({ ...c, items: c.items.filter(i => (i.name + i.desc + i.id).toLowerCase().includes(search.toLowerCase())) })).filter(c => c.items.length)
+    : cats;
+
+  const colCount = vw >= 1360 ? 3 : (vw >= 768 ? 2 : 1);
+  const gridCols = `repeat(${colCount}, minmax(0, 1fr))`;
 
   const handleAdd = async (item) => {
     const amt = parseFloat(amtIn) || 0;
@@ -2461,8 +2476,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-      {cats.map(cat => {
+      <div style={{ maxWidth: 1180, margin: "0 auto", width: "100%" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 16px", marginBottom: 16 }}>
+        <Icon name="search" size={16} color={t.inkMute} />
+        <input placeholder="Search reliefs..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: t.ink, fontFamily: FONT }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: 16, alignItems: "start" }}>
+      {filtCats.map(cat => {
         const doneCount = cat.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
         const expanded  = expCat === cat.id;
         const isRental  = cat.id === "rental";
@@ -2638,6 +2659,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
         );
       })}
       </div>
+    </div>
     </div>
   );
 }
