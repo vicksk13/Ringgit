@@ -2536,14 +2536,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
           {expanded && <div style={{padding:'12px 14px 14px',display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:10,borderTop:`1px solid ${t.hair}`}}>
             {cat.items.map(item=>{
               const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
-              return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:182}}>
-                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start'}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
-                <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:6,lineHeight:1.1}}>{item.name}</div>
-                <div style={{fontSize:12,color:t.inkMute,marginTop:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.desc}</div>
-                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:8}}>RM {claimedAmt.toLocaleString()}</div>
-                <div style={{fontSize:12,color:t.inkMute,marginTop:-8,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
-                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
-                <div style={{marginTop:'auto',display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:11,color:t.inkMute}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{eItems.length? 'View':'Add'}</button>}</div>
+              return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:216}}>
+                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start',marginBottom:8}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
+                <div style={{fontSize:19,fontFamily:"'DM Serif Display', Georgia, serif",lineHeight:1.1,minHeight:42}}>{item.name}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
+                <div style={{fontFamily:"'DM Serif Display', Georgia, serif",fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
+                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
+                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entry`+(eItems.length>1?'ies':''):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:'#1e1f28',color:'#fff',borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1}}>{eItems.length? 'View':'Add'}</button>}</div>
               </div>
             })}
           </div>}
