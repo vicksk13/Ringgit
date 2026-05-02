@@ -3204,7 +3204,9 @@ If a field is not found or unclear, use 0. All values are numbers, no RM prefix.
       )}
     </div>
   );
-}({ t, receipts, onRemove, onView }) {
+}
+
+function ReceiptsTab({ t, receipts, onRemove, onView }) {
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
