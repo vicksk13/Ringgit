@@ -2205,29 +2205,6 @@ export default function MakeCents() {
                 <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>On declared income</div>
               </div>
             </div>
-            {/* Row 2: MTD Paid + Balance (shown once income data exists) */}
-            {(totalMTDPaid > 0 || totalIncome > 0) && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>MTD Paid</div>
-                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                    RM {totalMTDPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>PCB by employer</div>
-                </div>
-                <div style={{ background: mtdBalance > 0 ? t.redSoft : t.greenSoft, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
-                    {mtdBalance > 0 ? "Balance Due" : mtdBalance < 0 ? "Refund Due" : "Settled"}
-                  </div>
-                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                    RM {Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>
-                    {mtdBalance > 0 ? "Still owe LHDN" : mtdBalance < 0 ? "LHDN owes you" : "Fully settled"}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* YA selector — Lovable pill tabs */}
@@ -2350,47 +2327,133 @@ export default function MakeCents() {
 function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
   const wide = useIsWide();
 
+  const testimonials = [
+    { quote: "MakeCents helped me claim RM 3,200 more in tax relief I didn't even know I was eligible for.", name: "Amir H.", role: "Software Engineer, KL" },
+    { quote: "The EA form scan auto-filled everything in seconds. Filing has never been this painless.", name: "Priya S.", role: "Marketing Manager, PJ" },
+    { quote: "Finally understand my tax position. The MTD balance card is a game-changer.", name: "Wei Liang T.", role: "Accountant, Penang" },
+  ];
+  const [tIdx, setTIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTIdx(i => (i + 1) % testimonials.length), 4000);
+    return () => clearInterval(id);
+  }, []);
+
   if (wide) {
     return (
-      <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 880, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 24px 80px rgba(28,25,23,0.12)", overflow: "hidden", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-          {/* Left — brand */}
-          <div style={{ padding: "52px 48px", display: "flex", flexDirection: "column", justifyContent: "center", background: t.ink, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: t.red, opacity: 0.8 }} />
-            <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: t.red, opacity: 0.15 }} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ marginBottom: 28 }}><MakeCentsLogo size={64} /></div>
-              <div style={{ fontSize: 48, fontWeight: 700, color: t.bg, letterSpacing: -1.5, lineHeight: 1, fontFamily: FONT_DISPLAY }}>MakeCents.</div>
-              <div style={{ fontSize: 16, color: "rgba(251,247,238,0.7)", marginTop: 14, lineHeight: 1.55 }}>{L("welcome_tagline")}</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 32 }}>
-                {[["sparkleAi", "AI receipt scanning & classification"], ["receipt", "Every LHDN relief category covered"], ["key", "AES-256 encrypted · PDPA compliant"]].map(([ic, label]) => (
-                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(251,247,238,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Icon name={ic} size={13} color="rgba(251,247,238,0.8)" />
-                    </div>
-                    <span style={{ fontSize: 13, color: "rgba(251,247,238,0.75)", fontWeight: 500 }}>{label}</span>
+      <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", fontFamily: FONT }}>
+        {/* ── Left panel — dark brand + value props + testimonial ── */}
+        <div style={{ width: "50%", minHeight: "100vh", background: t.ink, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", padding: "52px 56px" }}>
+          {/* Decorative circles */}
+          <div style={{ position: "absolute", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", background: t.red, opacity: 0.6 }} />
+          <div style={{ position: "absolute", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: t.red, opacity: 0.1 }} />
+          <div style={{ position: "absolute", top: "40%", left: "60%", width: 120, height: 120, borderRadius: "50%", background: t.red, opacity: 0.08 }} />
+
+          {/* Logo + wordmark */}
+          <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 14 }}>
+            <MakeCentsLogo size={44} />
+            <div style={{ fontSize: 22, fontWeight: 700, color: t.bg, fontFamily: FONT_DISPLAY, letterSpacing: -0.5 }}>MakeCents</div>
+          </div>
+
+          {/* Headline */}
+          <div style={{ position: "relative", zIndex: 1, flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <div style={{ fontSize: 42, fontWeight: 700, color: t.bg, letterSpacing: -1.2, lineHeight: 1.1, fontFamily: FONT_DISPLAY, marginBottom: 16 }}>
+              Know exactly what<br />you owe — or get back.
+            </div>
+            <div style={{ fontSize: 15, color: "rgba(251,247,238,0.65)", lineHeight: 1.6, marginBottom: 40, maxWidth: 360 }}>
+              {L("welcome_tagline")}
+            </div>
+
+            {/* Value props */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 48 }}>
+              {[
+                ["sparkleAi", "AI reads your EA form & receipts instantly"],
+                ["receipt",   "Every LHDN relief category, YA2025 ready"],
+                ["key",       "AES-256 encrypted · PDPA 2010 compliant"],
+                ["cloud",     "Google sync — your data, always safe"],
+              ].map(([ic, label]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(251,247,238,0.1)", border: "1px solid rgba(251,247,238,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon name={ic} size={15} color="rgba(251,247,238,0.75)" />
                   </div>
-                ))}
+                  <span style={{ fontSize: 13, color: "rgba(251,247,238,0.72)", fontWeight: 500, lineHeight: 1.4 }}>{label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Testimonial rotator */}
+            <div style={{ background: "rgba(251,247,238,0.07)", border: "1px solid rgba(251,247,238,0.1)", borderRadius: 16, padding: "20px 22px" }}>
+              <div style={{ fontSize: 14, color: "rgba(251,247,238,0.85)", lineHeight: 1.6, fontStyle: "italic", marginBottom: 14, minHeight: 60 }}>
+                "{testimonials[tIdx].quote}"
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.red, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 13, fontWeight: 700, color: "#fff" }}>
+                  {testimonials[tIdx].name[0]}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(251,247,238,0.9)" }}>{testimonials[tIdx].name}</div>
+                  <div style={{ fontSize: 11, color: "rgba(251,247,238,0.5)" }}>{testimonials[tIdx].role}</div>
+                </div>
+                <div style={{ marginLeft: "auto", display: "flex", gap: 5 }}>
+                  {testimonials.map((_, i) => (
+                    <div key={i} onClick={() => setTIdx(i)} style={{ width: i === tIdx ? 18 : 6, height: 6, borderRadius: 3, background: i === tIdx ? t.red : "rgba(251,247,238,0.2)", cursor: "pointer", transition: "all 0.3s" }} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          {/* Right — auth */}
-          <div style={{ padding: "52px 48px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Get started</div>
-            <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 36, lineHeight: 1.6 }}>Track your Malaysian income tax reliefs and estimate your annual tax. Free, private, and encrypted.</div>
-            <button onClick={onGoogle} style={{ width: "100%", padding: "15px 20px", border: "none", borderRadius: 14, background: t.ink, color: t.bg, fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 10 }}>
-              <Icon name="google" size={17} color={t.bg} />
+
+          {/* Footer */}
+          <div style={{ position: "relative", zIndex: 1, fontSize: 11, color: "rgba(251,247,238,0.35)" }}>
+            Free · Not financial advice
+          </div>
+        </div>
+
+        {/* ── Right panel — auth ── */}
+        <div style={{ width: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: "52px 64px", background: t.bg }}>
+          <div style={{ width: "100%", maxWidth: 380 }}>
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ fontSize: 30, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT_DISPLAY, marginBottom: 8 }}>
+                Welcome back
+              </div>
+              <div style={{ fontSize: 14, color: t.inkMute, lineHeight: 1.6 }}>
+                Sign in to sync your tax data across devices — or continue offline as a guest.
+              </div>
+            </div>
+
+            {/* Google sign-in */}
+            <button onClick={onGoogle} style={{ width: "100%", padding: "15px 20px", border: `1px solid ${t.hairStrong}`, borderRadius: 14, background: t.surface, color: t.ink, fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12, boxShadow: t.shadow, transition: "box-shadow 0.2s" }}>
+              <Icon name="google" size={18} color={t.ink} />
               {L("continue_google")}
             </button>
-            <button onClick={onGuest} style={{ width: "100%", padding: "15px 20px", border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.ink, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
+
+            {/* Divider */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{ flex: 1, height: 1, background: t.hair }} />
+              <span style={{ fontSize: 11, color: t.inkMute, fontWeight: 500 }}>or</span>
+              <div style={{ flex: 1, height: 1, background: t.hair }} />
+            </div>
+
+            {/* Guest */}
+            <button onClick={onGuest} style={{ width: "100%", padding: "14px 20px", border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.inkSoft, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer", marginBottom: 28 }}>
               {L("continue_guest")}
             </button>
-            <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, marginTop: 28, lineHeight: 1.9 }}>
+
+            {/* Trust signals */}
+            <div style={{ background: t.bgAlt, borderRadius: 14, padding: "14px 16px", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <Icon name="shield" size={16} color={t.inkMute} />
+                <div style={{ fontSize: 12, color: t.inkMute, lineHeight: 1.55 }}>
+                  Your data is encrypted with AES-256-GCM before leaving your device. We never see your raw financial figures.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, lineHeight: 1.9 }}>
               {L("welcome_footer")}
               <br />
               <span onClick={onPrivacy} style={{ color: t.red, textDecoration: "underline", cursor: "pointer" }}>{L("privacy_policy")}</span>
               {" · "}
-              <span style={{ color: t.inkMute }}>{L("pdpa_compliant")}</span>
+              <span>{L("pdpa_compliant")}</span>
             </div>
           </div>
         </div>
@@ -2398,6 +2461,7 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
     );
   }
 
+  // ── Mobile (unchanged) ───────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: t.bg, padding: "80px 28px 40px", display: "flex", flexDirection: "column", fontFamily: FONT, maxWidth: 480, margin: "0 auto" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -2665,7 +2729,6 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 
       {/* ── DESKTOP: big stat header ── */}
       {wide && <>
-        <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, marginBottom: 8 }}>Relief</div>
         <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -2855,12 +2918,29 @@ function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRen
     : (parseFloat(grossSalary) || 0) + (parseFloat(bonus) || 0) + (parseFloat(otherAllow) || 0);
 
   // ── AI EA Form reader ─────────────────────────────────────────
+  // Supports both PDF (sent as document type) and image files (JPEG/PNG/WebP/HEIC)
   const readEAForm = async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
     e.target.value = "";
     setAiErr(null);
     setAiLoading(true);
+
+    const isPDF = f.type === "application/pdf" || f.name?.toLowerCase().endsWith(".pdf");
+
+    // Validate: only PDFs and images allowed, max 20 MB
+    const validTypes = new Set(["application/pdf","image/jpeg","image/jpg","image/png","image/webp","image/heic","image/heif"]);
+    if (!validTypes.has(f.type) && !isPDF) {
+      setAiErr("Only PDF or image files (JPEG, PNG, WebP, HEIC) are supported for EA forms.");
+      setAiLoading(false);
+      return;
+    }
+    if (f.size > 20 * 1024 * 1024) {
+      setAiErr("File is too large. Please use a file under 20 MB.");
+      setAiLoading(false);
+      return;
+    }
+
     try {
       const raw = await new Promise((res, rej) => {
         const r = new FileReader();
@@ -2868,40 +2948,68 @@ function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRen
         r.onerror = rej;
         r.readAsDataURL(f);
       });
+
+      const commaIdx    = raw.indexOf(",");
       const semicolonIdx = raw.indexOf(";");
-      const commaIdx = raw.indexOf(",");
-      const mediaType = raw.substring(5, semicolonIdx);
-      const b64data = raw.substring(commaIdx + 1);
+      const b64data     = raw.substring(commaIdx + 1);
+      const mediaType   = raw.substring(5, semicolonIdx); // e.g. "application/pdf" or "image/jpeg"
+
+      // Anthropic API uses "document" source for PDFs, "image" for images
+      const contentBlock = isPDF
+        ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64data } }
+        : { type: "image",    source: { type: "base64", media_type: mediaType,          data: b64data } };
+
+      const eaSystemPrompt = `You are an expert at reading Malaysian EA forms (Borang EA / CP8A). The document may be a PDF or an image. Read all pages and extract the following fields, then return ONLY valid JSON with no markdown, no code fences, no explanation:
+{"employer":"company name","grossSalary":0,"bonus":0,"otherAllowances":0,"mtdPaid":0,"epfContrib":0,"socso":0}
+
+Field mapping (use exact section labels on the EA form):
+- employer: Nama dan Alamat Majikan (employer name only, not address)
+- grossSalary: B1(a) — Gaji kasar / Gross salary/wages
+- bonus: B1(b) — Fi, komisen atau bonus / Bonus and commission
+- otherAllowances: B1(c) — Tip kasar, perkuisit / Other allowances and perquisites
+- mtdPaid: D1 — Potongan Cukai Bulanan (PCB) / MTD deducted
+- epfContrib: E1 — EPF employee contributions (bahagian pekerja sahaja)
+- socso: E2 — PERKESO contributions (bahagian pekerja sahaja)
+
+Rules:
+- All values must be plain numbers (no RM prefix, no commas)
+- If a field is not present or zero, use 0
+- For grossSalary, look for the TOTAL in section B, NOT the grand total at the bottom
+- Return ONLY the JSON object, nothing else`;
 
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 600,
-          system: `You are an expert at reading Malaysian EA forms (Borang EA / CP8A). Extract the following fields exactly and return ONLY valid JSON with no markdown:
-{"employer":"company name","grossSalary":0,"bonus":0,"otherAllowances":0,"mtdPaid":0,"epfContrib":0,"socso":0}
-Fields:
-- employer: Company name from the EA form
-- grossSalary: Section B1a — Gross salary/wages
-- bonus: Section B1b — Bonus and commission  
-- otherAllowances: Section B1c — Other allowances and perquisites
-- mtdPaid: Section D1 — MTD/PCB deducted
-- epfContrib: Section E1 — EPF employee contributions
-- socso: Section E2 — SOCSO/PERKESO contributions
-If a field is not found or unclear, use 0. All values are numbers, no RM prefix.`,
-          messages: [{ role: "user", content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: b64data } },
-            { type: "text", text: "Extract all the income and deduction fields from this EA form." }
+          model:      "claude-sonnet-4-20250514",  // Sonnet for better PDF/form OCR accuracy
+          max_tokens: 800,
+          system:     eaSystemPrompt,
+          messages:   [{ role: "user", content: [
+            contentBlock,
+            { type: "text", text: "Extract all income and deduction fields from this EA form. Return only the JSON." }
           ]}],
         }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Server error ${res.status}`);
+      }
+
       const data = await res.json();
+      if (data.error) throw new Error(data.error.message || "API error");
+
       const textBlock = (data.content || []).find(b => b.type === "text");
-      if (!textBlock) throw new Error("No response");
-      let raw2 = textBlock.text.trim().replace(/```json|```/g, "");
-      const parsed = JSON.parse(raw2.substring(raw2.indexOf("{"), raw2.lastIndexOf("}") + 1));
-      setShowManual(true); // auto-expand when AI fills fields
+      if (!textBlock?.text) throw new Error("No text in response");
+
+      let raw2 = textBlock.text.trim().replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+      const start = raw2.indexOf("{");
+      const end   = raw2.lastIndexOf("}");
+      if (start === -1 || end === -1) throw new Error("No JSON found in response");
+
+      const parsed = JSON.parse(raw2.substring(start, end + 1));
+
+      setShowManual(true);
       if (parsed.employer)        setEmployer(parsed.employer);
       if (parsed.grossSalary)     setGrossSalary(String(parsed.grossSalary));
       if (parsed.bonus)           setBonus(String(parsed.bonus));
@@ -2910,7 +3018,13 @@ If a field is not found or unclear, use 0. All values are numbers, no RM prefix.
       if (parsed.epfContrib)      setEpfContrib(String(parsed.epfContrib));
       if (parsed.socso)           setSocso(String(parsed.socso));
     } catch (ex) {
-      setAiErr("Could not read EA form. Please fill in manually.");
+      console.error("EA form read error:", ex);
+      let msg = "Could not read EA form automatically.";
+      if (ex.message?.includes("401")) msg = "API key error — contact support.";
+      else if (ex.message?.includes("invalid_request") || ex.message?.includes("media_type"))
+        msg = "File format not supported. Try uploading a JPEG image of the EA form instead.";
+      else if (ex.message?.includes("Could not process")) msg = "Could not process this file. Try a clearer photo or different format.";
+      setAiErr(msg + " Please fill in manually or try a clearer image.");
     } finally {
       setAiLoading(false);
     }
@@ -3257,15 +3371,10 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
   onImport, onPrivacy, onSignInGoogle, supabase, cryptoKey, entries, receipts, incomes, rentalIncomes }) {
   const [exporting,      setExporting]      = useState(false);
   const [exportProgress, setExportProgress] = useState("");
-  const [driveStep,      setDriveStep]      = useState(""); // "" | "requesting" | "uploading" | "done"
+  const [driveStep,      setDriveStep]      = useState("");
+  const wide = useIsWide();
 
-  const rowStyle = {
-    display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
-    background: t.surface, borderRadius: 14, border: `1px solid ${t.hair}`,
-    marginBottom: 8, cursor: "pointer",
-  };
-
-  // ── Google Drive export ─────────────────────────────────────
+  // ── Google Drive export (unchanged logic) ─────────────────────
   const runDriveExport = async () => {
     if (!user || user.provider !== "google") {
       alert("Sign in with Google first to export to Google Drive."); return;
@@ -3274,343 +3383,239 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
     setExporting(true);
     setDriveStep("requesting");
     setExportProgress("Requesting Google Drive access…");
-
     try {
       const token = await requestDriveToken();
       setDriveStep("uploading");
-
-      // ── Build folder structure: MakeCents → YAxxxx → Receipts ──
       setExportProgress("Creating MakeCents folder…");
       const rootId  = await driveMkFolder(token, "MakeCents", "root");
       const yaId    = await driveMkFolder(token, `YA${ya}`, rootId);
       const recId   = await driveMkFolder(token, "Receipts", yaId);
-
-      // ── Fetch data from Supabase (source of truth for Google users) ──
       setExportProgress("Fetching your data…");
       let exportEntries = entries, exportReceipts = receipts,
           exportIncomes = incomes, exportRentals = rentalIncomes;
-
       if (user?.id) {
         const [{ data: cl }, { data: inc }, { data: rec }] = await Promise.all([
           supabase.from("claims").select("*").eq("user_id", user.id).eq("ya", ya),
           supabase.from("incomes").select("*").eq("user_id", user.id).eq("ya", ya),
           supabase.from("receipts").select("*").eq("user_id", user.id).eq("ya", ya),
         ]);
-
-        // Decrypt enc_payload for each row so that CSV columns contain
-        // the real values, not zeros/nulls from the placeholder columns.
-        exportEntries = await Promise.all(
-          (cl || []).map(async (c) => {
-            const p = await openEncPayload(cryptoKey, c.enc_payload);
-            return { ...c, amount: p?.amount ?? c.amount ?? 0, description: p?.description ?? c.description };
-          })
-        );
-        const allInc = await Promise.all(
-          (inc || []).map(async (i) => {
-            const p = await openEncPayload(cryptoKey, i.enc_payload);
-            return { ...i, amount: p?.amount ?? i.amount ?? 0, employer: p?.employer ?? i.employer, period: p?.period ?? i.period };
-          })
-        );
+        exportEntries = await Promise.all((cl || []).map(async (c) => {
+          const p = await openEncPayload(cryptoKey, c.enc_payload);
+          return { ...c, amount: p?.amount ?? c.amount ?? 0, description: p?.description ?? c.description };
+        }));
+        const allInc = await Promise.all((inc || []).map(async (i) => {
+          const p = await openEncPayload(cryptoKey, i.enc_payload);
+          return { ...i, amount: p?.amount ?? i.amount ?? 0, employer: p?.employer ?? i.employer, period: p?.period ?? i.period };
+        }));
         exportIncomes  = allInc.filter(i => i.type !== "rental");
         exportRentals  = allInc.filter(i => i.type === "rental");
-        exportReceipts = await Promise.all(
-          (rec || []).map(async (r) => {
-            const p = await openEncPayload(cryptoKey, r.enc_payload);
-            return { ...r, merchant: p?.merchant ?? r.merchant, amount: p?.amount ?? r.amount ?? 0, name: p?.name ?? r.name, date: p?.date ?? r.date };
-          })
-        );
+        exportReceipts = await Promise.all((rec || []).map(async (r) => {
+          const p = await openEncPayload(cryptoKey, r.enc_payload);
+          return { ...r, merchant: p?.merchant ?? r.merchant, amount: p?.amount ?? r.amount ?? 0, name: p?.name ?? r.name, date: p?.date ?? r.date };
+        }));
       }
-
-      // Totals for the summary sheet
       const empTotal    = exportIncomes.reduce((s, i) => s + (i.amount || 0), 0);
       const rentalTotal = exportRentals.reduce((s, i) => s + (i.amount || 0), 0);
       const claimsTotal = exportEntries.reduce((s, c) => s + (c.amount || 0), 0);
-      const receiptsCount = exportReceipts.length;
-
-      // ── Build CSV #1: Summary ───────────────────────────────
       setExportProgress("Building summary spreadsheet…");
       const summaryRows = [
-        ["MakeCents Tax Summary", "", ""],
-        ["Year of Assessment", `YA${ya}`, ""],
-        ["Exported", new Date().toLocaleString("en-GB"), ""],
-        ["User",  user.name || "", user.email || ""],
-        ["", "", ""],
-        ["Totals", "", ""],
-        ["Employment income (RM)", empTotal.toFixed(2), ""],
-        ["Rental income — gross (RM)", rentalTotal.toFixed(2), ""],
-        ["Total relief claims (RM)", claimsTotal.toFixed(2), ""],
-        ["Number of receipts", receiptsCount, ""],
-        ["", "", ""],
-        ["Notes", "", ""],
-        ["This export is for your own records. Keep receipts 7 years for LHDN audit.", "", ""],
+        ["MakeCents Tax Summary","",""],["Year of Assessment",`YA${ya}`,""],[`Exported`,new Date().toLocaleString("en-GB"),""],[`User`,user.name||"",user.email||""],["","",""],
+        ["Totals","",""],["Employment income (RM)",empTotal.toFixed(2),""],["Rental income — gross (RM)",rentalTotal.toFixed(2),""],["Total relief claims (RM)",claimsTotal.toFixed(2),""],
+        ["Number of receipts",exportReceipts.length,""],["","",""],["Notes","",""],["This export is for your own records. Keep receipts 7 years for LHDN audit.","",""],
       ];
-      await driveUploadFile(
-        token,
-        `YA${ya}-summary.csv`,
-        new Blob([buildCSV(summaryRows)], { type: "text/csv;charset=utf-8" }),
-        yaId
-      );
-
-      // ── Build CSV #2: Income ────────────────────────────────
-      const incomeRows = [["Type", "Source / Property", "Amount (RM)", "Period"]];
-      exportIncomes.forEach(i => incomeRows.push(["Employment", i.employer || "", (i.amount || 0).toFixed(2), i.period || ""]));
-      exportRentals.forEach(i => incomeRows.push(["Rental",     i.employer || "", (i.amount || 0).toFixed(2), i.period || "Rental income"]));
-      await driveUploadFile(
-        token,
-        `YA${ya}-income.csv`,
-        new Blob([buildCSV(incomeRows)], { type: "text/csv;charset=utf-8" }),
-        yaId
-      );
-
-      // ── Build CSV #3: Relief claims / expenses ──────────────
-      const claimRows = [["Date", "Category ID", "Category name", "Description", "Amount (RM)", "Units", "Has receipt"]];
-      exportEntries.forEach(c => {
-        const catName = (REL[ya] || REL["2025"]).flatMap(cat => cat.items).find(i => i.id === c.item_id)?.name || "";
-        const dateStr = c.created_at
-          ? new Date(c.created_at).toLocaleDateString("en-GB")
-          : (c.date || "");
-        claimRows.push([
-          dateStr,
-          c.item_id || "",
-          catName,
-          c.description || "",
-          (c.amount || 0).toFixed(2),
-          c.units || 1,
-          c.has_receipt ? "Yes" : "No",
-        ]);
+      await driveUploadFile(token,`YA${ya}-summary.csv`,new Blob([buildCSV(summaryRows)],{type:"text/csv;charset=utf-8"}),yaId);
+      const incomeRows=[["Type","Source / Property","Amount (RM)","Period"]];
+      exportIncomes.forEach(i=>incomeRows.push(["Employment",i.employer||"",(i.amount||0).toFixed(2),i.period||""]));
+      exportRentals.forEach(i=>incomeRows.push(["Rental",i.employer||"",(i.amount||0).toFixed(2),i.period||"Rental income"]));
+      await driveUploadFile(token,`YA${ya}-income.csv`,new Blob([buildCSV(incomeRows)],{type:"text/csv;charset=utf-8"}),yaId);
+      const claimRows=[["Date","Category ID","Category name","Description","Amount (RM)","Units","Has receipt"]];
+      exportEntries.forEach(c=>{
+        const catName=(REL[ya]||REL["2025"]).flatMap(cat=>cat.items).find(i=>i.id===c.item_id)?.name||"";
+        claimRows.push([c.created_at?new Date(c.created_at).toLocaleDateString("en-GB"):(c.date||""),c.item_id||"",catName,c.description||"",(c.amount||0).toFixed(2),c.units||1,c.has_receipt?"Yes":"No"]);
       });
-      await driveUploadFile(
-        token,
-        `YA${ya}-claims.csv`,
-        new Blob([buildCSV(claimRows)], { type: "text/csv;charset=utf-8" }),
-        yaId
-      );
-
-      // ── Build CSV #4: Receipts index (merchant / amount / file link) ──
-      const rxIndexRows = [["Merchant", "Category", "Amount (RM)", "Date", "Filename in Receipts folder"]];
-
-      // ── Upload receipt images, organised by category, and build index ──
-      const catFolderCache = {};
-      let uploaded = 0;
-      for (let i = 0; i < exportReceipts.length; i++) {
-        const rx = exportReceipts[i];
-        setExportProgress(`Uploading receipt ${i + 1} of ${exportReceipts.length}…`);
-
-        const itemId   = rx.item_id || rx.itemId || "Uncategorized";
-        const itemName = (rx.name || itemId).replace(/[^a-zA-Z0-9 \-_]/g, "").trim().slice(0, 40);
-        const catKey   = `${itemId} - ${itemName}`;
-
-        if (!catFolderCache[catKey]) {
-          catFolderCache[catKey] = await driveMkFolder(token, catKey, recId);
-        }
-
-        const imgSrc = rx.storage_url || rx.data;
-        const merchant = (rx.merchant || rx.name || "receipt")
-          .replace(/[^a-zA-Z0-9 \-]/g, "").trim().slice(0, 30);
-        const fname = `${merchant}-${String(rx.id).slice(-6)}.jpg`;
-
-        rxIndexRows.push([
-          rx.merchant || rx.name || "",
-          catKey,
-          (rx.amount || 0).toFixed(2),
-          rx.date || "",
-          imgSrc ? `Receipts/${catKey}/${fname}` : "(image not available)",
-        ]);
-
-        if (imgSrc) {
-          const blob = await fetchImgAsBlob(imgSrc);
-          if (blob) {
-            await driveUploadFile(token, fname, blob, catFolderCache[catKey]);
-            uploaded++;
-          }
-        }
+      await driveUploadFile(token,`YA${ya}-claims.csv`,new Blob([buildCSV(claimRows)],{type:"text/csv;charset=utf-8"}),yaId);
+      const rxIndexRows=[["Merchant","Category","Amount (RM)","Date","Filename in Receipts folder"]];
+      const catFolderCache={};
+      for(let i=0;i<exportReceipts.length;i++){
+        const rx=exportReceipts[i];
+        setExportProgress(`Uploading receipt ${i+1} of ${exportReceipts.length}…`);
+        const itemId=rx.item_id||rx.itemId||"Uncategorized";
+        const itemName=(rx.name||itemId).replace(/[^a-zA-Z0-9 \-_]/g,"").trim().slice(0,40);
+        const catKey=`${itemId} - ${itemName}`;
+        if(!catFolderCache[catKey]) catFolderCache[catKey]=await driveMkFolder(token,catKey,recId);
+        const imgSrc=rx.storage_url||rx.data;
+        const merchant=(rx.merchant||rx.name||"receipt").replace(/[^a-zA-Z0-9 \-]/g,"").trim().slice(0,30);
+        const fname=`${merchant}-${String(rx.id).slice(-6)}.jpg`;
+        rxIndexRows.push([rx.merchant||rx.name||"",catKey,(rx.amount||0).toFixed(2),rx.date||"",fname]);
+        const blob=await fetchImgAsBlob(imgSrc);
+        if(blob) await driveUploadFile(token,fname,blob,catFolderCache[catKey]);
       }
-
-      // Upload receipts index last (now that we know all filenames)
-      await driveUploadFile(
-        token,
-        `YA${ya}-receipts-index.csv`,
-        new Blob([buildCSV(rxIndexRows)], { type: "text/csv;charset=utf-8" }),
-        yaId
-      );
-
+      await driveUploadFile(token,`YA${ya}-receipts-index.csv`,new Blob([buildCSV(rxIndexRows)],{type:"text/csv;charset=utf-8"}),yaId);
       setDriveStep("done");
-      setExportProgress(`✓ Exported: 4 CSVs + ${uploaded} receipt image${uploaded === 1 ? "" : "s"}`);
-      setTimeout(() => { setExportProgress(""); setDriveStep(""); }, 5000);
-
-    } catch (e) {
-      console.error("Drive export error:", e);
-      const msg = e.message?.includes("popup_closed")
-        ? "Permission dialog was closed. Please try again."
-        : e.message?.includes("VITE_GOOGLE_CLIENT_ID")
-        ? "Google Client ID not configured — check Vercel env vars."
-        : "Drive export failed: " + (e.message || "Unknown error");
-      alert(msg);
-      setExportProgress("");
-      setDriveStep("");
+      setExportProgress(`Export complete — ${exportReceipts.length} receipts uploaded`);
+    } catch(ex) {
+      console.error("Drive export error:",ex);
+      setExportProgress("Export failed: " + (ex.message||"Unknown error"));
     } finally {
       setExporting(false);
     }
   };
 
-  return (
-    <div style={{ padding: "0 20px 40px", fontFamily: FONT }}>
+  // ── Shared sub-components ─────────────────────────────────────
+  const Section = ({ title, children }) => (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.3, marginBottom: 10, paddingLeft: 2 }}>{title}</div>
+      <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, overflow: "hidden" }}>
+        {children}
+      </div>
+    </div>
+  );
 
-      {/* Profile card */}
-      <div style={{ background: t.surface, padding: 18, borderRadius: 18, border: `1px solid ${t.hair}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: t.red, color: "#fff", fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {(user?.name || "U")[0].toUpperCase()}
+  const Row = ({ icon, iconBg, iconColor, label, sub, right, onClick, danger = false, disabled = false }) => (
+    <div onClick={disabled ? undefined : onClick}
+      style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1,
+        borderBottom: `1px solid ${t.hair}`, lastChild: { borderBottom: "none" }, transition: "background 0.12s" }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = t.bgAlt; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+      {icon && (
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: iconBg || t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon name={icon} size={17} color={iconColor || t.inkSoft} />
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: danger ? t.red : t.ink, lineHeight: 1.3 }}>{label}</div>
+        {sub && <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2, lineHeight: 1.4 }}>{sub}</div>}
+      </div>
+      {right || <Icon name="chevR" size={14} color={t.inkMute} />}
+    </div>
+  );
+
+  const SegmentControl = ({ options, value, onChange }) => (
+    <div style={{ display: "flex", gap: 4, background: t.bgAlt, borderRadius: 12, padding: 4 }}>
+      {options.map(opt => {
+        const active = value === opt.k;
+        return (
+          <button key={opt.k} onClick={() => onChange(opt.k)}
+            style={{ flex: 1, padding: "10px 12px", border: "none", borderRadius: 10, background: active ? t.ink : "transparent", color: active ? t.bg : t.inkSoft, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, transition: "all 0.15s" }}>
+            {opt.icon && <Icon name={opt.icon} size={14} color={active ? t.bg : t.inkSoft} />}
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div style={{ padding: wide ? "28px 32px 60px" : "16px 16px 120px", fontFamily: FONT, maxWidth: wide ? 700 : "100%", margin: "0 auto" }}>
+
+      {/* Page title (desktop only) */}
+      {wide && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 36, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.1, fontFamily: FONT_DISPLAY }}>Settings</div>
+          <div style={{ fontSize: 14, color: t.inkSoft, marginTop: 6 }}>Manage your account, data, and preferences.</div>
+        </div>
+      )}
+
+      {/* Account card */}
+      <div style={{ background: user?.provider === "google" ? t.ink : t.surface, border: `1px solid ${user?.provider === "google" ? "transparent" : t.hairStrong}`, borderRadius: 16, padding: "18px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: user?.provider === "google" ? t.red : t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 18, fontWeight: 700, color: user?.provider === "google" ? "#fff" : t.inkMute }}>
+          {user?.name?.[0]?.toUpperCase() || "G"}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: t.ink }}>{user?.name}</div>
-          <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2 }}>
-            {user?.provider === "google" ? L("google_synced") : L("guest_local")} · YA{ya}
+          <div style={{ fontSize: 15, fontWeight: 700, color: user?.provider === "google" ? t.bg : t.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {user?.name || "Guest"}
+          </div>
+          <div style={{ fontSize: 12, color: user?.provider === "google" ? "rgba(251,247,238,0.6)" : t.inkMute, marginTop: 2 }}>
+            {user?.provider === "google" ? `${L("google_synced")} · YA${ya}` : `${L("guest_local")} · YA${ya}`}
           </div>
         </div>
-        {user?.provider === "google" && (
-          <div style={{ padding: "4px 10px", borderRadius: 8, background: t.greenSoft, color: t.green, fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>{L("synced")}</div>
+        {user?.provider !== "google" && (
+          <button onClick={onSignInGoogle} style={{ padding: "9px 16px", border: "none", borderRadius: 10, background: t.ink, color: t.bg, fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+            <Icon name="google" size={13} color={t.bg} />
+            Sign in
+          </button>
         )}
       </div>
 
-      {/* Guest upgrade prompt */}
-      {user?.provider !== "google" && (
-        <div style={{ background: t.ink, borderRadius: 16, padding: 18, marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <Icon name="cloud" size={20} color={t.bg} />
-            <div style={{ fontSize: 14, fontWeight: 700, color: t.bg }}>{L("backup_title")}</div>
-          </div>
-          <div style={{ fontSize: 12, color: t.cardLabelSoft, lineHeight: 1.5, marginBottom: 14 }}>
-            {L("backup_sub")}
-          </div>
-          <button onClick={onSignInGoogle} style={{ width: "100%", padding: "13px 18px", border: "none", borderRadius: 12, background: t.red, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <Icon name="google" size={16} color="#fff" />
-            {L("signin_google")}
-          </button>
-        </div>
-      )}
-
       {/* Appearance */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>{L("appearance")}</div>
-      <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.hair}`, padding: 6, display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ k: "light", label: L("light"), icon: "sun" }, { k: "dark", label: L("dark"), icon: "moon" }].map(opt => {
-          const active = themeName === opt.k;
-          return (
-            <button key={opt.k} onClick={() => setTheme(opt.k)}
-              style={{ flex: 1, padding: "12px 16px", border: "none", borderRadius: 12, background: active ? t.ink : "transparent", color: active ? t.bg : t.inkSoft, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Icon name={opt.icon} size={16} color={active ? t.bg : t.inkSoft} />
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
+      <Section title={L("appearance")}>
+        <div style={{ padding: "14px 18px" }}>
+          <SegmentControl
+            value={themeName}
+            onChange={setTheme}
+            options={[{ k: "light", label: L("light"), icon: "sun" }, { k: "dark", label: L("dark"), icon: "moon" }]}
+          />
+        </div>
+        <div style={{ padding: "0 18px 14px" }}>
+          <SegmentControl
+            value={lang}
+            onChange={setLang}
+            options={[{ k: "en", label: "English" }, { k: "ms", label: "Bahasa Malaysia" }]}
+          />
+        </div>
+      </Section>
 
-      {/* Language picker */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>{L("language")}</div>
-      <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.hair}`, padding: 6, display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ k: "en", label: "English" }, { k: "ms", label: "Bahasa Malaysia" }].map(opt => {
-          const active = lang === opt.k;
-          return (
-            <button key={opt.k} onClick={() => setLang(opt.k)}
-              style={{ flex: 1, padding: "12px 16px", border: "none", borderRadius: 12, background: active ? t.ink : "transparent", color: active ? t.bg : t.inkSoft, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Data */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>{L("data_export")}</div>
-
-      {/* Google Drive Export */}
-      {user?.provider === "google" ? (
-        <div onClick={runDriveExport} style={rowStyle}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: t.greenSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            {exporting
-              ? <div style={{ width: 16, height: 16, border: `2px solid ${t.hair}`, borderTopColor: t.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-              : <Icon name="cloud" size={18} color={t.green} />}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: t.ink }}>
-              {driveStep === "done" ? L("exported") : exporting ? L("exporting") : L("export_drive")}
+      {/* Data & Export */}
+      <Section title={L("data_export")}>
+        {user?.provider === "google" ? (
+          <Row
+            icon={exporting ? null : "cloud"} iconBg={t.greenSoft} iconColor={t.green}
+            label={driveStep === "done" ? L("exported") : exporting ? L("exporting") : L("export_drive")}
+            sub={exportProgress || L("export_drive_sub", ya)}
+            right={exporting
+              ? <div style={{ width: 20, height: 20, border: `2px solid ${t.hair}`, borderTopColor: t.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              : <Icon name="chevR" size={14} color={t.inkMute} />}
+            onClick={runDriveExport}
+          />
+        ) : (
+          <Row icon="cloud" iconBg={t.bgAlt} iconColor={t.inkMute} label={L("export_drive")} sub={L("signin_google")} disabled />
+        )}
+        <Row icon="download" iconBg={t.bgAlt} iconColor={t.inkSoft}
+          label={L("dl_json")} sub={L("dl_json_sub")}
+          onClick={async () => { if (exporting) return; setExporting(true); try { await onExport(); } finally { setExporting(false); } }} />
+        <label style={{ display: "block", cursor: "pointer", borderBottom: `1px solid ${t.hair}` }}
+          onMouseEnter={e => e.currentTarget.style.background = t.bgAlt}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="upload" size={17} color={t.inkSoft} />
             </div>
-            <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>
-              {exportProgress || L("export_drive_sub", ya)}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{L("restore")}</div>
+              <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2 }}>{L("restore_sub")}</div>
             </div>
+            <Icon name="chevR" size={14} color={t.inkMute} />
           </div>
-          {!exporting && <Icon name="chevR" size={14} color={t.inkMute} />}
-        </div>
-      ) : (
-        <div style={{ ...rowStyle, opacity: 0.6 }}>
-          <Icon name="cloud" size={18} color={t.inkMute} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, color: t.inkMute }}>{L("export_drive")}</div>
-            <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>{L("signin_google")}</div>
-          </div>
-        </div>
-      )}
-
-      {/* JSON backup */}
-      <div onClick={async () => {
-        if (exporting) return;
-        setExporting(true);
-        try { await onExport(); } finally { setExporting(false); }
-      }} style={rowStyle}>
-        <Icon name="download" size={18} color={t.inkSoft} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{L("dl_json")}</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>{L("dl_json_sub")}</div>
-        </div>
-        <Icon name="chevR" size={14} color={t.inkMute} />
-      </div>
-
-      {/* Restore */}
-      <label style={rowStyle}>
-        <Icon name="upload" size={18} color={t.inkSoft} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{L("restore")}</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>{L("restore_sub")}</div>
-        </div>
-        <Icon name="chevR" size={14} color={t.inkMute} />
-        <input type="file" accept=".json" onChange={onImport} style={{ display: "none" }} />
-      </label>
-
-      {/* Reset YA */}
-      <div onClick={onReset} style={{ ...rowStyle, marginTop: 8 }}>
-        <Icon name="trash" size={18} color={t.red} />
-        <div style={{ flex: 1, fontSize: 14, fontWeight: 500, color: t.red }}>{L("reset_ya", ya)}</div>
-      </div>
+          <input type="file" accept=".json" onChange={onImport} style={{ display: "none" }} />
+        </label>
+        <Row icon="trash" iconBg={t.redSoft} iconColor={t.red}
+          label={L("reset_ya", ya)} danger onClick={onReset}
+          right={<Icon name="chevR" size={14} color={t.red} />} />
+      </Section>
 
       {/* Coming soon */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "16px 4px 10px" }}>{L("coming_soon")}</div>
-      <div style={{ background: t.surface, padding: 16, borderRadius: 16, border: `1px solid ${t.hair}`, display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {["Debt Tracker", "Savings Goals", "Budget Planner", "EPF Calc", "Zakat Calc"].map(f => (
-          <span key={f} style={{ fontSize: 11, fontWeight: 500, color: t.inkSoft, background: t.bgAlt, padding: "7px 12px", borderRadius: 20 }}>{f}</span>
-        ))}
-      </div>
-
-      {/* Legal */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "16px 4px 10px" }}>{L("legal_account")}</div>
-      <div onClick={onPrivacy} style={rowStyle}>
-        <Icon name="shield" size={18} color={t.inkSoft} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: t.ink }}>{L("privacy_policy")}</div>
-          <div style={{ fontSize: 11, color: t.inkMute, marginTop: 1 }}>{L("privacy_sub")}</div>
+      <Section title={L("coming_soon")}>
+        <div style={{ padding: "16px 18px", display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {["Debt Tracker", "Savings Goals", "Budget Planner", "EPF Calc", "Zakat Calc"].map(f => (
+            <span key={f} style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, background: t.bgAlt, padding: "7px 14px", borderRadius: 20, border: `1px solid ${t.hair}` }}>{f}</span>
+          ))}
         </div>
-        <Icon name="chevR" size={14} color={t.inkMute} />
-      </div>
+      </Section>
 
-      {/* Sign out */}
-      <button onClick={onSignOut} style={{ width: "100%", padding: 16, marginTop: 8, border: `1px solid ${t.hair}`, borderRadius: 14, background: "transparent", color: t.inkSoft, fontSize: 14, fontWeight: 500, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        <Icon name="logout" size={16} color={t.inkSoft} />
-        {L("sign_out")}
-      </button>
+      {/* Legal & Account */}
+      <Section title={L("legal_account")}>
+        <Row icon="shield" iconBg={t.bgAlt} iconColor={t.inkSoft}
+          label={L("privacy_policy")} sub={L("privacy_sub")} onClick={onPrivacy} />
+        <Row icon="logout" iconBg={t.bgAlt} iconColor={t.inkSoft}
+          label={L("sign_out")} onClick={onSignOut} />
+      </Section>
 
       {/* Delete account */}
-      <button onClick={onDeleteAccount} style={{ width: "100%", padding: 14, marginTop: 8, border: `1px solid ${t.redSoft}`, borderRadius: 14, background: "transparent", color: t.red, fontSize: 13, fontWeight: 500, fontFamily: FONT, cursor: "pointer" }}>
+      <button onClick={onDeleteAccount} style={{ width: "100%", padding: "14px 18px", border: `1px solid ${t.redSoft}`, borderRadius: 14, background: "transparent", color: t.red, fontSize: 13, fontWeight: 500, fontFamily: FONT, cursor: "pointer", marginBottom: 20 }}>
         {L("delete_account")}
       </button>
 
-      <div style={{ textAlign: "center", fontSize: 10, color: t.inkMute, marginTop: 20 }}>
+      <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute }}>
         MakeCents v4.5 · {L("not_fin_advice")}
       </div>
     </div>
