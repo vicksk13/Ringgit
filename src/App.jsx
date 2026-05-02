@@ -2086,7 +2086,7 @@ export default function MakeCents() {
           totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance} />
       )}
       {tab === "receipts" && (
-        <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} />
+        <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} ya={ya} allItems={allItems} />
       )}
       {tab === "more" && (
         <MoreTab t={t} L={L} lang={lang} setLang={setLang} user={user} ya={ya} themeName={themeName} setTheme={setThemeName}
@@ -3320,46 +3320,275 @@ Rules:
   );
 }
 
-function ReceiptsTab({ t, receipts, onRemove, onView }) {
-  return (
-    <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
-        All receipts · {receipts.length}
-      </div>
-      {receipts.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 20px" }}>
-          <Icon name="receipt" size={42} color={t.inkMute} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: t.inkSoft, marginTop: 12 }}>No receipts yet</div>
-          <div style={{ fontSize: 12, color: t.inkMute, marginTop: 4 }}>Tap Scan Receipt on the Relief tab to add one</div>
+function ReceiptsTab({ t, receipts, onRemove, onView, ya, allItems }) {
+  const wide = useIsWide();
+  const [filter, setFilter]   = useState("all"); // "all" | item_id
+  const [search, setSearch]   = useState("");
+  const [sortBy, setSortBy]   = useState("date"); // "date" | "amount"
+  const [confirm, setConfirm] = useState(null);   // id to confirm delete
+
+  // Build filter options from allItems that actually appear in receipts
+  const usedIds = useMemo(() => {
+    const s = new Set();
+    receipts.forEach(rx => { const id = rx.itemId || rx.item_id; if (id) s.add(id); });
+    return s;
+  }, [receipts]);
+
+  const filterOptions = useMemo(() => {
+    const opts = [{ id: "all", label: "All", count: receipts.length }];
+    if (!allItems) return opts;
+    allItems.forEach(item => {
+      if (usedIds.has(item.id)) {
+        opts.push({ id: item.id, label: `${item.id} · ${item.name}`, count: receipts.filter(rx => (rx.itemId || rx.item_id) === item.id).length });
+      }
+    });
+    return opts;
+  }, [allItems, receipts, usedIds]);
+
+  const filtered = useMemo(() => {
+    let r = receipts;
+    if (filter !== "all") r = r.filter(rx => (rx.itemId || rx.item_id) === filter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      r = r.filter(rx => (rx.merchant || rx.name || "").toLowerCase().includes(q) || (rx.itemId || rx.item_id || "").toLowerCase().includes(q));
+    }
+    return [...r].sort((a, b) => sortBy === "amount" ? (b.amount || 0) - (a.amount || 0) : (b.date || "").localeCompare(a.date || ""));
+  }, [receipts, filter, search, sortBy]);
+
+  // Aggregate stats
+  const totalAmount   = filtered.reduce((s, rx) => s + (rx.amount || 0), 0);
+  const claimableAmt  = filtered.reduce((s, rx) => s + (rx.claimableAmount || rx.amount || 0), 0);
+
+  if (!wide) {
+    // ── MOBILE layout (compact, existing style but with filter chips) ─────────
+    return (
+      <div style={{ padding: "12px 16px 120px", fontFamily: FONT }}>
+        {/* Search */}
+        <div style={{ position: "relative", marginBottom: 10 }}>
+          <Icon name="search" size={14} color={t.inkMute} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search receipts…"
+            style={{ width: "100%", padding: "10px 14px 10px 36px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+          <div style={{ position: "absolute", top: "50%", left: 12, transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <Icon name="search" size={14} color={t.inkMute} />
+          </div>
         </div>
-      ) : receipts.map(rx => {
-        const itemId = rx.itemId || rx.item_id;
-        const imgSrc = rx.storage_url || rx.data;
-        return (
-          <div key={rx.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-            {imgSrc ? (
-              <img src={imgSrc} onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 12, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
-            ) : (
-              <div style={{ width: 52, height: 52, borderRadius: 12, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Icon name="receipt" size={22} color={t.inkSoft} />
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rx.merchant || rx.name}</div>
-              <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>{rx.date}</div>
-              {itemId && (
-                <div style={{ marginTop: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: t.red, background: t.redSoft, padding: "2px 7px", borderRadius: 5 }}>{itemId} · {rx.name}</span>
+        {/* Filter chips */}
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
+          {filterOptions.map(opt => {
+            const active = filter === opt.id;
+            return (
+              <button key={opt.id} onClick={() => setFilter(opt.id)}
+                style={{ border: `1px solid ${active ? t.ink : t.hair}`, background: active ? t.ink : t.surface, color: active ? t.bg : t.inkMute, borderRadius: 999, padding: "6px 11px", fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0, fontFamily: FONT, display: "flex", alignItems: "center", gap: 5 }}>
+                {opt.id === "all" ? "All" : opt.id}
+                <span style={{ background: active ? "rgba(255,255,255,0.18)" : t.bgAlt, borderRadius: 999, padding: "1px 5px", fontSize: 10 }}>{opt.count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, marginBottom: 8 }}>
+          {filtered.length} receipt{filtered.length !== 1 ? "s" : ""} · RM {totalAmount.toLocaleString()} total
+        </div>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "50px 20px" }}>
+            <Icon name="receipt" size={36} color={t.inkMute} />
+            <div style={{ fontSize: 13, fontWeight: 600, color: t.inkSoft, marginTop: 10 }}>{receipts.length === 0 ? "No receipts yet" : "No receipts match this filter"}</div>
+          </div>
+        ) : filtered.map(rx => {
+          const itemId = rx.itemId || rx.item_id;
+          const imgSrc = rx.storage_url || rx.data;
+          return (
+            <div key={rx.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
+              {imgSrc ? (
+                <img src={imgSrc} onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
+              ) : (
+                <div style={{ width: 52, height: 52, borderRadius: 10, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon name="receipt" size={20} color={t.inkSoft} />
                 </div>
               )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{rx.merchant || rx.name}</div>
+                <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>{rx.date}</div>
+                {itemId && <span style={{ fontSize: 9, fontWeight: 700, color: t.red, background: t.redSoft, padding: "2px 6px", borderRadius: 5, marginTop: 4, display: "inline-block" }}>{itemId} · {rx.name}</span>}
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(rx.amount || 0).toLocaleString()}</div>
+                <button onClick={() => onRemove(rx.id)} style={{ marginTop: 4, width: 24, height: 24, border: "none", borderRadius: 7, background: t.redSoft, color: t.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name="close" size={11} color={t.red} />
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(rx.amount || 0).toLocaleString()}</div>
-            <button onClick={() => onRemove(rx.id)} style={{ width: 26, height: 26, border: "none", borderRadius: 8, background: t.redSoft, color: t.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="close" size={12} color={t.red} />
-            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── DESKTOP layout ──────────────────────────────────────────────────────────
+  return (
+    <div style={{ padding: "28px 32px 60px", fontFamily: FONT, maxWidth: 1200, margin: "0 auto" }}>
+
+      {/* Page header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 36, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.1, fontFamily: FONT_DISPLAY }}>Receipts</div>
+        <div style={{ fontSize: 14, color: t.inkSoft, marginTop: 6 }}>All scanned receipts for YA{ya}, organised by LHDN category.</div>
+      </div>
+
+      {/* Stats row */}
+      {receipts.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+          {[
+            { label: "Total receipts", value: receipts.length, sub: "across all categories", color: t.ink },
+            { label: "Total amount", value: `RM ${receipts.reduce((s,r)=>s+(r.amount||0),0).toLocaleString()}`, sub: "from all receipts", color: t.ink },
+            { label: "Categories covered", value: usedIds.size, sub: "LHDN relief codes", color: t.red },
+          ].map(s => (
+            <div key={s.label} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "16px 20px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: t.inkMute, marginTop: 4 }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Controls: search + sort */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <div style={{ position: "absolute", top: "50%", left: 14, transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <Icon name="search" size={15} color={t.inkMute} />
           </div>
-        );
-      })}
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by merchant or category…"
+            style={{ width: "100%", padding: "11px 14px 11px 40px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ display: "flex", gap: 4, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 12, padding: 4 }}>
+          {[["date", "Date"], ["amount", "Amount"]].map(([k, l]) => (
+            <button key={k} onClick={() => setSortBy(k)}
+              style={{ padding: "7px 14px", border: "none", borderRadius: 8, background: sortBy === k ? t.ink : "transparent", color: sortBy === k ? t.bg : t.inkMute, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Category filter chips — all relief codes that have receipts */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+        {filterOptions.map(opt => {
+          const active = filter === opt.id;
+          return (
+            <button key={opt.id} onClick={() => setFilter(opt.id)}
+              style={{ border: `1px solid ${active ? t.ink : t.hair}`, background: active ? t.ink : t.surface, color: active ? t.bg : t.inkMute, borderRadius: 999, padding: "7px 13px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}>
+              {opt.id === "all" ? <Icon name="grid" size={12} color={active ? t.bg : t.inkMute} /> : null}
+              <span>{opt.label}</span>
+              <span style={{ background: active ? "rgba(255,255,255,0.18)" : t.bgAlt, borderRadius: 999, padding: "2px 7px", fontSize: 11, color: active ? t.bg : t.inkMute }}>{opt.count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Results count */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>
+          {filtered.length} receipt{filtered.length !== 1 ? "s" : ""}
+          {filter !== "all" ? ` in ${filter}` : ""}
+          {search ? ` matching "${search}"` : ""}
+        </div>
+        {filtered.length > 0 && (
+          <div style={{ fontSize: 12, color: t.inkMute }}>
+            Total: <span style={{ fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalAmount.toLocaleString()}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Empty states */}
+      {receipts.length === 0 && (
+        <div style={{ textAlign: "center", padding: "80px 20px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <Icon name="receipt" size={28} color={t.inkMute} />
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT_DISPLAY }}>No receipts yet</div>
+          <div style={{ fontSize: 13, color: t.inkMute, marginTop: 6, maxWidth: 300, margin: "8px auto 0" }}>
+            Scan a receipt from the Relief tab — AI will classify it to the correct LHDN category automatically.
+          </div>
+        </div>
+      )}
+      {receipts.length > 0 && filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 20px", background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16 }}>
+          <Icon name="search" size={28} color={t.inkMute} />
+          <div style={{ fontSize: 15, fontWeight: 600, color: t.inkSoft, marginTop: 12 }}>No receipts match this filter</div>
+        </div>
+      )}
+
+      {/* Receipt cards grid */}
+      {filtered.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
+          {filtered.map(rx => {
+            const itemId = rx.itemId || rx.item_id;
+            const imgSrc = rx.storage_url || rx.data;
+            const itemName = allItems?.find(i => i.id === itemId)?.name || rx.name || "";
+            const isConfirming = confirm === rx.id;
+
+            return (
+              <div key={rx.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", transition: "box-shadow 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = t.shadow}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
+
+                {/* Image strip */}
+                {imgSrc ? (
+                  <div onClick={() => onView(imgSrc)} style={{ height: 140, cursor: "pointer", overflow: "hidden", background: t.bgAlt, flexShrink: 0, position: "relative" }}>
+                    <img src={imgSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Receipt" />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.25))" }} />
+                    <div style={{ position: "absolute", bottom: 8, right: 10, fontSize: 10, color: "#fff", fontWeight: 600, background: "rgba(0,0,0,0.4)", padding: "2px 7px", borderRadius: 6 }}>Tap to enlarge</div>
+                  </div>
+                ) : (
+                  <div style={{ height: 80, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon name="receipt" size={28} color={t.inkMute} />
+                  </div>
+                )}
+
+                {/* Card body */}
+                <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+                  {/* Category badge */}
+                  {itemId && (
+                    <div style={{ marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: t.red, background: t.redSoft, padding: "3px 8px", borderRadius: 6, cursor: "pointer" }}
+                        onClick={() => setFilter(itemId)}>
+                        {itemId} · {itemName.length > 28 ? itemName.slice(0, 28) + "…" : itemName}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Merchant + date */}
+                  <div style={{ fontSize: 15, fontWeight: 700, color: t.ink, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {rx.merchant || rx.name || "Receipt"}
+                  </div>
+                  <div style={{ fontSize: 12, color: t.inkMute, marginBottom: 10 }}>{rx.date}</div>
+
+                  {/* Amount */}
+                  <div style={{ marginTop: "auto", paddingTop: 10, borderTop: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Amount</div>
+                      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                        RM {(rx.amount || 0).toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* Delete with confirm */}
+                    {isConfirming ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => setConfirm(null)} style={{ padding: "6px 12px", border: `1px solid ${t.hair}`, borderRadius: 8, background: "transparent", color: t.inkMute, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
+                        <button onClick={() => { onRemove(rx.id); setConfirm(null); }} style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Delete</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirm(rx.id)} style={{ width: 32, height: 32, border: "none", borderRadius: 10, background: t.redSoft, color: t.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Icon name="trash" size={14} color={t.red} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
