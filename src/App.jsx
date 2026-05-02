@@ -2994,9 +2994,8 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model:      "claude-sonnet-4-6",  // Sonnet for better PDF/form OCR accuracy
-          max_tokens: 800,
-          system:     eaSystemPrompt,
+          scan_type:  "ea_form",   // proxy uses Haiku + EA prompt + PDF beta header if needed
+          max_tokens: 1024,
           messages:   [{ role: "user", content: [
             contentBlock,
             { type: "text", text: "Extract all income and deduction fields from this EA form. Return only the JSON." }
