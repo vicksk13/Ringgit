@@ -1468,6 +1468,16 @@ export default function MakeCents() {
             start:         payload?.start         ?? i.start,
             end:           payload?.end           ?? i.end,
             property_desc: payload?.property_desc ?? i.property_desc,
+            // BE form structured fields
+            grossSalary:   payload?.grossSalary   ?? i.grossSalary   ?? 0,
+            bonus:         payload?.bonus         ?? i.bonus         ?? 0,
+            otherAllow:    payload?.otherAllow     ?? i.otherAllow    ?? 0,
+            mtdPaid:       payload?.mtdPaid        ?? i.mtdPaid       ?? 0,
+            epfContrib:    payload?.epfContrib     ?? i.epfContrib    ?? 0,
+            socso:         payload?.socso          ?? i.socso         ?? 0,
+            bizIncome:     payload?.bizIncome      ?? i.bizIncome     ?? 0,
+            cp500:         payload?.cp500          ?? i.cp500         ?? 0,
+            type:          payload?.incType        ?? i.type          ?? "employed",
           };
         })
       );
@@ -1503,8 +1513,23 @@ export default function MakeCents() {
   const cats     = useMemo(() => (REL[ya] || REL["2025"]).map(c => ({ ...c, icon: CAT_ICON[c.id] || "sparkle" })), [ya]);
   const allItems = useMemo(() => cats.flatMap(c => c.items), [cats]);
 
+  // ── EPF / SOCSO from income records (for auto-linking into relief) ──────────
+  // These aggregate all employment income records' E1/E2 fields.
+  // They serve as the G17epf / G20 value when the user has no manual entries.
+  const epfFromIncomes   = useMemo(() => incomes.reduce((s, i) => s + (i.epfContrib || 0), 0), [incomes]);
+  const socsoFromIncomes = useMemo(() => incomes.reduce((s, i) => s + (i.socso       || 0), 0), [incomes]);
+  const cp500FromIncomes = useMemo(() => incomes.reduce((s, i) => s + (i.cp500       || 0), 0), [incomes]);
+
   const itemEntries  = (id) => entries.filter(e => e.itemId === id);
-  const itemTotalRaw = (id) => itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
+
+  // itemTotalRaw — returns manual entry total, but auto-fills G17epf and G20
+  // from income records when no manual entries exist (avoids double-counting).
+  const itemTotalRaw = (id) => {
+    const manual = itemEntries(id).reduce((s, e) => s + (e.amount || 0), 0);
+    if (id === "G17epf" && manual === 0 && epfFromIncomes   > 0) return epfFromIncomes;
+    if (id === "G20"    && manual === 0 && socsoFromIncomes > 0) return socsoFromIncomes;
+    return manual;
+  };
 
   const groupRaw = (ids) => ids.reduce((s, id) => s + itemTotalRaw(id), 0);
   const groupCapped = {
@@ -1562,6 +1587,13 @@ export default function MakeCents() {
   // Tax estimate only confirmed for YA2025; flagged for other years
   const estTax      = calcTax(chargeable);
   const taxIsTentative = ya !== "2025";
+
+  // ── MTD / PCB balance ─────────────────────────────────────
+  // totalMTDPaid sums D1 from all employment income records.
+  // cp500Paid sums CP500 installments from self-employed records.
+  // mtdBalance > 0 = still owe, < 0 = refund due.
+  const totalMTDPaid  = incomes.reduce((s, i) => s + (i.mtdPaid || 0), 0) + cp500FromIncomes;
+  const mtdBalance    = Math.round(estTax - totalMTDPaid);
 
   // ── Entry mutations ───────────────────────────────────────
   const addEntry = async (itemId, amount, desc, units = 1, hasReceipt = false, receiptImg = null) => {
@@ -1631,17 +1663,27 @@ export default function MakeCents() {
     if (user?.provider === "google" && user?.id) {
       try {
         const enc_payload = await buildEncPayload(cryptoKeyRef.current, {
-          amount:   inc.amount,
-          employer: inc.employer,
-          period:   inc.period,
-          start:    inc.start,
-          end:      inc.end,
+          amount:      inc.amount,
+          employer:    inc.employer,
+          period:      inc.period,
+          start:       inc.start,
+          end:         inc.end,
+          // BE form structured fields — stored encrypted
+          grossSalary: inc.grossSalary  || 0,
+          bonus:       inc.bonus        || 0,
+          otherAllow:  inc.otherAllow   || 0,
+          mtdPaid:     inc.mtdPaid      || 0,
+          epfContrib:  inc.epfContrib   || 0,
+          socso:       inc.socso        || 0,
+          bizIncome:   inc.bizIncome    || 0,
+          cp500:       inc.cp500        || 0,
+          incType:     inc.type         || "employed",
         });
         const { error } = await supabase.from("incomes").insert({
           id:          inc.id,
           user_id:     user.id,
           ya,
-          type:        "employment",
+          type:        inc.type === "self" ? "business" : "employment",
           amount:      0,       // placeholder — real value in enc_payload
           employer:    null,    // placeholder
           enc_payload,
@@ -2029,6 +2071,7 @@ export default function MakeCents() {
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
           totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
           taxIsTentative={taxIsTentative} ya={ya}
+          epfFromIncomes={epfFromIncomes} socsoFromIncomes={socsoFromIncomes}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2039,7 +2082,8 @@ export default function MakeCents() {
           totalRentalIncome={totalRentalIncome} totalRentalExpenses={totalRentalExpenses}
           netRentalIncome={netRentalIncome}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
-          estTax={estTax} taxIsTentative={taxIsTentative} />
+          estTax={estTax} taxIsTentative={taxIsTentative}
+          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance} />
       )}
       {tab === "receipts" && (
         <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} />
@@ -2124,7 +2168,7 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* KPIs: Total Relief (main) + Unclaimed + Est Tax */}
+          {/* KPIs: Total Relief (main) + Unclaimed + Est Tax + MTD Balance */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {/* Main: Total Relief Claimed */}
             <div style={{ background: t.ink, borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
@@ -2136,26 +2180,54 @@ export default function MakeCents() {
                 <div style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                   RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
+                <div style={{ fontSize: 9, color: t.cardLabelSoft, marginTop: 4 }}>
+                  of RM {(eligibleCapTotal || 0).toLocaleString()} cap · {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}% utilised
+                </div>
                 <div style={{ height: 2, background: "rgba(251,247,238,0.2)", borderRadius: 2, marginTop: 8 }}>
                   <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
                 </div>
               </div>
             </div>
-            {/* Row: Unclaimed + Est Tax */}
+            {/* Row 1: Unclaimed + Est Tax */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
                 <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Unclaimed</div>
                 <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                   RM {Math.max(0, eligibleCapTotal - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
+                <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>Still available</div>
               </div>
               <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
                 <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
                 <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                   RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
+                <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>On declared income</div>
               </div>
             </div>
+            {/* Row 2: MTD Paid + Balance (shown once income data exists) */}
+            {(totalMTDPaid > 0 || totalIncome > 0) && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>MTD Paid</div>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                    RM {totalMTDPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>PCB by employer</div>
+                </div>
+                <div style={{ background: mtdBalance > 0 ? t.redSoft : t.greenSoft, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+                    {mtdBalance > 0 ? "Balance Due" : mtdBalance < 0 ? "Refund Due" : "Settled"}
+                  </div>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                    RM {Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
+                  <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>
+                    {mtdBalance > 0 ? "Still owe LHDN" : mtdBalance < 0 ? "LHDN owes you" : "Fully settled"}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* YA selector — Lovable pill tabs */}
@@ -2239,7 +2311,8 @@ export default function MakeCents() {
       {tab === "relief" ? (
         <Header t={t} L={L} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
-          estTax={estTax} taxIsTentative={taxIsTentative} eligibleCapTotal={eligibleCapTotal} />
+          estTax={estTax} taxIsTentative={taxIsTentative} eligibleCapTotal={eligibleCapTotal}
+          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance} />
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
@@ -2418,7 +2491,7 @@ function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
 // ─────────────────────────────────────────────────────────────
 // HEADER
 // ─────────────────────────────────────────────────────────────
-function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal }) {
+function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal, totalMTDPaid, mtdBalance }) {
   return (
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2451,7 +2524,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         </div>
       </div>
 
-      {/* KPI cards — Total Relief (main) + Unclaimed + Est Tax */}
+      {/* KPI cards — Total Relief (main) + 2×2 grid below */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
         {/* Main: Total Relief */}
         <div style={{ background: t.ink, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
@@ -2463,26 +2536,60 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
-            <div style={{ height: 3, background: "rgba(251,247,238,0.18)", borderRadius: 2, marginTop: 10 }}>
+            <div style={{ fontSize: 10, color: t.cardLabelSoft, marginTop: 4 }}>
+              of RM {(eligibleCapTotal || 0).toLocaleString()} cap · {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}% utilised
+            </div>
+            <div style={{ height: 3, background: "rgba(251,247,238,0.18)", borderRadius: 2, marginTop: 8 }}>
               <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
             </div>
           </div>
         </div>
-        {/* Row: Unclaimed + Est Tax */}
+
+        {/* Row 1: Unclaimed + Est Tax */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Unclaimed</div>
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {Math.max(0, (eligibleCapTotal || 0) - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
+            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>Still available to claim</div>
           </div>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
+            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>Based on declared income</div>
           </div>
         </div>
+
+        {/* Row 2: MTD Paid + Balance */}
+        {(totalMTDPaid > 0 || totalIncome > 0) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>MTD Paid</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                RM {totalMTDPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>PCB deducted by employer</div>
+            </div>
+            <div style={{
+              background: mtdBalance > 0 ? t.redSoft : t.greenSoft,
+              border: `1px solid ${mtdBalance > 0 ? t.hairStrong : t.hair}`,
+              borderRadius: 16, padding: "14px 16px"
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
+                {mtdBalance > 0 ? "Balance Due" : mtdBalance < 0 ? "Refund Due" : "Settled"}
+              </div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                RM {Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>
+                {mtdBalance > 0 ? "Still owe LHDN" : mtdBalance < 0 ? "LHDN owes you" : "Tax fully paid"}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2517,7 +2624,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes }) {
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
@@ -2640,16 +2747,20 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               const eItems=itemEntries(item.id); const raw=itemTotalRaw(item.id); const units=eItems[0]?.units||1; const capEff=item.cap>=999999?raw||1:(item.perUnit?item.cap*units:item.cap); const claimedAmt=item.auto?item.cap:Math.min(raw,capEff); const pct=item.cap>=999999?100:Math.round((claimedAmt/Math.max(1,capEff))*100);
               if (!wide) {
                 // ── MOBILE: horizontal row layout ──
+                const isAutoLinked = (item.id === "G17epf" && eItems.length === 0 && epfFromIncomes > 0)
+                                  || (item.id === "G20"    && eItems.length === 0 && socsoFromIncomes > 0);
                 return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,background:t.bg}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
                       <span style={{fontSize:9,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:6}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
                       {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.green,background:t.greenSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
+                      {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</span>}
                     </div>
                     <div style={{fontSize:13,fontWeight:600,color:t.ink,lineHeight:1.3,marginBottom:2}}>{item.name}</div>
                     <div style={{fontSize:11,color:t.inkMute,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{item.desc}</div>
-                    <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:3}}/></div>
+                    <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:3}}/></div>
                     <div style={{fontSize:10,color:t.inkMute,marginTop:4}}>RM {claimedAmt.toLocaleString()} of RM {capEff.toLocaleString()}</div>
+                    {isAutoLinked && <div style={{fontSize:10,color:t.gold,marginTop:2}}>Auto-linked from your EA form · add manual entries to override</div>}
                   </div>
                   <div style={{flexShrink:0,textAlign:'right'}}>
                     <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
@@ -2661,14 +2772,20 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                 </div>;
               }
               // ── DESKTOP: tall card layout ──
+              const isAutoLinked = (item.id === "G17epf" && eItems.length === 0 && epfFromIncomes > 0)
+                                || (item.id === "G20"    && eItems.length === 0 && socsoFromIncomes > 0);
               return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:216}}>
-                <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block',alignSelf:'flex-start',marginBottom:8}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
+                  <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block'}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
+                  {isAutoLinked && <div style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</div>}
+                </div>
                 <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{item.name}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
+                {isAutoLinked && <div style={{fontSize:11,color:t.gold,marginTop:4,lineHeight:1.4}}>Auto-linked from your EA form. Add manual entries to override.</div>}
                 <div style={{fontFamily:FONT_DISPLAY,fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
-                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:t.red,borderRadius:4}}/></div>
-                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}</div>
+                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
+                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}</div>
               </div>
             })}
           </div>}
@@ -2707,7 +2824,8 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
 // ─────────────────────────────────────────────────────────────
 function IncomeTab({ t, L, ya, incomes, rentalIncomes, onAdd, onRemove, onAddRental, onRemoveRental,
   totalEmploymentIncome, totalRentalIncome, totalRentalExpenses, netRentalIncome,
-  totalIncome, totalRelief, chargeable, estTax, taxIsTentative }) {
+  totalIncome, totalRelief, chargeable, estTax, taxIsTentative,
+  totalMTDPaid, mtdBalance }) {
   const wide = useIsWide();
 
   // ── Form state ──────────────────────────────────────────────
@@ -3037,11 +3155,56 @@ If a field is not found or unclear, use 0. All values are numbers, no RM prefix.
           </div>
         </>
       )}
+      {/* ── Tax & MTD Summary card ── */}
+      {totalIncome > 0 && (
+        <div style={{ ...cardStyle, background: t.surface }}>
+          <div style={{ fontSize: wide ? 18 : 15, fontWeight: 700, color: t.ink, marginBottom: 14 }}>Tax Summary · YA{ya}</div>
+          {[
+            ["Total income",         totalIncome,          t.ink,   false],
+            ["Total relief",        -totalRelief,          t.green, false],
+            ["Chargeable income",    chargeable,           t.ink,   true ],
+            ["Estimated tax",        estTax,               t.ink,   false],
+            ["MTD / PCB paid",      -totalMTDPaid,         t.green, false],
+          ].map(([label, val, color, divider], i) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+              fontSize: divider ? 13 : 12, fontWeight: divider ? 700 : 500,
+              padding: divider ? "10px 0 6px" : "4px 0",
+              borderTop: divider ? `1px solid ${t.hair}` : "none",
+              marginTop: divider ? 8 : 0 }}>
+              <span style={{ color: t.inkSoft }}>{label}</span>
+              <span style={{ fontVariantNumeric: "tabular-nums", color, fontWeight: divider ? 700 : 600 }}>
+                {val < 0 ? "−" : ""} RM {Math.abs(val).toLocaleString()}
+              </span>
+            </div>
+          ))}
+          {/* Balance row */}
+          <div style={{ marginTop: 10, padding: "14px 16px", borderRadius: 12,
+            background: mtdBalance > 0 ? t.redSoft : t.greenSoft,
+            border: `1px solid ${mtdBalance > 0 ? t.hairStrong : t.hair}`,
+            display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.inkMute }}>
+                {mtdBalance > 0 ? "Balance still owed to LHDN" : mtdBalance < 0 ? "Refund due from LHDN" : "Tax fully settled"}
+              </div>
+              {mtdBalance !== 0 && <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>
+                {mtdBalance > 0 ? "Pay via ByrHASiL before 30 April" : "Refund via e-Filing"}
+              </div>}
+            </div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700,
+              color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums" }}>
+              RM {Math.abs(mtdBalance).toLocaleString()}
+            </div>
+          </div>
+          {taxIsTentative && (
+            <div style={{ fontSize: 11, color: t.inkMute, marginTop: 8, textAlign: "center" }}>
+              ~ Estimate using YA2025 brackets — YA{ya} rates not yet gazetted
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
-}
-
-function ReceiptsTab({ t, receipts, onRemove, onView }) {
+}({ t, receipts, onRemove, onView }) {
   return (
     <div style={{ padding: "0 16px 40px", fontFamily: FONT }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1.2, padding: "4px 4px 10px" }}>
