@@ -1,4 +1,20 @@
-const SYSTEM_PROMPT = `You are an expert Malaysian income tax relief validator for LHDN (Lembaga Hasil Dalam Negeri Malaysia), strictly following the official BE2025 Explanatory Notes issued by LHDN.
+// ─────────────────────────────────────────────────────────────
+// /api/scan.js — Anthropic proxy for MakeCents
+//
+// Routes two scan types to the right model with the right prompt:
+//
+//   scan_type: "ea_form"  → claude-haiku-4-5-20251001
+//                           Uses the EA extraction prompt sent by the client.
+//                           PDF beta header added automatically when needed.
+//
+//   scan_type: "receipt"  → claude-sonnet-4-6   (default when omitted)
+//   (or omitted)            Uses the authoritative LHDN SYSTEM_PROMPT below.
+//                           Client system prompt is ignored for security.
+//
+// ANTHROPIC_API_KEY must be set in Vercel → Settings → Environment Variables.
+// ─────────────────────────────────────────────────────────────
+
+const RECEIPT_SYSTEM_PROMPT = `You are an expert Malaysian income tax relief validator for LHDN (Lembaga Hasil Dalam Negeri Malaysia), strictly following the official BE2025 Explanatory Notes issued by LHDN.
 
 YOUR ONLY JOB: Determine if an expense qualifies for Malaysian income tax relief under the Income Tax Act 1967 for the Year of Assessment (YA) specified by the user.
 
@@ -161,6 +177,32 @@ When terminology on a receipt is industry-specific, abbreviated or not immediate
 Always respond with ONLY this exact JSON, no other text before or after:
 {"claimable":true,"category_id":"G10","category_name":"Sports & fitness","total_amount":250,"suggested_amount":250,"explanation":"Clear explanation citing the specific LHDN rule that applies","conditions":"Specific conditions, sub-limits, or documentation requirements from LHDN BE2025"}`;
 
+// ─────────────────────────────────────────────────────────────
+// EA FORM system prompt — kept server-side for consistency.
+// The client sends the same text; this authoritative copy is
+// used instead so client-side edits cannot bypass it.
+// ─────────────────────────────────────────────────────────────
+const EA_SYSTEM_PROMPT = `You are an expert at reading Malaysian EA forms (Borang EA / CP8A). The document may be a PDF or an image. Read all pages and extract the following fields, then return ONLY valid JSON with no markdown, no code fences, no explanation:
+{"employer":"company name","grossSalary":0,"bonus":0,"otherAllowances":0,"mtdPaid":0,"epfContrib":0,"socso":0}
+
+Field mapping (use exact section labels on the EA form):
+- employer: Nama dan Alamat Majikan (employer name only, not address)
+- grossSalary: B1(a) — Gaji kasar / Gross salary/wages
+- bonus: B1(b) — Fi, komisen atau bonus / Bonus and commission
+- otherAllowances: B1(c) — Tip kasar, perkuisit / Other allowances and perquisites
+- mtdPaid: D1 — Potongan Cukai Bulanan (PCB) / MTD deducted
+- epfContrib: E1 — EPF employee contributions (bahagian pekerja sahaja)
+- socso: E2 — PERKESO contributions (bahagian pekerja sahaja)
+
+Rules:
+- All values must be plain numbers (no RM prefix, no commas)
+- If a field is not present or zero, use 0
+- For grossSalary, look for the TOTAL in section B, NOT the grand total at the bottom
+- Return ONLY the JSON object, nothing else`;
+
+// ─────────────────────────────────────────────────────────────
+// HANDLER
+// ─────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -168,28 +210,60 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
+    console.error("[scan] ANTHROPIC_API_KEY not configured");
     return res.status(500).json({ error: { message: "ANTHROPIC_API_KEY not set" } });
   }
 
-  try {
-    // Accept the full Anthropic body from App.jsx, but override system prompt
-    // with the authoritative server-side LHDN rules — never trust client system prompts
-    const body = { ...req.body, system: SYSTEM_PROMPT };
+  const body = req.body;
+  const scanType = body?.scan_type; // "ea_form" | "receipt" (default)
+  const isEAForm = scanType === "ea_form";
 
+  // ── Model + system prompt selection ──────────────────────────
+  const model  = isEAForm
+    ? "claude-haiku-4-5-20251001"   // Fast + cheap for structured form extraction
+    : "claude-sonnet-4-6";          // Smarter for nuanced LHDN receipt classification
+
+  const system = isEAForm
+    ? EA_SYSTEM_PROMPT              // Authoritative EA extraction prompt (server-side)
+    : RECEIPT_SYSTEM_PROMPT;        // Authoritative LHDN validator (server-side)
+                                    // Client system prompts are intentionally ignored
+                                    // for both scan types to prevent prompt injection.
+
+  // ── Detect PDF to add required beta header ────────────────────
+  const containsPDF = Array.isArray(body?.messages) && body.messages.some(m =>
+    Array.isArray(m.content) &&
+    m.content.some(b => b?.type === "document" || b?.source?.media_type === "application/pdf")
+  );
+
+  const headers = {
+    "Content-Type":      "application/json",
+    "x-api-key":         apiKey,
+    "anthropic-version": "2023-06-01",
+    // Required by Anthropic when sending document (PDF) content blocks
+    ...(containsPDF && { "anthropic-beta": "pdfs-2024-09-25" }),
+  };
+
+  try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(body),
+      headers,
+      body: JSON.stringify({
+        model,
+        max_tokens: body?.max_tokens || (isEAForm ? 1024 : 600),
+        system,
+        messages: body?.messages || [],
+      }),
     });
 
     const data = await r.json();
+
+    if (!r.ok) {
+      console.error(`[scan/${scanType}] Anthropic error ${r.status}:`, data?.error?.message);
+    }
+
     return res.status(r.status).json(data);
   } catch (e) {
-    console.error("Proxy error:", e);
-    return res.status(500).json({ error: { message: e.message } });
+    console.error(`[scan/${scanType}] Network error:`, e?.message);
+    return res.status(500).json({ error: { message: e.message || "Proxy error" } });
   }
 }
