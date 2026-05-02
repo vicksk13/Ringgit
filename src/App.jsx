@@ -2028,6 +2028,7 @@ export default function MakeCents() {
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
           totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
+          taxIsTentative={taxIsTentative} ya={ya}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2516,7 +2517,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya }) {
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
