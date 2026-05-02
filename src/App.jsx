@@ -2725,34 +2725,34 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   };
 
   return (
-    <div style={{ padding: wide ? "16px 28px 40px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? 1260 : "100%", margin: "0 auto" }}>
+    <div style={{ padding: wide ? "16px 24px 40px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? "none" : "100%", margin: "0 auto" }}>
 
       {/* ── DESKTOP: big stat header ── */}
       {wide && <>
         <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14, alignItems: 'stretch' }}>
           {/* Hero: Total Relief Claimed */}
-          <div style={{ background: t.ink, borderRadius: 14, padding: 22, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ background: t.ink, borderRadius: 14, padding: 22, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: t.red, opacity: 0.75 }} />
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: t.cardLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>TOTAL RELIEF · YA{ya}</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 52, lineHeight: 1.02, color: t.bg, fontVariantNumeric: 'tabular-nums' }}>RM {totalRelief.toLocaleString()}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.bg, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>RM {totalRelief.toLocaleString()}</div>
               <div style={{ height: 4, background: 'rgba(251,247,238,0.15)', borderRadius: 4, marginTop: 14 }}><div style={{ width: `${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`, height: '100%', background: t.red, borderRadius: 4 }}/></div>
               <div style={{ fontSize: 12, color: t.cardLabelSoft, marginTop: 6 }}>of RM {totalCap.toLocaleString()} cap · {Math.round((totalRelief/Math.max(1,totalCap))*100)}% utilised</div>
             </div>
           </div>
           {/* Unclaimed relief */}
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}>
-            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase'}}>UNCLAIMED</div>
-            <div style={{fontFamily:FONT_DISPLAY,fontSize:48,lineHeight:1.05,marginTop:4,color:t.red,fontVariantNumeric:'tabular-nums'}}>RM {remainingRelief.toLocaleString()}</div>
-            <div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>Still available to claim</div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>UNCLAIMED</div>
+            <div style={{fontFamily:FONT_DISPLAY,fontSize:38,lineHeight:1.02,color:t.red,fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>RM {remainingRelief.toLocaleString()}</div>
+            <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Still available to claim</div>
           </div>
           {/* Est. Tax */}
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 18 }}>
-            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase'}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
-            <div style={{fontFamily:FONT_DISPLAY,fontSize:48,lineHeight:1.05,marginTop:4,fontVariantNumeric:'tabular-nums'}}>RM {estTax.toLocaleString()}</div>
-            <div style={{fontSize:12,color:t.inkSoft,marginTop:6}}>Based on declared income</div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
+            <div style={{fontFamily:FONT_DISPLAY,fontSize:38,lineHeight:1.02,fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>RM {estTax.toLocaleString()}</div>
+            <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Based on declared income</div>
           </div>
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -2798,11 +2798,24 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               <div style={{fontSize: wide ? 15 : 14,fontWeight:700,color:t.ink,display:'flex',alignItems:'center',gap:6}}>
                 {cat.name}<span style={{fontSize:11,color:t.inkMute,fontWeight:500}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
               </div>
-              <div style={{fontSize:11,color:t.inkMute,marginTop:4}}>
-                <span style={{fontWeight:600,color: util > 0 ? t.red : t.inkMute}}>{util}%</span> · RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}
-              </div>
-              <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>
+              {!wide && (
+                <div style={{fontSize:11,color:t.inkMute,marginTop:4}}>
+                  <span style={{fontWeight:600,color: util > 0 ? t.red : t.inkMute}}>{util}%</span> · RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}
+                </div>
+              )}
+              {!wide && <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>}
             </div>
+            {wide && (
+              <div style={{display:'flex',alignItems:'center',gap:14,marginRight:14,flexShrink:0}}>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize:22,fontWeight:700,color: util > 0 ? t.red : t.inkMute,lineHeight:1.1}}>{util}%</div>
+                  <div style={{fontSize:11,color:t.inkMute,marginTop:2,whiteSpace:'nowrap'}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}</div>
+                </div>
+                <div style={{width:140,height:6,background:t.bgAlt,borderRadius:6,overflow:'hidden',flexShrink:0}}>
+                  <div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:6}}/>
+                </div>
+              </div>
+            )}
             <Icon name={expanded ? "chevD" : "chevR"} size={15} color={t.inkMute} style={{flexShrink:0}} />
           </button>
           {expanded && <div style={{borderTop:`1px solid ${t.hair}`,padding: wide ? '12px 14px 14px' : '8px 12px 12px',display: wide ? 'grid' : 'flex',gridTemplateColumns: wide ? 'repeat(4,minmax(0,1fr))' : undefined,flexDirection: wide ? undefined : 'column',gap: wide ? 10 : 8}}>
@@ -2981,7 +2994,7 @@ Rules:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model:      "claude-sonnet-4-20250514",  // Sonnet for better PDF/form OCR accuracy
+          model:      "claude-sonnet-4-6",  // Sonnet for better PDF/form OCR accuracy
           max_tokens: 800,
           system:     eaSystemPrompt,
           messages:   [{ role: "user", content: [
@@ -3055,9 +3068,9 @@ Rules:
 
   const inp = (val, set, ph, prefix = "RM") => (
     <div style={{ display: "flex", alignItems: "center", border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, overflow: "hidden" }}>
-      {prefix && <span style={{ padding: "0 10px", fontSize: 13, color: t.inkMute, borderRight: `1px solid ${t.hair}`, height: "100%", display: "flex", alignItems: "center", background: t.bgAlt, fontFamily: FONT }}>{prefix}</span>}
+      {prefix && <span style={{ padding: "0 6px 0 12px", fontSize: 13, color: t.inkMute, display: "flex", alignItems: "center", fontFamily: FONT, flexShrink: 0 }}>{prefix}</span>}
       <input value={val} onChange={e => set(e.target.value)} type="number" placeholder={ph}
-        style={{ flex: 1, padding: "11px 12px", border: "none", background: "transparent", color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none" }} />
+        style={{ flex: 1, padding: "11px 12px 11px 4px", border: "none", background: "transparent", color: t.ink, fontSize: 14, fontFamily: FONT, outline: "none" }} />
     </div>
   );
 
