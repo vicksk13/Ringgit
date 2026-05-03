@@ -2072,6 +2072,7 @@ export default function MakeCents() {
           totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
           taxIsTentative={taxIsTentative} ya={ya}
           epfFromIncomes={epfFromIncomes} socsoFromIncomes={socsoFromIncomes}
+          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance}
           onOpenScanner={(item) => { setScannerSeed(item); setScannerOpen(true); }} />
       )}
       {tab === "income" && (
@@ -2168,45 +2169,6 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* KPIs: Total Relief (main) + Unclaimed + Est Tax + MTD Balance */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {/* Main: Total Relief Claimed */}
-            <div style={{ background: t.ink, borderRadius: 14, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: -18, right: -18, width: 64, height: 64, borderRadius: "50%", background: t.red, opacity: 0.8 }} />
-              <div style={{ position: "relative" }}>
-                <div style={{ fontSize: 9, color: t.cardLabel, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-                  Total Relief · YA{ya}
-                </div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 26, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-                <div style={{ fontSize: 9, color: t.cardLabelSoft, marginTop: 4 }}>
-                  of RM {(eligibleCapTotal || 0).toLocaleString()} cap · {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}% utilised
-                </div>
-                <div style={{ height: 2, background: "rgba(251,247,238,0.2)", borderRadius: 2, marginTop: 8 }}>
-                  <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
-                </div>
-              </div>
-            </div>
-            {/* Row 1: Unclaimed + Est Tax */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
-                <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Unclaimed</div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  RM {Math.max(0, eligibleCapTotal - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-                <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>Still available</div>
-              </div>
-              <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "12px 14px" }}>
-                <div style={{ fontSize: 8, color: t.inkMute, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 16, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                  RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </div>
-                <div style={{ fontSize: 8, color: t.inkMute, marginTop: 3 }}>On declared income</div>
-              </div>
-            </div>
-          </div>
-
           {/* YA selector — Lovable pill tabs */}
           <div>
             <div style={{ fontSize: "0.625rem", fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 8 }}>
@@ -2270,7 +2232,7 @@ export default function MakeCents() {
 
           {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1, paddingBottom: 40 }}>
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 960, width: "100%", margin: "0 auto", alignSelf: "center" }}>
             {yaSpinner}
             {tabContent}
           </div>
@@ -2688,11 +2650,12 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes }) {
+function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes, totalMTDPaid, mtdBalance }) {
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
   const [drawerItemId, setDrawerItemId] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [amtIn, setAmtIn] = useState("");
   const [descIn, setDescIn] = useState("");
@@ -2742,17 +2705,30 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               <div style={{ fontSize: 12, color: t.cardLabelSoft, marginTop: 6 }}>of RM {totalCap.toLocaleString()} cap · {Math.round((totalRelief/Math.max(1,totalCap))*100)}% utilised</div>
             </div>
           </div>
-          {/* Unclaimed relief */}
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>UNCLAIMED</div>
-            <div style={{fontFamily:FONT_DISPLAY,fontSize:38,lineHeight:1.02,color:t.red,fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>RM {remainingRelief.toLocaleString()}</div>
-            <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Still available to claim</div>
-          </div>
-          {/* Est. Tax */}
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-            <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
-            <div style={{fontFamily:FONT_DISPLAY,fontSize:38,lineHeight:1.02,fontVariantNumeric:'tabular-nums', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>RM {estTax.toLocaleString()}</div>
-            <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Based on declared income</div>
+          {/* Right 2×2 grid: Unclaimed, Est Tax, MTD Paid, Balance */}
+          <div style={{ display: 'grid', gridColumn: 'span 2', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12 }}>
+            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>UNCLAIMED</div>
+              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:t.red,fontVariantNumeric:'tabular-nums'}}>RM {remainingRelief.toLocaleString()}</div>
+              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Still available to claim</div>
+            </div>
+            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
+              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,fontVariantNumeric:'tabular-nums'}}>RM {estTax.toLocaleString()}</div>
+              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Based on declared income</div>
+            </div>
+            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>MTD PAID</div>
+              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:t.ink,fontVariantNumeric:'tabular-nums'}}>RM {(totalMTDPaid||0).toLocaleString()}</div>
+              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>PCB deducted by employer</div>
+            </div>
+            <div style={{ background: (mtdBalance||0) > 0 ? t.redSoft : (mtdBalance||0) < 0 ? t.greenSoft : t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>
+                {(mtdBalance||0) > 0 ? 'BALANCE DUE' : (mtdBalance||0) < 0 ? 'REFUND DUE' : 'SETTLED'}
+              </div>
+              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:(mtdBalance||0)>0?t.red:(mtdBalance||0)<0?t.green:t.ink,fontVariantNumeric:'tabular-nums'}}>RM {Math.abs(mtdBalance||0).toLocaleString()}</div>
+              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>{(mtdBalance||0)>0?'Still owe LHDN':(mtdBalance||0)<0?'LHDN owes you':'Tax fully paid'}</div>
+            </div>
           </div>
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -2771,10 +2747,9 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
           const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
           const active = activeFilter === c.id;
           const icon = c.id === "all" ? "grid" : c.icon;
-          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? t.ink : t.hair}`,background:active?t.ink:t.surface,color:active?t.bg:t.inkMute,borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:6,lineHeight:1,flexShrink:0,fontFamily:FONT}}>
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? t.ink : 'transparent'}`,background:active?t.ink:'transparent',color:active?t.bg:t.inkMute,borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:6,lineHeight:1,flexShrink:0,fontFamily:FONT,transition:'all 0.15s'}}>
             <Icon name={icon} size={13} color={active ? t.bg : t.inkMute} />
-            <span>{c.name}</span>
-            <span style={{background:active?'rgba(255,255,255,0.18)':t.bgAlt,padding:'2px 6px',borderRadius:999,fontSize:11,color:active?t.bg:t.inkMute}}>{cnt}/{total}</span></button>
+            <span>{c.name}</span></button>
         })}
       </div>
 
@@ -2798,14 +2773,14 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               <div style={{fontSize: wide ? 15 : 14,fontWeight:700,color:t.ink,display:'flex',alignItems:'center',gap:6}}>
                 {cat.name}<span style={{fontSize:11,color:t.inkMute,fontWeight:500}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
               </div>
-              {!wide && (
+              {expanded && !wide && (
                 <div style={{fontSize:11,color:t.inkMute,marginTop:4}}>
                   <span style={{fontWeight:600,color: util > 0 ? t.red : t.inkMute}}>{util}%</span> · RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}
                 </div>
               )}
-              {!wide && <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>}
+              {expanded && !wide && <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>}
             </div>
-            {wide && (
+            {expanded && wide && (
               <div style={{display:'flex',alignItems:'center',gap:14,marginRight:14,flexShrink:0}}>
                 <div style={{textAlign:'right'}}>
                   <div style={{fontSize:22,fontWeight:700,color: util > 0 ? t.red : t.inkMute,lineHeight:1.1}}>{util}%</div>
@@ -2828,7 +2803,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                 return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:'12px 14px',display:'flex',alignItems:'center',gap:12,background:t.bg}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                      <span style={{fontSize:9,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:6}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
+                      <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
                       {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.green,background:t.greenSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
                       {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</span>}
                     </div>
@@ -2850,10 +2825,13 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               // ── DESKTOP: tall card layout ──
               const isAutoLinked = (item.id === "G17epf" && eItems.length === 0 && epfFromIncomes > 0)
                                 || (item.id === "G20"    && eItems.length === 0 && socsoFromIncomes > 0);
-              return <div key={item.id} style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:216}}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:8}}>
-                  <div style={{fontSize:10,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:7,display:'inline-block'}}>{item.id.startsWith("G17") ? "G17" : item.id}</div>
-                  {isAutoLinked && <div style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</div>}
+              return <div key={item.id}
+                onMouseEnter={()=>setHoveredCard(item.id)}
+                onMouseLeave={()=>setHoveredCard(null)}
+                style={{border:`1px solid ${t.hair}`,borderRadius:12,padding:12,display:'flex',flexDirection:'column',minHeight:200,background:t.surface,transition:'box-shadow 0.15s',boxShadow:hoveredCard===item.id?'0 4px 16px rgba(0,0,0,0.08)':'none'}}>
+                <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:8}}>
+                  <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
+                  {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'1px 5px',borderRadius:4}}>FROM EA</span>}
                 </div>
                 <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{item.name}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
@@ -2861,7 +2839,10 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                 <div style={{fontFamily:FONT_DISPLAY,fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
-                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`}}><span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>{item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}</div>
+                <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`,opacity:hoveredCard===item.id||eItems.length>0?1:0,transition:'opacity 0.15s'}}>
+                  <span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>
+                  {item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}
+                </div>
               </div>
             })}
           </div>}
