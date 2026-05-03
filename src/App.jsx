@@ -2733,7 +2733,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
           const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
           const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
           const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-          const label      = isBalance ? L('balance_due') : L('your_refund');
+          const label      = isBalance ? L('balance_due') : L('your refund');
           const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
           const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
           return (
@@ -2859,7 +2859,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
             const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
             const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
             const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-            const label      = isBalance ? L('balance_due') : L('your_refund');
+            const label      = isBalance ? L('balance_due') : L('your refund');
             const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance||0).toLocaleString()}`;
             const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
             return (
