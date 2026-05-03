@@ -2232,7 +2232,7 @@ export default function MakeCents() {
 
           {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 960, width: "100%", margin: "0 auto", alignSelf: "center" }}>
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 1050, width: "100%", margin: "0 auto", alignSelf: "center" }}>
             {yaSpinner}
             {tabContent}
           </div>
