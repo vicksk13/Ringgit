@@ -114,10 +114,14 @@ const uploadReceiptToStorage = async (supabaseClient, userId, receiptId, dataUrl
   try {
     const fetchRes = await fetch(dataUrl);
     const blob = await fetchRes.blob();
-    const path = `${userId}/${receiptId}.jpg`;
+    // Detect PDF so we store it with the correct extension + MIME type
+    const isPDF = blob.type === "application/pdf" || dataUrl.startsWith("data:application/pdf");
+    const ext         = isPDF ? "pdf" : "jpg";
+    const contentType = isPDF ? "application/pdf" : "image/jpeg";
+    const path = `${userId}/${receiptId}.${ext}`;
     const { error } = await supabaseClient.storage
       .from(RECEIPTS_BUCKET)
-      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+      .upload(path, blob, { contentType, upsert: true });
     if (error) {
       console.error("Storage upload error (bucket:", RECEIPTS_BUCKET, "):", error);
       throw error;
@@ -271,6 +275,12 @@ const buildCSV = (rows) => {
   const body = rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
   // BOM so Excel detects UTF-8
   return "\uFEFF" + body;
+};
+
+// Detect whether a URL or data-URI represents a PDF
+const isPdfSrc = (src) => {
+  if (!src || typeof src !== "string") return false;
+  return src.startsWith("data:application/pdf") || src.toLowerCase().endsWith(".pdf");
 };
 
 // PII sanitization — strip obvious sensitive patterns from any text
@@ -1953,8 +1963,11 @@ export default function MakeCents() {
         const { error } = await supabase.from("receipts").delete().eq("id", id).eq("user_id", user.id);
         if (error) throw error;
         // Also delete from Storage if we have a storage_url
+        // Derive correct extension from the actual storage URL (may be .pdf or .jpg)
         if (rx?.storage_url) {
-          const path = `${user.id}/${id}.jpg`;
+          const isPDFUrl = rx.storage_url.toLowerCase().endsWith(".pdf");
+          const ext  = isPDFUrl ? "pdf" : "jpg";
+          const path = `${user.id}/${id}.${ext}`;
           await supabase.storage.from(RECEIPTS_BUCKET).remove([path]);
         }
       } catch (e) {
@@ -1966,8 +1979,17 @@ export default function MakeCents() {
 
   const addFromScan = async (scanResult, useTotal, img) => {
     if (!scanResult?.claimable || !scanResult.category_id) return;
+    // Sanitize category_id — AI occasionally returns compound IDs like "G17ins + G19"
+    // when a document spans multiple relief categories. Resolve to a single valid item.
+    let catId = scanResult.category_id.trim();
+    if (!allItems.find(i => i.id === catId)) {
+      // Try to find the first valid item ID within the compound string
+      const match = allItems.find(i => catId.includes(i.id));
+      if (!match) return; // can't map to any known category — skip silently
+      catId = match.id;
+    }
     const amt = useTotal ? scanResult.total_amount : scanResult.suggested_amount;
-    await addEntry(scanResult.category_id, amt, scanResult.category_name + " (AI scanned)", 1, true, img);
+    await addEntry(catId, amt, scanResult.category_name + " (AI scanned)", 1, true, img);
   };
 
   // ── Backup / restore ──────────────────────────────────────
@@ -2276,7 +2298,16 @@ export default function MakeCents() {
     <>
       {viewImg && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setViewImg(null)}>
-          <img src={viewImg} style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 16, objectFit: "contain" }} alt="Receipt" />
+          {isPdfSrc(viewImg) ? (
+            <iframe
+              src={viewImg}
+              title="Receipt PDF"
+              style={{ width: "90vw", maxWidth: 900, height: "85vh", borderRadius: 16, border: "none", background: "#fff" }}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <img src={viewImg} style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 16, objectFit: "contain" }} alt="Receipt" />
+          )}
         </div>
       )}
       <SyncToast message={syncError} t={t} />
@@ -3595,7 +3626,16 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           return (
             <div key={rx.id} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
               {imgSrc ? (
-                <img src={imgSrc} onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
+                isPdfSrc(imgSrc) ? (
+                  <div onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 10, background: t.bgAlt, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, gap: 2 }}>
+                    <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke={t.inkMute} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span style={{ fontSize: 8, color: t.inkMute, fontWeight: 700 }}>PDF</span>
+                  </div>
+                ) : (
+                  <img src={imgSrc} onClick={() => onView(imgSrc)} style={{ width: 52, height: 52, borderRadius: 10, objectFit: "cover", cursor: "pointer", flexShrink: 0 }} alt="Receipt" />
+                )
               ) : (
                 <div style={{ width: 52, height: 52, borderRadius: 10, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon name="receipt" size={20} color={t.inkSoft} />
@@ -3730,9 +3770,19 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
                 {/* Image strip */}
                 {imgSrc ? (
                   <div onClick={() => onView(imgSrc)} style={{ height: 140, cursor: "pointer", overflow: "hidden", background: t.bgAlt, flexShrink: 0, position: "relative" }}>
-                    <img src={imgSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Receipt" />
+                    {isPdfSrc(imgSrc) ? (
+                      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        <svg viewBox="0 0 24 24" width={40} height={40} fill="none" stroke={t.inkMute} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                          <line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><polyline points="9 9 10 9 11 9"/>
+                        </svg>
+                        <span style={{ fontSize: 11, color: t.inkMute, fontWeight: 600 }}>PDF Document</span>
+                      </div>
+                    ) : (
+                      <img src={imgSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="Receipt" />
+                    )}
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.25))" }} />
-                    <div style={{ position: "absolute", bottom: 8, right: 10, fontSize: 10, color: "#fff", fontWeight: 600, background: "rgba(0,0,0,0.4)", padding: "2px 7px", borderRadius: 6 }}>Tap to enlarge</div>
+                    <div style={{ position: "absolute", bottom: 8, right: 10, fontSize: 10, color: "#fff", fontWeight: 600, background: "rgba(0,0,0,0.4)", padding: "2px 7px", borderRadius: 6 }}>{isPdfSrc(imgSrc) ? "Tap to open" : "Tap to enlarge"}</div>
                   </div>
                 ) : (
                   <div style={{ height: 80, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -4125,6 +4175,7 @@ ${scopedId ? `The user is checking this expense against: ${scopedId} · ${scoped
 
 Rules:
 - Map to the MOST SPECIFIC matching category based on the descriptions
+- CRITICAL: Return EXACTLY ONE category_id from the list above. Never combine multiple IDs (e.g. never "G17ins + G19" or "G17ins, G19"). If a document spans multiple categories (e.g. a combined insurance statement with life + medical), pick the SINGLE category that has the LARGEST claimable amount and mention the other categories only in the explanation field.
 - Sports & fitness (G10) INCLUDES: golf green fees, golf equipment (clubs/balls/bags), golf lessons, gym memberships, court rental (badminton/squash/tennis/golf simulator), swimming, martial arts, yoga, pilates, competition entry fees
 - Sports & fitness (G10) EXCLUDES: golf buggy rental, club joining/membership fees, sports clothing/shoes/apparel
 - When a receipt has BOTH claimable and non-claimable line items, sum ONLY the claimable line items for suggested_amount; use the full receipt total for total_amount
