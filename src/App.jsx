@@ -946,115 +946,112 @@ const CAT_ICON = {
 // ─────────────────────────────────────────────────────────────
 const REL = {
   "2025": [
-    { id: "personal", name: "Individual & Dependents", items: [
-      { id: "G1",  name: "Individual relief",   cap: 9000, auto: true, desc: "Automatic RM9,000 for all resident taxpayers — YA2025 confirmed" },
-      { id: "G4",  name: "Disabled individual", cap: 7000, desc: "Certified by JKM" },
-      { id: "G14", name: "Spouse / Alimony",    cap: 4000, desc: "Spouse with no income or alimony" },
-      { id: "G15", name: "Disabled spouse",     cap: 6000, desc: "Spouse certified disabled" },
+    { id: "personal", name: "Individual & Dependents", nameBM: "Individu & Tanggungan", items: [
+      { id: "G1",  name: "Individual relief",   nameBM: "Pelepasan individu",   cap: 9000, auto: true, desc: "Automatic RM9,000 for all resident taxpayers — YA2025 confirmed", descBM: "Automatik RM9,000 untuk semua pembayar cukai pemastautin — YA2025 disahkan" },
+      { id: "G4",  name: "Disabled individual", nameBM: "Individu OKU",         cap: 7000, desc: "Certified by JKM", descBM: "Disahkan oleh JKM" },
+      { id: "G14", name: "Spouse / Alimony",    nameBM: "Pasangan / Nafkah",    cap: 4000, desc: "Spouse with no income or alimony", descBM: "Pasangan tanpa pendapatan atau nafkah" },
+      { id: "G15", name: "Disabled spouse",     nameBM: "Pasangan OKU",         cap: 6000, desc: "Spouse certified disabled", descBM: "Pasangan yang disahkan OKU" },
     ]},
-    { id: "medical", name: "Medical & Special Needs", items: [
-      { id: "G6", name: "Serious disease / fertility / vaccination / dental", cap: 10000, desc: "G6 + G7 + G8 share a combined RM10,000 cap. Vaccination sub-limit RM1k, dental sub-limit RM1k" },
-      { id: "G7", name: "Medical exam / self-test / mental health",           cap: 1000,  desc: "Check-up, screening, oximeter, BP monitor, mental health. Sub-limit within G6+G7+G8 RM10k cap" },
-      { id: "G8", name: "Learning disability (child 18 and below)",           cap: 6000,  desc: "ASD, ADHD, GDD, Down Syndrome diagnosis and rehab. Sub-limit within G6+G7+G8 RM10k cap" },
-      { id: "G2", name: "Parents / grandparents medical",                     cap: 8000,  desc: "Medical, dental, nursing, carer. Check-up sub-limit RM1k" },
-      { id: "G3", name: "Disabled equipment",                                 cap: 6000,  desc: "Wheelchair, hearing aid, dialysis machine" },
+    { id: "medical", name: "Medical & Special Needs", nameBM: "Perubatan & Keperluan Khas", items: [
+      { id: "G6", name: "Serious disease / fertility / vaccination / dental", nameBM: "Penyakit serius / kesuburan / vaksinasi / pergigian", cap: 10000, desc: "G6 + G7 + G8 share a combined RM10,000 cap. Vaccination sub-limit RM1k, dental sub-limit RM1k", descBM: "G6 + G7 + G8 berkongsi had gabungan RM10,000. Sub-had vaksinasi RM1k, pergigian RM1k" },
+      { id: "G7", name: "Medical exam / self-test / mental health",           nameBM: "Pemeriksaan perubatan / ujian sendiri / kesihatan mental", cap: 1000,  desc: "Check-up, screening, oximeter, BP monitor, mental health. Sub-limit within G6+G7+G8 RM10k cap", descBM: "Pemeriksaan, saringan, oximeter, monitor BP, kesihatan mental. Sub-had dalam G6+G7+G8 RM10k" },
+      { id: "G8", name: "Learning disability (child 18 and below)",           nameBM: "Ketidakupayaan pembelajaran (kanak-kanak 18 & ke bawah)", cap: 6000,  desc: "ASD, ADHD, GDD, Down Syndrome diagnosis and rehab. Sub-limit within G6+G7+G8 RM10k cap", descBM: "ASD, ADHD, GDD, Sindrom Down — diagnosis dan pemulihan. Sub-had dalam G6+G7+G8 RM10k" },
+      { id: "G2", name: "Parents / grandparents medical",                     nameBM: "Perubatan ibu bapa / datuk nenek",                       cap: 8000,  desc: "Medical, dental, nursing, carer. Check-up sub-limit RM1k", descBM: "Perubatan, pergigian, penjagaan. Sub-had pemeriksaan RM1k" },
+      { id: "G3", name: "Disabled equipment",                                 nameBM: "Peralatan OKU",                                         cap: 6000,  desc: "Wheelchair, hearing aid, dialysis machine", descBM: "Kerusi roda, alat bantu pendengaran, mesin dialisis" },
     ]},
-    { id: "lifestyle", name: "Lifestyle", items: [
-      { id: "G9",  name: "Books, gadgets, internet, courses", cap: 2500, desc: "Books, smartphone/tablet/PC, internet bills, upskilling courses" },
-      { id: "G10", name: "Sports & fitness",                  cap: 1000, desc: "Equipment, gym membership, court rental (badminton/squash/tennis), green fees, swimming, martial arts, yoga, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
-      { id: "G21", name: "EV charging / composting",          cap: 2500, desc: "EV charging install/rental/subscription, composting machine" },
+    { id: "lifestyle", name: "Lifestyle", nameBM: "Gaya Hidup", items: [
+      { id: "G9",  name: "Books, gadgets, internet, courses", nameBM: "Buku, gajet, internet, kursus", cap: 2500, desc: "Books, smartphone/tablet/PC, internet bills, upskilling courses", descBM: "Buku, telefon pintar/tablet/PC, bil internet, kursus peningkatan kemahiran" },
+      { id: "G10", name: "Sports & fitness",                  nameBM: "Sukan & kecergasan",            cap: 1000, desc: "Equipment, gym membership, court rental (badminton/squash/tennis), green fees, swimming, martial arts, yoga, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental.", descBM: "Peralatan, keahlian gim, sewaan gelanggang, yuran padang golf, renang, seni mempertahankan diri, yoga, daftar pertandingan. TIDAK TERMASUK: yuran kemasukan kelab, pakaian/kasut sukan, sewaan basikal golf." },
+      { id: "G21", name: "EV charging / composting",          nameBM: "Pengecasan EV / pengkomposan",  cap: 2500, desc: "EV charging install/rental/subscription, composting machine", descBM: "Pemasangan/sewaan/langganan pengecas EV, mesin pengkomposan" },
     ]},
-    { id: "insurance", name: "Insurance & Contributions", items: [
-      { id: "G17ins", name: "Life insurance / takaful",    cap: 3000, desc: "Life insurance or takaful premiums. Sub-limit of G17 combined RM7,000 cap (shared with EPF)" },
-      { id: "G17epf", name: "EPF contributions",           cap: 4000, desc: "Mandatory or voluntary EPF contributions. Sub-limit of G17 combined RM7,000 cap (shared with insurance)" },
-      { id: "G18",    name: "PRS / Deferred annuity",      cap: 3000, desc: "Private Retirement Scheme" },
-      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Medical insurance & takaful medical plans (protect against hospital bills)" },
-      { id: "G20",    name: "SOCSO / EIS",                  cap: 350,  desc: "SOCSO + Employment Insurance contributions" },
+    { id: "insurance", name: "Insurance & Contributions", nameBM: "Insurans & Caruman", items: [
+      { id: "G17ins", name: "Life insurance / takaful",    nameBM: "Insurans hayat / takaful",       cap: 3000, desc: "Life insurance or takaful premiums. Sub-limit of G17 combined RM7,000 cap (shared with EPF)", descBM: "Premium insurans hayat atau takaful. Sub-had had gabungan G17 RM7,000 (berkongsi dengan KWSP)" },
+      { id: "G17epf", name: "EPF contributions",           nameBM: "Caruman KWSP",                   cap: 4000, desc: "Mandatory or voluntary EPF contributions. Sub-limit of G17 combined RM7,000 cap (shared with insurance)", descBM: "Caruman KWSP wajib atau sukarela. Sub-had had gabungan G17 RM7,000 (berkongsi dengan insurans)" },
+      { id: "G18",    name: "PRS / Deferred annuity",      nameBM: "PRS / Anuiti tertangguh",        cap: 3000, desc: "Private Retirement Scheme", descBM: "Skim Persaraan Swasta" },
+      { id: "G19",    name: "Education & medical insurance",nameBM: "Insurans pendidikan & perubatan",cap: 4000, desc: "Medical insurance & takaful medical plans (protect against hospital bills)", descBM: "Insurans perubatan & pelan takaful perubatan (perlindungan bil hospital)" },
+      { id: "G20",    name: "SOCSO / EIS",                  nameBM: "PERKESO / EIS",                  cap: 350,  desc: "SOCSO + Employment Insurance contributions", descBM: "Caruman PERKESO + Insurans Pekerjaan" },
     ]},
-    { id: "education", name: "Education & Savings", items: [
-      { id: "G5",  name: "Education fees (self)", cap: 7000, desc: "Master's/Doctorate (any field), Professional courses (law, accounting, Islamic financing, technical, vocational, scientific, technology). Upskilling: RM2k sub-limit" },
-      { id: "G13", name: "SSPN net savings",      cap: 8000, desc: "Net deposits minus withdrawals" },
+    { id: "education", name: "Education & Savings", nameBM: "Pendidikan & Simpanan", items: [
+      { id: "G5",  name: "Education fees (self)", nameBM: "Yuran pendidikan (sendiri)", cap: 7000, desc: "Master's/Doctorate (any field), Professional courses (law, accounting, Islamic financing, technical, vocational, scientific, technology). Upskilling: RM2k sub-limit", descBM: "Sarjana/Doktor Falsafah (mana-mana bidang), Kursus profesional (undang-undang, perakaunan, kewangan Islam, teknikal, vokasional). Peningkatan kemahiran: sub-had RM2k" },
+      { id: "G13", name: "SSPN net savings",      nameBM: "Simpanan SSPN bersih",       cap: 8000, desc: "Net deposits minus withdrawals", descBM: "Deposit bersih tolak pengeluaran" },
     ]},
-    { id: "children", name: "Children", items: [
-      { id: "G16a", name: "Child under 18",           cap: 2000, desc: "RM2,000 per unmarried child",               perUnit: true, unitName: "children" },
-      { id: "G16b", name: "Child 18+ in education",   cap: 8000, desc: "Diploma+ MY / degree+ overseas",            perUnit: true, unitName: "children" },
-      { id: "G16c", name: "Disabled child",           cap: 8000, desc: "Base RM8,000. If 18+, unmarried, diploma+: additional RM8,000 (total potential RM16,000 per child)"
-,    perUnit: true, unitName: "children" },
-      { id: "G12",  name: "Childcare / kindergarten", cap: 3000, desc: "Child aged 6 and below" },
-      { id: "G11",  name: "Breastfeeding equipment",  cap: 1000, desc: "Child aged 2 and below. Once every 2 years" },
+    { id: "children", name: "Children", nameBM: "Anak-anak", items: [
+      { id: "G16a", name: "Child under 18",           nameBM: "Kanak-kanak bawah 18",              cap: 2000, desc: "RM2,000 per unmarried child",               descBM: "RM2,000 setiap kanak-kanak yang tidak berkahwin",                                                               perUnit: true, unitName: "children" },
+      { id: "G16b", name: "Child 18+ in education",   nameBM: "Kanak-kanak 18+ dalam pendidikan",  cap: 8000, desc: "Diploma+ MY / degree+ overseas",            descBM: "Diploma+ Malaysia / ijazah+ luar negara",                                                                      perUnit: true, unitName: "children" },
+      { id: "G16c", name: "Disabled child",           nameBM: "Kanak-kanak OKU",                   cap: 8000, desc: "Base RM8,000. If 18+, unmarried, diploma+: additional RM8,000 (total potential RM16,000 per child)", descBM: "Asas RM8,000. Jika 18+, tidak berkahwin, diploma+: tambahan RM8,000 (potensi jumlah RM16,000 setiap kanak-kanak)", perUnit: true, unitName: "children" },
+      { id: "G12",  name: "Childcare / kindergarten", nameBM: "Tadika / taska",                    cap: 3000, desc: "Child aged 6 and below", descBM: "Kanak-kanak berumur 6 tahun dan ke bawah" },
+      { id: "G11",  name: "Breastfeeding equipment",  nameBM: "Peralatan penyusuan",               cap: 1000, desc: "Child aged 2 and below. Once every 2 years", descBM: "Kanak-kanak berumur 2 tahun dan ke bawah. Sekali setiap 2 tahun" },
     ]},
-    { id: "housing", name: "Housing", items: [
-      { id: "G22", name: "Housing loan interest (first home)", cap: 7000, desc: "SPA 2025–2027. RM7k if up to RM500k, RM5k if RM500k–750k" },
+    { id: "housing", name: "Housing", nameBM: "Perumahan", items: [
+      { id: "G22", name: "Housing loan interest (first home)", nameBM: "Faedah pinjaman perumahan (rumah pertama)", cap: 7000, desc: "SPA 2025–2027. RM7k if up to RM500k, RM5k if RM500k–750k", descBM: "SPA 2025–2027. RM7k jika sehingga RM500k, RM5k jika RM500k–750k" },
     ]},
-    { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: cost of repairs and maintenance of rental property" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax paid to local authority" },
-      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance on rental property" },
-      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: property management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: interest on loan taken to purchase/improve rental property" },
+    { id: "rental", name: "Rental Income & Expenses", nameBM: "Pendapatan & Perbelanjaan Sewa", items: [
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   nameBM: "Perbelanjaan sewa — pembaikan & penyelenggaraan",   cap: 999999, desc: "Deductible: cost of repairs and maintenance of rental property", descBM: "Boleh ditolak: kos pembaikan dan penyelenggaraan hartanah sewa" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  nameBM: "Perbelanjaan sewa — cukai tanah & cukai pintu",      cap: 999999, desc: "Deductible: quit rent, assessment tax paid to local authority", descBM: "Boleh ditolak: cukai tanah, cukai pintu yang dibayar kepada pihak berkuasa tempatan" },
+      { id: "R3", name: "Rental expenses — insurance premium",       nameBM: "Perbelanjaan sewa — premium insurans",              cap: 999999, desc: "Deductible: fire/building insurance on rental property", descBM: "Boleh ditolak: insurans kebakaran/bangunan untuk hartanah sewa" },
+      { id: "R4", name: "Rental expenses — management & agent fees", nameBM: "Perbelanjaan sewa — yuran pengurusan & ejen",       cap: 999999, desc: "Deductible: property management fees, agent commission", descBM: "Boleh ditolak: yuran pengurusan hartanah, komisyen ejen" },
+      { id: "R5", name: "Rental expenses — loan interest",           nameBM: "Perbelanjaan sewa — faedah pinjaman",              cap: 999999, desc: "Deductible: interest on loan taken to purchase/improve rental property", descBM: "Boleh ditolak: faedah pinjaman yang diambil untuk membeli/memperbaiki hartanah sewa" },
     ]},
   ],
 
   "2026": [
-    { id: "personal", name: "Individual", items: [
-      // G1 auto:true removed — YA2026 relief amounts unconfirmed by LHDN
-      { id: "G1",  name: "Individual relief",   cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2026 rates" },
-      { id: "G4",  name: "Disabled individual", cap: 8000, desc: "Increased for YA2026" },
-      { id: "G14", name: "Spouse / Alimony",    cap: 4000, desc: "Spouse with no income" },
+    { id: "personal", name: "Individual", nameBM: "Individu", items: [
+      { id: "G1",  name: "Individual relief",   nameBM: "Pelepasan individu",   cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2026 rates", descBM: "Dijangka RM9,000 — tambah secara manual setelah LHDN mengesahkan kadar YA2026" },
+      { id: "G4",  name: "Disabled individual", nameBM: "Individu OKU",         cap: 8000, desc: "Increased for YA2026", descBM: "Ditingkatkan untuk YA2026" },
+      { id: "G14", name: "Spouse / Alimony",    nameBM: "Pasangan / Nafkah",    cap: 4000, desc: "Spouse with no income", descBM: "Pasangan tanpa pendapatan" },
     ]},
-    { id: "lifestyle", name: "Lifestyle", items: [
-      { id: "G9",  name: "Books, gadgets, internet", cap: 2500, desc: "Same as YA2025" },
-      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Equipment, gym membership, court rental, green fees, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
-      { id: "VMY", name: "Visit Malaysia 2026",        cap: 1000, desc: "NEW: Domestic tourism — hotel, attraction, tour packages" },
+    { id: "lifestyle", name: "Lifestyle", nameBM: "Gaya Hidup", items: [
+      { id: "G9",  name: "Books, gadgets, internet", nameBM: "Buku, gajet, internet", cap: 2500, desc: "Same as YA2025", descBM: "Sama seperti YA2025" },
+      { id: "G10", name: "Sports & fitness",          nameBM: "Sukan & kecergasan",   cap: 1000, desc: "Equipment, gym membership, court rental, green fees, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental.", descBM: "Peralatan, keahlian gim, sewaan gelanggang, yuran padang golf, daftar pertandingan. TIDAK TERMASUK: yuran kemasukan kelab, pakaian/kasut sukan, sewaan basikal golf." },
+      { id: "VMY", name: "Visit Malaysia 2026",        nameBM: "Melawat Malaysia 2026", cap: 1000, desc: "NEW: Domestic tourism — hotel, attraction, tour packages", descBM: "BARU: Pelancongan domestik — hotel, tarikan, pakej pelancongan" },
     ]},
-    { id: "medical", name: "Medical", items: [
-      { id: "G6", name: "Medical (serious disease, fertility, vaccination, dental)", cap: 10000, desc: "Same structure as YA2025" },
-      { id: "G2", name: "Parents medical",                                           cap: 8000,  desc: "Medical, dental, nursing" },
+    { id: "medical", name: "Medical", nameBM: "Perubatan", items: [
+      { id: "G6", name: "Medical (serious disease, fertility, vaccination, dental)", nameBM: "Perubatan (penyakit serius, kesuburan, vaksinasi, pergigian)", cap: 10000, desc: "Same structure as YA2025", descBM: "Struktur sama seperti YA2025" },
+      { id: "G2", name: "Parents medical",                                           nameBM: "Perubatan ibu bapa",                                         cap: 8000,  desc: "Medical, dental, nursing", descBM: "Perubatan, pergigian, penjagaan" },
     ]},
-    { id: "insurance", name: "Insurance", items: [
-      { id: "G17ins", name: "Life insurance / takaful",    cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)" },
-      { id: "G17epf", name: "EPF contributions",           cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)" },
-      { id: "G18",    name: "PRS",                         cap: 3000, desc: "Private Retirement Scheme" },
-      { id: "G19",    name: "Education & medical insurance",cap: 4000, desc: "Premiums" },
-      { id: "G20",    name: "SOCSO / EIS",                  cap: 350,  desc: "Contributions" },
+    { id: "insurance", name: "Insurance", nameBM: "Insurans", items: [
+      { id: "G17ins", name: "Life insurance / takaful",    nameBM: "Insurans hayat / takaful",       cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)", descBM: "Sub-had dalam had gabungan G17 RM7,000 (berkongsi dengan KWSP)" },
+      { id: "G17epf", name: "EPF contributions",           nameBM: "Caruman KWSP",                   cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)", descBM: "Sub-had dalam had gabungan G17 RM7,000 (berkongsi dengan insurans)" },
+      { id: "G18",    name: "PRS",                         nameBM: "PRS",                            cap: 3000, desc: "Private Retirement Scheme", descBM: "Skim Persaraan Swasta" },
+      { id: "G19",    name: "Education & medical insurance",nameBM: "Insurans pendidikan & perubatan",cap: 4000, desc: "Premiums", descBM: "Premium" },
+      { id: "G20",    name: "SOCSO / EIS",                  nameBM: "PERKESO / EIS",                  cap: 350,  desc: "Contributions", descBM: "Caruman" },
     ]},
-    { id: "children", name: "Children", items: [
-      { id: "G16a", name: "Child under 18",  cap: 2000,  desc: "Per child",  perUnit: true, unitName: "children" },
-      { id: "G16c", name: "Disabled child",  cap: 10000, desc: "Increased",  perUnit: true, unitName: "children" },
+    { id: "children", name: "Children", nameBM: "Anak-anak", items: [
+      { id: "G16a", name: "Child under 18",  nameBM: "Kanak-kanak bawah 18", cap: 2000,  desc: "Per child",  descBM: "Setiap kanak-kanak", perUnit: true, unitName: "children" },
+      { id: "G16c", name: "Disabled child",  nameBM: "Kanak-kanak OKU",      cap: 10000, desc: "Increased",  descBM: "Ditingkatkan",       perUnit: true, unitName: "children" },
     ]},
-    { id: "housing", name: "Housing", items: [
-      { id: "G22", name: "Housing loan interest", cap: 7000, desc: "First-time buyer" },
+    { id: "housing", name: "Housing", nameBM: "Perumahan", items: [
+      { id: "G22", name: "Housing loan interest", nameBM: "Faedah pinjaman perumahan", cap: 7000, desc: "First-time buyer", descBM: "Pembeli rumah pertama" },
     ]},
-    { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: repairs and maintenance" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax" },
-      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance" },
-      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: loan interest on rental property" },
+    { id: "rental", name: "Rental Income & Expenses", nameBM: "Pendapatan & Perbelanjaan Sewa", items: [
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   nameBM: "Perbelanjaan sewa — pembaikan & penyelenggaraan",   cap: 999999, desc: "Deductible: repairs and maintenance", descBM: "Boleh ditolak: pembaikan dan penyelenggaraan" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  nameBM: "Perbelanjaan sewa — cukai tanah & cukai pintu",      cap: 999999, desc: "Deductible: quit rent, assessment tax", descBM: "Boleh ditolak: cukai tanah, cukai pintu" },
+      { id: "R3", name: "Rental expenses — insurance premium",       nameBM: "Perbelanjaan sewa — premium insurans",              cap: 999999, desc: "Deductible: fire/building insurance", descBM: "Boleh ditolak: insurans kebakaran/bangunan" },
+      { id: "R4", name: "Rental expenses — management & agent fees", nameBM: "Perbelanjaan sewa — yuran pengurusan & ejen",       cap: 999999, desc: "Deductible: management fees, agent commission", descBM: "Boleh ditolak: yuran pengurusan, komisyen ejen" },
+      { id: "R5", name: "Rental expenses — loan interest",           nameBM: "Perbelanjaan sewa — faedah pinjaman",              cap: 999999, desc: "Deductible: loan interest on rental property", descBM: "Boleh ditolak: faedah pinjaman untuk hartanah sewa" },
     ]},
   ],
 
   "2027": [
-    { id: "personal", name: "Individual", items: [
-      // G1 auto:true removed — YA2027 relief amounts unconfirmed by LHDN
-      { id: "G1",  name: "Individual relief", cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2027 rates" },
-      { id: "G14", name: "Spouse / Alimony",  cap: 4000, desc: "Spouse with no income" },
+    { id: "personal", name: "Individual", nameBM: "Individu", items: [
+      { id: "G1",  name: "Individual relief", nameBM: "Pelepasan individu", cap: 9000, desc: "Expected RM9,000 — add manually once LHDN confirms YA2027 rates", descBM: "Dijangka RM9,000 — tambah secara manual setelah LHDN mengesahkan kadar YA2027" },
+      { id: "G14", name: "Spouse / Alimony",  nameBM: "Pasangan / Nafkah", cap: 4000, desc: "Spouse with no income", descBM: "Pasangan tanpa pendapatan" },
     ]},
-    { id: "lifestyle", name: "Lifestyle", items: [
-      { id: "G9",  name: "Books, gadgets, internet", cap: 2500, desc: "Gadgets, internet" },
-      { id: "G10", name: "Sports & fitness",          cap: 1000, desc: "Equipment, gym membership, court rental, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental." },
+    { id: "lifestyle", name: "Lifestyle", nameBM: "Gaya Hidup", items: [
+      { id: "G9",  name: "Books, gadgets, internet", nameBM: "Buku, gajet, internet", cap: 2500, desc: "Gadgets, internet", descBM: "Gajet, internet" },
+      { id: "G10", name: "Sports & fitness",          nameBM: "Sukan & kecergasan",   cap: 1000, desc: "Equipment, gym membership, court rental, competition entry. EXCLUDES: club joining fees, sports clothing/shoes, buggy rental.", descBM: "Peralatan, keahlian gim, sewaan gelanggang, daftar pertandingan. TIDAK TERMASUK: yuran kemasukan kelab, pakaian/kasut sukan, sewaan basikal golf." },
     ]},
-    { id: "insurance", name: "Insurance", items: [
-      { id: "G17ins", name: "Life insurance / takaful", cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)" },
-      { id: "G17epf", name: "EPF contributions",        cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)" },
-      { id: "G20",    name: "SOCSO / EIS",               cap: 350,  desc: "Contributions" },
+    { id: "insurance", name: "Insurance", nameBM: "Insurans", items: [
+      { id: "G17ins", name: "Life insurance / takaful", nameBM: "Insurans hayat / takaful", cap: 3000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with EPF)", descBM: "Sub-had dalam had gabungan G17 RM7,000 (berkongsi dengan KWSP)" },
+      { id: "G17epf", name: "EPF contributions",        nameBM: "Caruman KWSP",              cap: 4000, desc: "Sub-limit within G17 combined RM7,000 cap (shared with insurance)", descBM: "Sub-had dalam had gabungan G17 RM7,000 (berkongsi dengan insurans)" },
+      { id: "G20",    name: "SOCSO / EIS",               nameBM: "PERKESO / EIS",             cap: 350,  desc: "Contributions", descBM: "Caruman" },
     ]},
-    { id: "rental", name: "Rental Income & Expenses", items: [
-      { id: "R1", name: "Rental expenses — repairs & maintenance",   cap: 999999, desc: "Deductible: repairs and maintenance" },
-      { id: "R2", name: "Rental expenses — quit rent & assessment",  cap: 999999, desc: "Deductible: quit rent, assessment tax" },
-      { id: "R3", name: "Rental expenses — insurance premium",       cap: 999999, desc: "Deductible: fire/building insurance" },
-      { id: "R4", name: "Rental expenses — management & agent fees", cap: 999999, desc: "Deductible: management fees, agent commission" },
-      { id: "R5", name: "Rental expenses — loan interest",           cap: 999999, desc: "Deductible: loan interest on rental property" },
+    { id: "rental", name: "Rental Income & Expenses", nameBM: "Pendapatan & Perbelanjaan Sewa", items: [
+      { id: "R1", name: "Rental expenses — repairs & maintenance",   nameBM: "Perbelanjaan sewa — pembaikan & penyelenggaraan",   cap: 999999, desc: "Deductible: repairs and maintenance", descBM: "Boleh ditolak: pembaikan dan penyelenggaraan" },
+      { id: "R2", name: "Rental expenses — quit rent & assessment",  nameBM: "Perbelanjaan sewa — cukai tanah & cukai pintu",      cap: 999999, desc: "Deductible: quit rent, assessment tax", descBM: "Boleh ditolak: cukai tanah, cukai pintu" },
+      { id: "R3", name: "Rental expenses — insurance premium",       nameBM: "Perbelanjaan sewa — premium insurans",              cap: 999999, desc: "Deductible: fire/building insurance", descBM: "Boleh ditolak: insurans kebakaran/bangunan" },
+      { id: "R4", name: "Rental expenses — management & agent fees", nameBM: "Perbelanjaan sewa — yuran pengurusan & ejen",       cap: 999999, desc: "Deductible: management fees, agent commission", descBM: "Boleh ditolak: yuran pengurusan, komisyen ejen" },
+      { id: "R5", name: "Rental expenses — loan interest",           nameBM: "Perbelanjaan sewa — faedah pinjaman",              cap: 999999, desc: "Deductible: loan interest on rental property", descBM: "Boleh ditolak: faedah pinjaman untuk hartanah sewa" },
     ]},
   ],
 };
@@ -2244,7 +2241,7 @@ export default function MakeCents() {
   const tabContent = (
     <>
       {tab === "relief" && (
-        <ReliefTab t={t} L={L} cats={cats} entries={entries}
+        <ReliefTab t={t} L={L} lang={lang} cats={cats} entries={entries}
           itemEntries={itemEntries} itemTotalRaw={itemTotalRaw}
           onAddEntry={addEntry} onRemoveEntry={removeEntry}
           totalIncome={totalIncome} totalRelief={totalRelief} estTax={estTax} eligibleCapTotal={eligibleCapTotal}
@@ -2812,7 +2809,10 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes, totalMTDPaid, mtdBalance }) {
+function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes, totalMTDPaid, mtdBalance }) {
+  const isBM = lang === "ms";
+  const n = (item) => isBM ? (item.nameBM || item.name) : item.name;
+  const d = (item) => isBM ? (item.descBM || item.desc) : item.desc;
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
@@ -2924,7 +2924,7 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
             <div style={{width:36,height:36,borderRadius:10,background:t.redSoft,display:'flex',alignItems:'center',justifyContent:'center',marginRight:10,flexShrink:0}}><Icon name={cat.icon} size={16} color={t.red}/></div>
             <div style={{flex:1,textAlign:'left',minWidth:0}}>
               <div style={{fontSize: wide ? 15 : 14,fontWeight:700,color:t.ink,display:'flex',alignItems:'center',gap:6}}>
-                {cat.name}<span style={{fontSize:11,color:t.inkMute,fontWeight:500}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
+                {n(cat)}<span style={{fontSize:11,color:t.inkMute,fontWeight:500}}>{cat.items.filter(i=>itemTotalRaw(i.id)>0 || i.auto).length}/{cat.items.length}</span>
               </div>
               {expanded && !wide && (
                 <div style={{fontSize:11,color:t.inkMute,marginTop:4}}>
@@ -2960,8 +2960,8 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
                       {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.green,background:t.greenSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
                       {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</span>}
                     </div>
-                    <div style={{fontSize:13,fontWeight:600,color:t.ink,lineHeight:1.3,marginBottom:2}}>{item.name}</div>
-                    <div style={{fontSize:11,color:t.inkMute,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{item.desc}</div>
+                    <div style={{fontSize:13,fontWeight:600,color:t.ink,lineHeight:1.3,marginBottom:2}}>{n(item)}</div>
+                    <div style={{fontSize:11,color:t.inkMute,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{d(item)}</div>
                     <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:3}}/></div>
                     <div style={{fontSize:10,color:t.inkMute,marginTop:4}}>RM {claimedAmt.toLocaleString()} of RM {capEff.toLocaleString()}</div>
                     {isAutoLinked && <div style={{fontSize:10,color:t.gold,marginTop:2}}>Auto-linked from your EA form · add manual entries to override</div>}
@@ -2969,8 +2969,8 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
                   <div style={{flexShrink:0,textAlign:'right'}}>
                     <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
                     {item.auto
-                      ? <div style={{fontSize:10,color:t.green,fontWeight:600,marginTop:4}}>Confirmed</div>
-                      : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length?'View':'Add'}</button>
+                      ? <div style={{fontSize:10,color:t.green,fontWeight:600,marginTop:4}}>{isBM ? "Disahkan" : "Confirmed"}</div>
+                      : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length ? L('view') : L('add')}</button>
                     }
                   </div>
                 </div>;
@@ -2986,15 +2986,15 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
                   <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
                   {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'1px 5px',borderRadius:4}}>FROM EA</span>}
                 </div>
-                <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{item.name}</div>
-                <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{item.desc}</div>
+                <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
+                <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{d(item)}</div>
                 {isAutoLinked && <div style={{fontSize:11,color:t.gold,marginTop:4,lineHeight:1.4}}>Auto-linked from your EA form. Add manual entries to override.</div>}
                 <div style={{fontFamily:FONT_DISPLAY,fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
                 <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`,opacity:hoveredCard===item.id||eItems.length>0?1:0,transition:'opacity 0.15s'}}>
                   <span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>
-                  {item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}
+                  {item.auto?<span style={{color:t.green}}>{isBM ? "Disahkan" : "Confirmed"}</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length ? L('view') : L('add')}</button>}
                 </div>
               </div>
             })}
@@ -3015,7 +3015,7 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
             background:t.surface, display:'flex', flexDirection:'column', overflow:'hidden'
           }}>
           {!wide && <div style={{display:'flex', justifyContent:'center', padding:'12px 0 0'}}><div style={{width:40, height:4, background:t.hair, borderRadius:2}}/></div>}
-            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{n(drawerItem)}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{d(drawerItem)}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
             <div style={{padding:18, overflow:'auto', flex:1}}>
               <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8,fontFamily:FONT}}>ENTRIES · {drawerEntries.length}</div>
               {drawerEntries.length===0
@@ -3074,7 +3074,7 @@ function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry,
                 </div>
               </div>
             </div>
-            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={closeDrawer} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
+            <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>{isBM ? "Dituntut" : "Claimed"} RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={closeDrawer} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>{L('done')}</button></div>
           </div>
         </div>
       )}
