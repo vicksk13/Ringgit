@@ -509,8 +509,55 @@ const TRANS = {
     delete_account:  "Delete account & all data",
     not_fin_advice:  "MakeCents · Not financial advice",
 
-    // KPI cards
-    your_refund:         "YOUR REFUND",
+    // Income tab - employment type
+    employed:            "Employed",
+    self_employed:       "Self-Employed",
+    employed_dot:        "Employed",
+    self_employed_dot:   "Self-employed",
+    total_annual_income: "Total Annual Income",
+    gross_salary:        "Gross salary",
+    bonus:               "Bonus",
+    other_allow:         "Other allow.",
+    mtd_paid:            "MTD paid",
+    epf:                 "EPF",
+    socso:               "SOCSO",
+
+    // Income tab - tax summary card
+    tax_summary:         "Tax Summary",
+    total_income_label:  "Total income",
+    total_relief_label:  "Total relief",
+    chargeable_label:    "Chargeable income",
+    estimated_tax:       "Estimated tax",
+    mtd_pcb_paid:        "MTD / PCB paid",
+    balance_owed:        "Balance still owed to LHDN",
+    refund_due:          "Refund due from LHDN",
+    tax_settled:         "Tax fully settled",
+    pay_byrhastil:       "Pay via ByrHASiL before 30 April",
+    refund_efiling:      "Refund via e-Filing",
+
+    // Income tab - rental summary
+    gross_rental_label:  "Gross rental income",
+    deductible_label:    "Deductible expenses",
+    net_rental_label:    "Net rental income",
+
+    // Receipts tab - stats
+    total_receipts_label:"Total receipts",
+    across_categories:   "across all categories",
+    total_amount_label:  "Total amount",
+    from_all_receipts:   "from all receipts",
+    categories_covered:  "Categories covered",
+    lhdn_relief_codes:   "LHDN relief codes",
+    search_placeholder:  "Search by merchant or category…",
+    sort_date:           "Date",
+    sort_amount:         "Amount",
+    n_receipts:          "{0} receipt",
+    n_receipts_plural:   "{0} receipts",
+    in_filter:           "in {0}",
+    matching:            "matching \"{0}\"",
+    total_label:         "Total:",
+    scan_from_relief:    "Scan a receipt from the Relief tab — AI will classify it to the correct LHDN category automatically.",
+    scanned_via_ai:      "Scanned via AI",
+    amount_label:        "Amount",
     balance_due:         "BALANCE DUE",
     tax_estimate_label:  "TAX ESTIMATE",
     relief_claimed_label:"RELIEF CLAIMED",
@@ -688,8 +735,55 @@ const TRANS = {
     delete_account:  "Padam akaun & semua data",
     not_fin_advice:  "MakeCents · Bukan nasihat kewangan",
 
-    // KPI cards
-    your_refund:         "BAYARAN BALIK",
+    // Income tab - employment type
+    employed:            "Bekerja",
+    self_employed:       "Bekerja Sendiri",
+    employed_dot:        "Bekerja",
+    self_employed_dot:   "Bekerja sendiri",
+    total_annual_income: "Jumlah Pendapatan Tahunan",
+    gross_salary:        "Gaji kasar",
+    bonus:               "Bonus",
+    other_allow:         "Elaun lain",
+    mtd_paid:            "MTD dibayar",
+    epf:                 "KWSP",
+    socso:               "PERKESO",
+
+    // Income tab - tax summary card
+    tax_summary:         "Ringkasan Cukai",
+    total_income_label:  "Jumlah pendapatan",
+    total_relief_label:  "Jumlah pelepasan",
+    chargeable_label:    "Pendapatan boleh dicukai",
+    estimated_tax:       "Anggaran cukai",
+    mtd_pcb_paid:        "MTD / PCB dibayar",
+    balance_owed:        "Baki masih perlu dibayar kepada LHDN",
+    refund_due:          "Bayaran balik daripada LHDN",
+    tax_settled:         "Cukai telah diselesaikan",
+    pay_byrhastil:       "Bayar melalui ByrHASiL sebelum 30 April",
+    refund_efiling:      "Bayaran balik melalui e-Filing",
+
+    // Income tab - rental summary
+    gross_rental_label:  "Pendapatan sewa kasar",
+    deductible_label:    "Perbelanjaan boleh ditolak",
+    net_rental_label:    "Pendapatan sewa bersih",
+
+    // Receipts tab - stats
+    total_receipts_label:"Jumlah resit",
+    across_categories:   "merentas semua kategori",
+    total_amount_label:  "Jumlah amaun",
+    from_all_receipts:   "daripada semua resit",
+    categories_covered:  "Kategori diliputi",
+    lhdn_relief_codes:   "Kod pelepasan LHDN",
+    search_placeholder:  "Cari mengikut peniaga atau kategori…",
+    sort_date:           "Tarikh",
+    sort_amount:         "Amaun",
+    n_receipts:          "{0} resit",
+    n_receipts_plural:   "{0} resit",
+    in_filter:           "dalam {0}",
+    matching:            "sepadan dengan \"{0}\"",
+    total_label:         "Jumlah:",
+    scan_from_relief:    "Imbas resit dari tab Pelepasan — AI akan mengklasifikasikannya ke kategori LHDN yang betul secara automatik.",
+    scanned_via_ai:      "Diimbas melalui AI",
+    amount_label:        "Amaun",
     balance_due:         "BAKI PERLU DIBAYAR",
     tax_estimate_label:  "ANGGARAN CUKAI",
     relief_claimed_label:"PELEPASAN DITUNTUT",
@@ -3202,8 +3296,8 @@ Rules:
 
         {/* Employed / Self-Employed toggle */}
         <div style={{ display: "flex", gap: 4, background: t.bgAlt, borderRadius: 12, padding: 4, marginBottom: 20 }}>
-          {tabBtn("employed", "Employed")}
-          {tabBtn("self", "Self-Employed")}
+          {tabBtn("employed", L("employed"))}
+          {tabBtn("self", L("self_employed"))}
         </div>
 
         {empType === "employed" && <>
@@ -3284,7 +3378,7 @@ Rules:
         {/* Total + Save */}
         <div style={{ background: t.bgAlt, borderRadius: 12, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
           <div>
-            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Annual Income</div>
+            <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{L("total_annual_income")}</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
               RM {totalForEntry.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
@@ -3307,7 +3401,7 @@ Rules:
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: t.ink }}>{inc.employer || "Employer"}</div>
-                  <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>{inc.type === "self" ? "Self-employed" : "Employed"} · YA{ya}</div>
+                  <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>{inc.type === "self" ? L("self_employed_dot") : L("employed_dot")} · YA{ya}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(inc.amount || 0).toLocaleString()}</div>
@@ -3317,7 +3411,7 @@ Rules:
               {/* Breakdown */}
               {inc.grossSalary > 0 && (
                 <div style={{ borderTop: `1px solid ${t.hair}`, paddingTop: 10, display: "grid", gridTemplateColumns: wide ? "1fr 1fr 1fr" : "1fr 1fr", gap: "6px 12px" }}>
-                  {[["Gross salary", inc.grossSalary], ["Bonus", inc.bonus], ["Other allow.", inc.otherAllow], ["MTD paid", inc.mtdPaid], ["EPF", inc.epfContrib], ["SOCSO", inc.socso]].filter(([,v]) => v > 0).map(([l, v]) => (
+                  {[[L("gross_salary"), inc.grossSalary], [L("bonus"), inc.bonus], [L("other_allow"), inc.otherAllow], [L("mtd_paid"), inc.mtdPaid], [L("epf"), inc.epfContrib], [L("socso"), inc.socso]].filter(([,v]) => v > 0).map(([l, v]) => (
                     <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.inkMute }}>
                       <span>{l}</span><span style={{ fontWeight: 600, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {(v||0).toLocaleString()}</span>
                     </div>
@@ -3374,7 +3468,7 @@ Rules:
             </div>
           ))}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 16 }}>
-            {[["Gross rental income", totalRentalIncome, t.ink], ["Deductible expenses", -totalRentalExpenses, t.green], ["Net rental income", netRentalIncome, t.ink]].map(([l, v, c], i) => (
+            {[[L("gross_rental_label"), totalRentalIncome, t.ink], [L("deductible_label"), -totalRentalExpenses, t.green], [L("net_rental_label"), netRentalIncome, t.ink]].map(([l, v, c], i) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: i === 2 ? 13 : 12, fontWeight: i === 2 ? 700 : 500, color: i === 2 ? t.ink : t.inkSoft, padding: "4px 0", borderTop: i === 2 ? `1px solid ${t.hair}` : "none", marginTop: i === 2 ? 6 : 0, paddingTop: i === 2 ? 8 : 4 }}>
                 <span>{l}</span><span style={{ fontVariantNumeric: "tabular-nums", color: c }}>RM {Math.abs(v).toLocaleString()}</span>
               </div>
@@ -3385,13 +3479,13 @@ Rules:
       {/* ── Tax & MTD Summary card ── */}
       {totalIncome > 0 && (
         <div style={{ ...cardStyle, background: t.surface }}>
-          <div style={{ fontSize: wide ? 18 : 15, fontWeight: 700, color: t.ink, marginBottom: 14 }}>Tax Summary · YA{ya}</div>
+          <div style={{ fontSize: wide ? 18 : 15, fontWeight: 700, color: t.ink, marginBottom: 14 }}>{L("tax_summary")} · YA{ya}</div>
           {[
-            ["Total income",         totalIncome,          t.ink,   false],
-            ["Total relief",        -totalRelief,          t.green, false],
-            ["Chargeable income",    chargeable,           t.ink,   true ],
-            ["Estimated tax",        estTax,               t.ink,   false],
-            ["MTD / PCB paid",      -totalMTDPaid,         t.green, false],
+            [L("total_income_label"),   totalIncome,          t.ink,   false],
+            [L("total_relief_label"),  -totalRelief,          t.green, false],
+            [L("chargeable_label"),     chargeable,           t.ink,   true ],
+            [L("estimated_tax"),        estTax,               t.ink,   false],
+            [L("mtd_pcb_paid"),        -totalMTDPaid,         t.green, false],
           ].map(([label, val, color, divider], i) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
               fontSize: divider ? 13 : 12, fontWeight: divider ? 700 : 500,
@@ -3411,10 +3505,10 @@ Rules:
             display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: t.inkMute }}>
-                {mtdBalance > 0 ? "Balance still owed to LHDN" : mtdBalance < 0 ? "Refund due from LHDN" : "Tax fully settled"}
+                {mtdBalance > 0 ? L("balance_owed") : mtdBalance < 0 ? L("refund_due") : L("tax_settled")}
               </div>
               {mtdBalance !== 0 && <div style={{ fontSize: 11, color: t.inkMute, marginTop: 2 }}>
-                {mtdBalance > 0 ? "Pay via ByrHASiL before 30 April" : "Refund via e-Filing"}
+                {mtdBalance > 0 ? L("pay_byrhastil") : L("refund_efiling")}
               </div>}
             </div>
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700,
@@ -3550,9 +3644,9 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
       {receipts.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
           {[
-            { label: "Total receipts", value: receipts.length, sub: "across all categories", color: t.ink },
-            { label: "Total amount", value: `RM ${receipts.reduce((s,r)=>s+(r.amount||0),0).toLocaleString()}`, sub: "from all receipts", color: t.ink },
-            { label: "Categories covered", value: usedIds.size, sub: "LHDN relief codes", color: t.red },
+            { label: L("total_receipts_label"), value: receipts.length, sub: L("across_categories"), color: t.ink },
+            { label: L("total_amount_label"), value: `RM ${receipts.reduce((s,r)=>s+(r.amount||0),0).toLocaleString()}`, sub: L("from_all_receipts"), color: t.ink },
+            { label: L("categories_covered"), value: usedIds.size, sub: L("lhdn_relief_codes"), color: t.red },
           ].map(s => (
             <div key={s.label} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "16px 20px" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
@@ -3569,11 +3663,11 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           <div style={{ position: "absolute", top: "50%", left: 14, transform: "translateY(-50%)", pointerEvents: "none" }}>
             <Icon name="search" size={15} color={t.inkMute} />
           </div>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by merchant or category…"
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={L("search_placeholder")}
             style={{ width: "100%", padding: "11px 14px 11px 40px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 13, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
         </div>
         <div style={{ display: "flex", gap: 4, background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 12, padding: 4 }}>
-          {[["date", "Date"], ["amount", "Amount"]].map(([k, l]) => (
+          {[["date", L("sort_date")], ["amount", L("sort_amount")]].map(([k, l]) => (
             <button key={k} onClick={() => setSortBy(k)}
               style={{ padding: "7px 14px", border: "none", borderRadius: 8, background: sortBy === k ? t.ink : "transparent", color: sortBy === k ? t.bg : t.inkMute, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
               {l}
@@ -3600,13 +3694,13 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
       {/* Results count */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>
-          {filtered.length} receipt{filtered.length !== 1 ? "s" : ""}
-          {filter !== "all" ? ` in ${filter}` : ""}
-          {search ? ` matching "${search}"` : ""}
+          {filtered.length !== 1 ? L("n_receipts_plural", filtered.length) : L("n_receipts", filtered.length)}
+          {filter !== "all" ? ` ${L("in_filter", filter)}` : ""}
+          {search ? ` ${L("matching", search)}` : ""}
         </div>
         {filtered.length > 0 && (
           <div style={{ fontSize: 12, color: t.inkMute }}>
-            Total: <span style={{ fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalAmount.toLocaleString()}</span>
+            {L("total_label")} <span style={{ fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums" }}>RM {totalAmount.toLocaleString()}</span>
           </div>
         )}
       </div>
@@ -3619,7 +3713,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           </div>
           <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT_DISPLAY }}>{L('no_receipts')}</div>
           <div style={{ fontSize: 13, color: t.inkMute, marginTop: 6, maxWidth: 300, margin: "8px auto 0" }}>
-            Scan a receipt from the Relief tab — AI will classify it to the correct LHDN category automatically.
+            {L("scan_from_relief")}
           </div>
         </div>
       )}
@@ -3678,7 +3772,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
                   {/* Amount */}
                   <div style={{ marginTop: "auto", paddingTop: 10, borderTop: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>Amount</div>
+                      <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{L("amount_label")}</div>
                       <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                         RM {(rx.amount || 0).toLocaleString()}
                       </div>
@@ -3687,8 +3781,8 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
                     {/* Delete with confirm */}
                     {isConfirming ? (
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => setConfirm(null)} style={{ padding: "6px 12px", border: `1px solid ${t.hair}`, borderRadius: 8, background: "transparent", color: t.inkMute, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
-                        <button onClick={() => { onRemove(rx.id); setConfirm(null); }} style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Delete</button>
+                        <button onClick={() => setConfirm(null)} style={{ padding: "6px 12px", border: `1px solid ${t.hair}`, borderRadius: 8, background: "transparent", color: t.inkMute, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>{L("cancel")}</button>
+                        <button onClick={() => { onRemove(rx.id); setConfirm(null); }} style={{ padding: "6px 12px", border: "none", borderRadius: 8, background: t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>{L("remove")}</button>
                       </div>
                     ) : (
                       <button onClick={() => setConfirm(rx.id)} style={{ width: 32, height: 32, border: "none", borderRadius: 10, background: t.redSoft, color: t.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
