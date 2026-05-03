@@ -306,11 +306,11 @@ const sanitizeForPrompt = (raw, maxLen = 500) => {
 };
 
 // [Priority 3] Validate a receipt file before it is read into memory.
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"]);
 const MAX_FILE_MB  = 20;
 const validateReceiptFile = (file) => {
   if (!ALLOWED_MIME.has(file.type))
-    return { ok: false, error: "Only JPEG, PNG, WebP, and HEIC images are supported." };
+    return { ok: false, error: "Only JPEG, PNG, WebP, HEIC images, and PDF files are supported." };
   if (file.size > MAX_FILE_MB * 1024 * 1024)
     return { ok: false, error: `Image must be under ${MAX_FILE_MB}MB.` };
   return { ok: true };
@@ -4086,8 +4086,12 @@ function ScannerSheet({ open, onClose, onAdd, seededItem, t, L, ya, allItems }) 
         r.onerror = rej;
         r.readAsDataURL(f);
       });
-      const compressed = await compressImage(raw);
-      setImg(compressed);
+      if (f.type === "application/pdf") {
+  setImg(raw); // PDFs sent as-is to Claude — no canvas compression
+} else {
+  const compressed = await compressImage(raw);
+  setImg(compressed);
+}
     } catch (ex) {
       console.error("Compression error:", ex?.message);
       setErr("Failed to process image. Please try a smaller photo.");
@@ -4145,7 +4149,11 @@ If not claimable:
       }
       const mediaType = img.substring(5, semicolonIdx);
       const b64data   = img.substring(commaIdx + 1);
-      userContent.push({ type: "image", source: { type: "base64", media_type: mediaType, data: b64data } });
+      if (mediaType === "application/pdf") {
+  userContent.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64data } });
+} else {
+  userContent.push({ type: "image", source: { type: "base64", media_type: mediaType, data: b64data } });
+}
     }
     // [Priority 1] Use sanitized desc — never embed raw user text directly into prompts
     userContent.push({
@@ -4256,7 +4264,14 @@ If not claimable:
               </div>
             ) : img ? (
               <div style={{ width: "100%", padding: "16px", background: t.surface, border: `1.5px solid ${t.green}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <img src={img} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, objectFit: "contain" }} alt="Receipt preview" />
+                {img?.startsWith("data:application/pdf") ? (
+  <div style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+    <Icon name="receipt" size={36} color={t.green} />
+    <div style={{ fontSize: 12, color: t.inkSoft }}>PDF document ready</div>
+  </div>
+) : (
+  <img src={img} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, objectFit: "contain" }} alt="Receipt preview" />
+)}
                 <div style={{ fontSize: 12, fontWeight: 600, color: t.green }}>{L("receipt_ok")}</div>
                 <button onClick={() => setImg(null)} style={{ fontSize: 11, color: t.inkMute, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: FONT }}>{L("remove")}</button>
               </div>
