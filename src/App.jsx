@@ -389,8 +389,8 @@ const THEMES = {
   },
 };
 
-const FONT         = "'Inter', -apple-system, system-ui, sans-serif";
-const FONT_DISPLAY = "'Fraunces', 'Georgia', ui-serif, serif";
+const FONT         = "'Poppins', -apple-system, system-ui, sans-serif";
+const FONT_DISPLAY = "'Fraunces', 'Georgia', ui-serif, serif"; // ← kept for key RM numbers
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -2638,6 +2638,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
   const [descIn, setDescIn] = useState("");
   const [dateIn, setDateIn] = useState(() => new Date().toISOString().slice(0, 10));
   const [unitsIn, setUnitsIn] = useState(1);
+  const [drawerFormOpen, setDrawerFormOpen] = useState(false);
 
   const totalCap = eligibleCapTotal || 0;
   const remainingRelief = Math.max(0, totalCap - totalRelief);
@@ -2656,20 +2657,21 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
     const amt = parseFloat(amtIn) || 0;
     if (amt <= 0) return;
     await onAddEntry(drawerItem.id, amt, descIn || drawerItem.name, unitsIn || 1, false, null);
-    setAmtIn(""); setDescIn(""); setUnitsIn(1);
+    setAmtIn(""); setDescIn(""); setUnitsIn(1); setDrawerFormOpen(false);
   };
 
   const closeDrawer = () => {
     setDrawerClosing(true);
+    setDrawerFormOpen(false);
     setTimeout(() => { setDrawerItemId(null); setDrawerClosing(false); }, 180);
   };
 
   return (
-    <div style={{ padding: wide ? "16px 24px 40px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? "none" : "100%", margin: "0 auto" }}>
+    <div style={{ padding: wide ? "20px 28px 60px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? "none" : "100%", margin: "0 auto" }}>
 
       {/* ── DESKTOP: big stat header ── */}
       {wide && <>
-        <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
+        <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT, marginBottom: 6 }}>Relief overview</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
         {/* ── 3-card KPI row ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14, alignItems: 'stretch' }}>
@@ -2747,13 +2749,13 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
               {expanded && !wide && <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:6,marginRight:8}}><div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:3}}/></div>}
             </div>
             {expanded && wide && (
-              <div style={{display:'flex',alignItems:'center',gap:14,marginRight:14,flexShrink:0}}>
-                <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:22,fontWeight:700,color: util > 0 ? t.red : t.inkMute,lineHeight:1.1}}>{util}%</div>
-                  <div style={{fontSize:11,color:t.inkMute,marginTop:2,whiteSpace:'nowrap'}}>RM {claimed.toLocaleString()} of RM {cap.toLocaleString()}</div>
-                </div>
-                <div style={{width:140,height:6,background:t.bgAlt,borderRadius:6,overflow:'hidden',flexShrink:0}}>
-                  <div style={{width:`${Math.min(100,util)}%`,height:'100%',background:t.red,borderRadius:6}}/>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginRight:14,flexShrink:0}}>
+                <span style={{fontSize:12,fontWeight:600,color: util > 0 ? t.red : t.inkMute,background: util > 0 ? t.redSoft : t.bgAlt,padding:'3px 10px',borderRadius:20,minWidth:48,textAlign:'center',letterSpacing:0.2}}>{util}%</span>
+                <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'flex-end'}}>
+                  <div style={{width:120,height:5,background:t.bgAlt,borderRadius:5,overflow:'hidden'}}>
+                    <div style={{width:`${Math.min(100,util)}%`,height:'100%',background: util > 0 ? t.red : t.hair,borderRadius:5,transition:'width 0.4s ease'}}/>
+                  </div>
+                  <div style={{fontSize:11,color:t.inkMute,whiteSpace:'nowrap'}}>RM {claimed.toLocaleString()} / RM {cap.toLocaleString()} cap</div>
                 </div>
               </div>
             )}
@@ -2783,7 +2785,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                     <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
                     {item.auto
                       ? <div style={{fontSize:10,color:t.green,fontWeight:600,marginTop:4}}>Confirmed</div>
-                      : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length?'View':'Add'}</button>
+                      : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length?'View':'Add'}</button>
                     }
                   </div>
                 </div>;
@@ -2807,7 +2809,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
                 <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`,opacity:hoveredCard===item.id||eItems.length>0?1:0,transition:'opacity 0.15s'}}>
                   <span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>
-                  {item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}
+                  {item.auto?<span style={{color:t.green}}>Confirmed</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length?'View':'Add'}</button>}
                 </div>
               </div>
             })}
@@ -2822,15 +2824,70 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
           <div style={{
             position:'absolute',
             ...(wide
-              ? { right:0, top:0, height:'100%', width:440, borderLeft:`1px solid ${t.hair}`, transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease" }
+              ? { right:0, top:0, height:'100%', width:480, borderLeft:`1px solid ${t.hair}`, transform: drawerClosing ? "translateX(100%)" : "translateX(0)", transition: "transform 180ms ease" }
               : { left:0, right:0, bottom:0, maxHeight:'88vh', borderRadius:'20px 20px 0 0', transform: drawerClosing ? "translateY(100%)" : "translateY(0)", transition: "transform 240ms cubic-bezier(0.32,0,0,1)" }
             ),
             background:t.surface, display:'flex', flexDirection:'column', overflow:'hidden'
           }}>
           {!wide && <div style={{display:'flex', justifyContent:'center', padding:'12px 0 0'}}><div style={{width:40, height:4, background:t.hair, borderRadius:2}}/></div>}
             <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>LHDN tax relief</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{drawerItem.name}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{drawerItem.desc}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>of RM {drawerCap.toLocaleString()} cap</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>RM {Math.max(0,drawerCap-drawerClaimed).toLocaleString()} remaining</div></div></div>
-            <div style={{padding:18, overflow:'auto', flex:1}}><div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8}}>ENTRIES · {drawerEntries.length}</div>{drawerEntries.length===0?<div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute}}>No claim entries yet. Add your first one below.</div>:drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8}}><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{e.desc}</div><div style={{fontSize:12,color:t.inkMute}}>{e.date}</div></div><div style={{fontWeight:700}}>RM {e.amount.toLocaleString()}</div><button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:8,cursor:'pointer'}}>🗑</button></div>)}
-              <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:14}}><div style={{fontSize:28,fontFamily:"'DM Serif Display', Georgia, serif",marginBottom:8}}>Add a new entry</div><div style={{fontSize:12,marginBottom:4}}>Description</div><input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ' style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:8,fontFamily:FONT}}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}><div><div style={{fontSize:12,marginBottom:4}}>Date</div><input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div><div><div style={{fontSize:12,marginBottom:4}}>Amount (RM)</div><input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT}}/></div></div><button onClick={handleDrawerAdd} style={{width:'100%',marginTop:10,padding:'10px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer'}}>+ Add entry</button></div>
+            <div style={{padding:18, overflow:'auto', flex:1}}>
+              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8,fontFamily:FONT}}>ENTRIES · {drawerEntries.length}</div>
+              {drawerEntries.length===0
+                ? <div style={{border:`1px dashed ${t.hairStrong}`,borderRadius:10,padding:24,textAlign:'center',color:t.inkMute,fontFamily:FONT,fontSize:13}}>No claim entries yet.</div>
+                : drawerEntries.map(e=><div key={e.id} style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:'10px 12px',display:'flex',alignItems:'center',marginBottom:8,fontFamily:FONT}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:600,color:t.ink}}>{e.desc}</div>
+                      <div style={{fontSize:12,color:t.inkMute}}>{e.date}</div>
+                    </div>
+                    <div style={{fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:15,color:t.ink}}>RM {e.amount.toLocaleString()}</div>
+                    <button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:10,cursor:'pointer',fontSize:15,opacity:0.5}}>🗑</button>
+                  </div>)
+              }
+              {/* ── Animated Add Entry toggle ── */}
+              <button
+                onClick={() => setDrawerFormOpen(v => !v)}
+                style={{
+                  width:'100%', marginTop:14, padding:'11px 16px',
+                  border:`1.5px dashed ${drawerFormOpen ? t.red : t.hair}`,
+                  borderRadius:10, background: drawerFormOpen ? t.redSoft : 'transparent',
+                  color: drawerFormOpen ? t.red : t.inkMute,
+                  fontWeight:600, fontSize:13, fontFamily:FONT,
+                  cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                  transition:'all 0.22s ease',
+                }}>
+                <span style={{fontSize:18,lineHeight:1,display:'inline-block',transition:'transform 0.25s ease',transform: drawerFormOpen ? 'rotate(45deg)' : 'rotate(0deg)'}}>+</span>
+                {drawerFormOpen ? 'Cancel' : 'Add a new entry'}
+              </button>
+              <div style={{
+                overflow:'hidden',
+                maxHeight: drawerFormOpen ? 420 : 0,
+                opacity: drawerFormOpen ? 1 : 0,
+                transform: drawerFormOpen ? 'translateY(0)' : 'translateY(-10px)',
+                transition:'max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease, transform 0.28s ease',
+              }}>
+                <div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:16,marginTop:10,background:t.surface,fontFamily:FONT}}>
+                  <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginBottom:4}}>Description</div>
+                  <input value={descIn} onChange={e=>setDescIn(e.target.value)} placeholder='e.g. Annual check-up at KPJ'
+                    style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,marginBottom:10,fontFamily:FONT,fontSize:13,color:t.ink,background:t.bg,outline:'none',boxSizing:'border-box'}}/>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginBottom:4}}>Date</div>
+                      <input type='date' value={dateIn} onChange={e=>setDateIn(e.target.value)}
+                        style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT,fontSize:13,color:t.ink,background:t.bg,outline:'none',boxSizing:'border-box'}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:500,color:t.inkMute,marginBottom:4}}>Amount (RM)</div>
+                      <input type='number' value={amtIn} onChange={e=>setAmtIn(e.target.value)} placeholder='0'
+                        style={{width:'100%',padding:'10px 11px',border:`1px solid ${t.hair}`,borderRadius:10,fontFamily:FONT,fontSize:13,color:t.ink,background:t.bg,outline:'none',boxSizing:'border-box'}}/>
+                    </div>
+                  </div>
+                  <button onClick={handleDrawerAdd}
+                    style={{width:'100%',padding:'11px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:FONT,letterSpacing:0.2}}>
+                    + Add entry
+                  </button>
+                </div>
+              </div>
             </div>
             <div style={{padding:'12px 18px',borderTop:`1px solid ${t.hair}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={{fontSize:12,color:t.inkMute}}>Claimed RM {drawerClaimed.toLocaleString()} / RM {drawerCap.toLocaleString()}</div><button onClick={closeDrawer} style={{border:`1px solid ${t.hair}`,background:t.surface,padding:'8px 16px',borderRadius:12,fontWeight:600,cursor:'pointer'}}>Done</button></div>
           </div>
@@ -3039,12 +3096,18 @@ Rules:
   );
 
   return (
-    <div style={{ padding: wide ? "24px 28px 60px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? 800 : "100%", margin: "0 auto" }}>
+    <div style={{ padding: wide ? "20px 28px 60px" : "12px 16px 120px", fontFamily: FONT, maxWidth: wide ? 1200 : "100%", margin: "0 auto" }}>
+
+      {/* ── DESKTOP: hero title ── */}
+      {wide && <>
+        <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT, marginBottom: 6 }}>Income</div>
+        <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 24, fontFamily: FONT }}>Manage your employment and rental income for YA{ya}.</div>
+      </>}
 
       {/* ── Income entry form ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: wide ? 20 : 17, fontWeight: 700, color: t.ink, marginBottom: 4 }}>Employment Income</div>
-        <div style={{ fontSize: 13, color: t.inkMute, marginBottom: 18 }}>Update your income information for YA{ya}</div>
+        <div style={{ fontSize: wide ? 20 : 17, fontWeight: 700, color: t.ink, marginBottom: 4, fontFamily: FONT }}>Employment Income</div>
+        <div style={{ fontSize: 13, color: t.inkMute, marginBottom: 18, fontFamily: FONT }}>Update your income information for YA{ya}</div>
 
         {/* Employed / Self-Employed toggle */}
         <div style={{ display: "flex", gap: 4, background: t.bgAlt, borderRadius: 12, padding: 4, marginBottom: 20 }}>
@@ -3388,7 +3451,7 @@ function ReceiptsTab({ t, receipts, onRemove, onView, ya, allItems }) {
 
       {/* Page header */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 36, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.1, fontFamily: FONT_DISPLAY }}>Receipts</div>
+        <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT }}>Receipts</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginTop: 6 }}>All scanned receipts for YA{ya}, organised by LHDN category.</div>
       </div>
 
@@ -3694,12 +3757,12 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
   );
 
   return (
-    <div style={{ padding: wide ? "28px 32px 60px" : "16px 16px 120px", fontFamily: FONT, maxWidth: wide ? 700 : "100%", margin: "0 auto" }}>
+    <div style={{ padding: wide ? "20px 28px 60px" : "16px 16px 120px", fontFamily: FONT, maxWidth: wide ? 1200 : "100%", margin: "0 auto" }}>
 
       {/* Page title (desktop only) */}
       {wide && (
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 36, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.1, fontFamily: FONT_DISPLAY }}>Settings</div>
+          <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT }}>Settings</div>
           <div style={{ fontSize: 14, color: t.inkSoft, marginTop: 6 }}>Manage your account, data, and preferences.</div>
         </div>
       )}
@@ -4181,12 +4244,13 @@ const baseStyle = (t) => ({
 });
 
 const globalCSS = `
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Inter:wght@400;500;600;700;800&display=swap');
-@keyframes spin    { to { transform: rotate(360deg); } }
-@keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Poppins:wght@400;500;600;700;800&display=swap');
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes fadein    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideup   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes slidedown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+html, body { margin: 0; padding: 0; font-family: 'Poppins', -apple-system, system-ui, sans-serif; }
 input::placeholder, textarea::placeholder { color: rgba(139,130,117,0.7); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
