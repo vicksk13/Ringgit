@@ -4169,7 +4169,9 @@ If not claimable:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: img?.startsWith("data:application/pdf")
+  ? "claude-sonnet-4-20250514"
+  : "claude-haiku-4-5-20251001",
           max_tokens: 600,
           system: systemPrompt,
           messages: [{ role: "user", content: userContent }],
