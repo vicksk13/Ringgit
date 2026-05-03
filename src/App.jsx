@@ -2739,21 +2739,7 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       </>}
 
 
-
-      {/* ── Category filter chips ── */}
-      <div style={{ display:'flex', gap:8, flexWrap: wide ? 'wrap' : 'nowrap', overflowX: wide ? 'visible' : 'auto', marginBottom: 14, paddingBottom: wide ? 0 : 4 }}>
-        {[{id:'all',name:'All'}, ...cats].map(c => {
-          const cnt = c.id === 'all' ? cats.flatMap(x=>x.items).filter(i => itemTotalRaw(i.id) > 0 || i.auto).length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
-          const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
-          const active = activeFilter === c.id;
-          const icon = c.id === "all" ? "grid" : c.icon;
-          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? t.ink : 'transparent'}`,background:active?t.ink:'transparent',color:active?t.bg:t.inkMute,borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:6,lineHeight:1,flexShrink:0,fontFamily:FONT,transition:'all 0.15s'}}>
-            <Icon name={icon} size={13} color={active ? t.bg : t.inkMute} />
-            <span>{c.name}</span></button>
-        })}
-      </div>
-
-      {shownCats.map(cat => {
+      {cats.map(cat => {
         const fixedCaps = { personal: 26000, medical: 24000, lifestyle: 6000, insurance: 14350, education: 15000, housing: 7000 };
         const medGroup = Math.min(Math.min(itemTotalRaw("G6"),10000) + Math.min(itemTotalRaw("G7"),1000) + Math.min(itemTotalRaw("G8"),6000), 10000);
         const claimed = cat.id === "medical"
