@@ -909,24 +909,13 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
 // MAKECENTS LOGO
 // ─────────────────────────────────────────────────────────────
 const MakeCentsLogo = ({ size = 72, shadowStyle = {} }) => (
-  <div style={{ flexShrink: 0, borderRadius: Math.round(size * 0.22), overflow: "hidden", display: "inline-block", lineHeight: 0, ...shadowStyle }}>
-    <svg
-      width={size} height={size}
-      viewBox="0 0 200 200"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ display: "block" }}
-    >
-      {/* Red background — rx matches the wrapper corner radius */}
-      <rect width="200" height="200" fill="#B83A2C" />
-      {/* Dark right C — rendered behind, opens left, CW large arc */}
-      <path fill="none" stroke="#1C1A2C" strokeWidth="30" strokeLinecap="round"
-        d="M 95 56 A 52 52 0 1 1 95 144" />
-      {/* White left C — rendered on top, opens right, CCW large arc.
-          White is drawn last so it crosses OVER the dark C at the centre. */}
-      <path fill="none" stroke="#FFFFFF" strokeWidth="30" strokeLinecap="round"
-        d="M 105 56 A 52 52 0 1 0 105 144" />
-    </svg>
-  </div>
+  <img
+    src="/icon-192.png"
+    width={size}
+    height={size}
+    alt="MakeCents"
+    style={{ display: "block", flexShrink: 0, borderRadius: Math.round(size * 0.22), objectFit: "cover", ...shadowStyle }}
+  />
 );
 const CAT_ICON = {
   personal: "user", medical: "heart", lifestyle: "sparkle",
