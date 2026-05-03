@@ -734,21 +734,25 @@ const Icon = ({ name, size = 18, color = "currentColor", weight = 1.6 }) => {
 // ─────────────────────────────────────────────────────────────
 // MAKECENTS LOGO
 // ─────────────────────────────────────────────────────────────
-const MakeCentsLogo = ({ size = 72 }) => (
-  <svg
-    width={size} height={size}
-    viewBox="0 0 200 200"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ display: "block", flexShrink: 0 }}
-  >
-    <rect width="200" height="200" rx="36" fill="#E44230" />
-    {/* Dark right c — underneath at the centre crossing */}
-    <path fill="none" stroke="#1E1E1E" strokeWidth="28" strokeLinecap="round"
-      d="M 97,75 C 110,50 132,42 152,42 C 182,42 197,68 197,100 C 197,132 182,158 152,158 C 132,158 110,150 97,125" />
-    {/* White left C — on top so white wins at the crossing */}
-    <path fill="none" stroke="white" strokeWidth="34" strokeLinecap="round"
-      d="M 103,125 C 90,148 65,158 45,158 C 15,158 3,132 3,100 C 3,68 15,42 45,42 C 65,42 90,52 103,75" />
-  </svg>
+const MakeCentsLogo = ({ size = 72, shadowStyle = {} }) => (
+  <div style={{ flexShrink: 0, borderRadius: Math.round(size * 0.22), overflow: "hidden", display: "inline-block", lineHeight: 0, ...shadowStyle }}>
+    <svg
+      width={size} height={size}
+      viewBox="0 0 200 200"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block" }}
+    >
+      {/* Red background — rx matches the wrapper corner radius */}
+      <rect width="200" height="200" fill="#B83A2C" />
+      {/* Dark right C — rendered behind, opens left, CW large arc */}
+      <path fill="none" stroke="#1C1A2C" strokeWidth="30" strokeLinecap="round"
+        d="M 95 56 A 52 52 0 1 1 95 144" />
+      {/* White left C — rendered on top, opens right, CCW large arc.
+          White is drawn last so it crosses OVER the dark C at the centre. */}
+      <path fill="none" stroke="#FFFFFF" strokeWidth="30" strokeLinecap="round"
+        d="M 105 56 A 52 52 0 1 0 105 144" />
+    </svg>
+  </div>
 );
 const CAT_ICON = {
   personal: "user", medical: "heart", lifestyle: "sparkle",
@@ -2151,14 +2155,7 @@ export default function MakeCents() {
 
           {/* Brand mark + user info */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 14, flexShrink: 0,
-              background: `linear-gradient(135deg, ${t.red}, #E05A44)`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#FBF7EE", fontFamily: FONT_DISPLAY,
-              fontSize: 20, fontWeight: 700,
-              boxShadow: t.shadowHi,
-            }}>M</div>
+            <MakeCentsLogo size={40} shadowStyle={{ boxShadow: t.shadowHi }} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.name}
