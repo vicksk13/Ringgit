@@ -2718,7 +2718,7 @@ function TabBar({ t, L, tab, setTab }) {
 // ─────────────────────────────────────────────────────────────
 // RELIEF TAB
 // ─────────────────────────────────────────────────────────────
-function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes, totalMTDPaid, mtdBalance }) {
+function ReliefTab({ t, L, cats, entries, itemEntries, itemTotalRaw, onAddEntry, onRemoveEntry, onOpenScanner, totalIncome, totalRelief, estTax, eligibleCapTotal, taxIsTentative, ya, epfFromIncomes, socsoFromIncomes, totalMTDPaid, mtdBalance }) {
   const wide = useIsWide();
   const [openCats, setOpenCats] = useState(new Set(["individual", "medical"]));
   const [activeFilter, setActiveFilter] = useState("all");
@@ -3433,7 +3433,7 @@ Rules:
   );
 }
 
-function ReceiptsTab({ t, receipts, onRemove, onView, ya, allItems }) {
+function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
   const wide = useIsWide();
   const [filter, setFilter]   = useState("all"); // "all" | item_id
   const [search, setSearch]   = useState("");
