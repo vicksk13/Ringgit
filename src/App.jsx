@@ -2019,7 +2019,7 @@ export default function MakeCents() {
 
   if (screen === "welcome") {
     return (
-      <div style={baseStyle(t)}>
+      <div style={{ fontFamily: FONT, background: t.bg, minHeight: "100vh", position: "relative" }}>
         <style>{globalCSS}</style>
         {showConsent && (
           <ConsentModal t={t} L={L}
@@ -2036,7 +2036,7 @@ export default function MakeCents() {
 
   if (screen === "signup") {
     return (
-      <div style={baseStyle(t)}>
+      <div style={{ fontFamily: FONT, background: t.bgAlt, minHeight: "100vh", position: "relative" }}>
         <style>{globalCSS}</style>
         <Signup t={t} L={L} name={nameIn} setName={setNameIn} yob={yobIn} setYob={setYobIn}
           onDone={async () => {
@@ -2368,10 +2368,10 @@ function Welcome({ t, L, onGoogle, onGuest, onPrivacy }) {
         </div>
 
         {/* ── Right panel — auth ── */}
-        <div style={{ width: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: "52px 64px", background: t.bg }}>
-          <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ width: "50%", display: "flex", alignItems: "center", justifyContent: "center", padding: "52px 72px", background: t.bg }}>
+          <div style={{ width: "100%", maxWidth: 440 }}>
             <div style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: 30, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT_DISPLAY, marginBottom: 8 }}>
+              <div style={{ fontSize: 36, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT, marginBottom: 8 }}>
                 Welcome back
               </div>
               <div style={{ fontSize: 14, color: t.inkMute, lineHeight: 1.6 }}>
@@ -2465,24 +2465,38 @@ function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
   if (wide) {
     return (
       <div style={{ minHeight: "100vh", background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT, padding: "40px 24px" }}>
-        <div style={{ width: "100%", maxWidth: 460, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", padding: "44px 48px" }}>
-          <div style={{ marginBottom: 24 }}><MakeCentsLogo size={48} /></div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{L("setup_profile")}</div>
-          <div style={{ fontSize: 14, color: t.inkMute, marginTop: 6, marginBottom: 32 }}>{L("setup_sub")}</div>
-          {formFields.map(f => (
-            <div key={f.label} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{f.label}</div>
-              <input value={f.value} onChange={e => f.set(e.target.value)} type={f.type} placeholder={f.ph}
-                style={{ width: "100%", padding: "14px 16px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+        <div style={{ width: "100%", maxWidth: 560, background: t.bg, borderRadius: 24, border: `1px solid ${t.hair}`, boxShadow: "0 20px 60px rgba(28,25,23,0.1)", overflow: "hidden" }}>
+          {/* Brand accent strip */}
+          <div style={{ height: 4, background: t.red }} />
+          <div style={{ padding: "40px 48px" }}>
+            {/* Logo + progress dots */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+              <MakeCentsLogo size={40} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 22, height: 5, borderRadius: 3, background: t.red }} />
+                <div style={{ width: 5, height: 5, borderRadius: 3, background: t.hair }} />
+                <div style={{ width: 5, height: 5, borderRadius: 3, background: t.hair }} />
+              </div>
             </div>
-          ))}
-          <div style={{ marginTop: 8 }} />
-          <button onClick={onDone} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.red, color: "#fff", fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", marginBottom: 8 }}>
-            {L("get_started")}
-          </button>
-          <button onClick={onSkip} style={{ width: "100%", padding: 14, border: "none", background: "transparent", color: t.inkMute, fontSize: 14, fontFamily: FONT, cursor: "pointer" }}>
-            {L("skip_for_now")}
-          </button>
+            <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, fontFamily: FONT, marginBottom: 6 }}>{L("setup_profile")}</div>
+            <div style={{ fontSize: 14, color: t.inkMute, marginBottom: 28 }}>{L("setup_sub")}</div>
+            {/* Fields side by side */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
+              {formFields.map(f => (
+                <div key={f.label}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: t.inkMute, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{f.label}</div>
+                  <input value={f.value} onChange={e => f.set(e.target.value)} type={f.type} placeholder={f.ph}
+                    style={{ width: "100%", padding: "14px 16px", border: `1px solid ${t.hair}`, borderRadius: 12, background: t.surface, color: t.ink, fontSize: 15, fontFamily: FONT, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+            <button onClick={onDone} style={{ width: "100%", padding: "16px 20px", border: "none", borderRadius: 14, background: t.red, color: "#fff", fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: "pointer", marginBottom: 8 }}>
+              {L("get_started")}
+            </button>
+            <button onClick={onSkip} style={{ width: "100%", padding: 14, border: "none", background: "transparent", color: t.inkMute, fontSize: 14, fontFamily: FONT, cursor: "pointer" }}>
+              {L("skip_for_now")}
+            </button>
+          </div>
         </div>
       </div>
     );
