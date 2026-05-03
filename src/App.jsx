@@ -2232,7 +2232,7 @@ export default function MakeCents() {
 
           {/* Main content */}
         <div style={{ flex: 1, height: "100vh", overflow: "auto", background: t.bgAlt, display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 1250, width: "100%", margin: "0 auto", alignSelf: "center" }}>
+          <div style={{ position: "relative", flex: 1, paddingBottom: 40, maxWidth: 960, width: "100%", margin: "0 auto", alignSelf: "center" }}>
             {yaSpinner}
             {tabContent}
           </div>
@@ -2550,72 +2550,49 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         </div>
       </div>
 
-      {/* KPI cards — Total Relief (main) + 2×2 grid below */}
+      {/* KPI cards — 3-card layout matching desktop */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-        {/* Main: Total Relief */}
-        <div style={{ background: t.ink, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, borderRadius: "50%", background: t.red, opacity: 0.75 }} />
-          <div style={{ position: "relative" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: t.cardLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-              Total Relief · YA{ya}
+        {/* Hero: YOUR REFUND — conditional state */}
+        {(() => {
+          const noIncome   = totalIncome <= 0;
+          const isRefund   = mtdBalance < 0;
+          const isBalance  = mtdBalance > 0;
+          const heroBg     = noIncome ? t.ink : isRefund ? t.greenSoft : t.redSoft;
+          const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? 'rgba(58,107,58,0.18)' : 'rgba(184,58,44,0.18)'}`;
+          const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
+          const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
+          const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
+          const label      = isBalance ? 'BALANCE DUE' : 'YOUR REFUND';
+          const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+          const sub        = noIncome ? 'Add income to calculate' : isRefund ? 'File to claim this back →' : 'Still owe LHDN';
+          return (
+            <div style={{ background: heroBg, border: heroBorder, borderRadius: 16, padding: "16px 18px", position: "relative", overflow: "hidden" }}>
+              {noIncome && <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, borderRadius: "50%", background: t.red, opacity: 0.45 }} />}
+              <div style={{ position: "relative" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: heroLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: heroNum, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
+                <div style={{ fontSize: 10, color: heroSub, marginTop: 6 }}>{sub}</div>
+              </div>
             </div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: t.bg, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-              RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-            <div style={{ fontSize: 10, color: t.cardLabelSoft, marginTop: 4 }}>
-              of RM {(eligibleCapTotal || 0).toLocaleString()} cap · {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}% utilised
-            </div>
-            <div style={{ height: 3, background: "rgba(251,247,238,0.18)", borderRadius: 2, marginTop: 8 }}>
-              <div style={{ width: `${Math.min(100, (totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%`, height: "100%", background: t.red, borderRadius: 2 }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Row 1: Unclaimed + Est Tax */}
+          );
+        })()}
+        {/* Row: Tax Estimate + Relief Claimed */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Unclaimed</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>TAX ESTIMATE{taxIsTentative ? " ~" : ""}</div>
             <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-              RM {Math.max(0, (eligibleCapTotal || 0) - totalRelief).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>Still available to claim</div>
-          </div>
-          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Est. Tax{taxIsTentative ? " ~" : ""}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
-            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>Based on declared income</div>
+            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>What you owe LHDN</div>
+          </div>
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>RELIEF CLAIMED</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+              {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%
+            </div>
+            <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })} of cap</div>
           </div>
         </div>
-
-        {/* Row 2: MTD Paid + Balance */}
-        {(totalMTDPaid > 0 || totalIncome > 0) && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>MTD Paid</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                RM {totalMTDPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>PCB deducted by employer</div>
-            </div>
-            <div style={{
-              background: mtdBalance > 0 ? t.redSoft : t.greenSoft,
-              border: `1px solid ${mtdBalance > 0 ? t.hairStrong : t.hair}`,
-              borderRadius: 16, padding: "14px 16px"
-            }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
-                {mtdBalance > 0 ? "Balance Due" : mtdBalance < 0 ? "Refund Due" : "Settled"}
-              </div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                RM {Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              </div>
-              <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>
-                {mtdBalance > 0 ? "Still owe LHDN" : mtdBalance < 0 ? "LHDN owes you" : "Tax fully paid"}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -2694,41 +2671,43 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       {wide && <>
         <div style={{ fontSize: 50, fontWeight: 700, color: t.ink, letterSpacing: -0.8, lineHeight: 1.04, fontFamily: FONT_DISPLAY, marginBottom: 6 }}>Relief overview</div>
         <div style={{ fontSize: 14, color: t.inkSoft, marginBottom: 18 }}>Track every LHDN-approved relief, what you've claimed, and what's still available.</div>
+        {/* ── 3-card KPI row ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14, alignItems: 'stretch' }}>
-          {/* Hero: Total Relief Claimed */}
-          <div style={{ background: t.ink, borderRadius: 14, padding: 22, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: t.red, opacity: 0.75 }} />
-            <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: t.cardLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>TOTAL RELIEF · YA{ya}</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.bg, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>RM {totalRelief.toLocaleString()}</div>
-              <div style={{ height: 4, background: 'rgba(251,247,238,0.15)', borderRadius: 4, marginTop: 14 }}><div style={{ width: `${Math.min(100,(totalRelief/Math.max(1,totalCap))*100)}%`, height: '100%', background: t.red, borderRadius: 4 }}/></div>
-              <div style={{ fontSize: 12, color: t.cardLabelSoft, marginTop: 6 }}>of RM {totalCap.toLocaleString()} cap · {Math.round((totalRelief/Math.max(1,totalCap))*100)}% utilised</div>
-            </div>
-          </div>
-          {/* Right 2×2 grid: Unclaimed, Est Tax, MTD Paid, Balance */}
-          <div style={{ display: 'grid', gridColumn: 'span 2', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12 }}>
-            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>UNCLAIMED</div>
-              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:t.red,fontVariantNumeric:'tabular-nums'}}>RM {remainingRelief.toLocaleString()}</div>
-              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Still available to claim</div>
-            </div>
-            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>EST. TAX{taxIsTentative ? ' ~' : ''}</div>
-              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,fontVariantNumeric:'tabular-nums'}}>RM {estTax.toLocaleString()}</div>
-              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>Based on declared income</div>
-            </div>
-            <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>MTD PAID</div>
-              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:t.ink,fontVariantNumeric:'tabular-nums'}}>RM {(totalMTDPaid||0).toLocaleString()}</div>
-              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>PCB deducted by employer</div>
-            </div>
-            <div style={{ background: (mtdBalance||0) > 0 ? t.redSoft : (mtdBalance||0) < 0 ? t.greenSoft : t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
-              <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,textTransform:'uppercase', marginBottom: 8}}>
-                {(mtdBalance||0) > 0 ? 'BALANCE DUE' : (mtdBalance||0) < 0 ? 'REFUND DUE' : 'SETTLED'}
+          {/* Card 1 — YOUR REFUND (hero, conditional state) */}
+          {(() => {
+            const noIncome   = totalIncome <= 0;
+            const isRefund   = (mtdBalance||0) < 0;
+            const isBalance  = (mtdBalance||0) > 0;
+            const heroBg     = noIncome ? t.ink : isRefund ? t.greenSoft : t.redSoft;
+            const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? 'rgba(58,107,58,0.18)' : 'rgba(184,58,44,0.18)'}`;
+            const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
+            const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
+            const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
+            const label      = isBalance ? 'BALANCE DUE' : 'YOUR REFUND';
+            const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance||0).toLocaleString()}`;
+            const sub        = noIncome ? 'Add income to calculate' : isRefund ? 'File to claim this back →' : 'Still owe LHDN';
+            return (
+              <div style={{ background: heroBg, border: heroBorder, borderRadius: 14, padding: 22, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {noIncome && <div style={{ position: 'absolute', top: -30, right: -30, width: 110, height: 110, borderRadius: '50%', background: t.red, opacity: 0.45 }} />}
+                <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: heroLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{label}</div>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: heroNum, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                  <div style={{ fontSize: 12, color: heroSub, marginTop: 'auto', paddingTop: 10 }}>{sub}</div>
+                </div>
               </div>
-              <div style={{fontFamily:FONT_DISPLAY,fontSize:28,lineHeight:1.02,color:(mtdBalance||0)>0?t.red:(mtdBalance||0)<0?t.green:t.ink,fontVariantNumeric:'tabular-nums'}}>RM {Math.abs(mtdBalance||0).toLocaleString()}</div>
-              <div style={{fontSize:12,color:t.inkSoft,marginTop:'auto',paddingTop:6}}>{(mtdBalance||0)>0?'Still owe LHDN':(mtdBalance||0)<0?'LHDN owes you':'Tax fully paid'}</div>
-            </div>
+            );
+          })()}
+          {/* Card 2 — TAX ESTIMATE */}
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>TAX ESTIMATE{taxIsTentative ? ' ~' : ''}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.red, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
+            <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>What you owe LHDN</div>
+          </div>
+          {/* Card 3 — RELIEF CLAIMED % */}
+          <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>RELIEF CLAIMED</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.ink, fontVariantNumeric: 'tabular-nums' }}>{Math.round((totalRelief / Math.max(1, totalCap)) * 100)}%</div>
+            <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>RM {totalRelief.toLocaleString()} of RM {totalCap.toLocaleString()} cap</div>
           </div>
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
@@ -2739,7 +2718,21 @@ function ReliefTab({ t, cats, entries, itemEntries, itemTotalRaw, onAddEntry, on
       </>}
 
 
-      {cats.map(cat => {
+
+      {/* ── Category filter chips ── */}
+      <div style={{ display:'flex', gap:8, flexWrap: wide ? 'wrap' : 'nowrap', overflowX: wide ? 'visible' : 'auto', marginBottom: 14, paddingBottom: wide ? 0 : 4 }}>
+        {[{id:'all',name:'All'}, ...cats].map(c => {
+          const cnt = c.id === 'all' ? cats.flatMap(x=>x.items).filter(i => itemTotalRaw(i.id) > 0 || i.auto).length : c.items.filter(i => itemTotalRaw(i.id) > 0 || i.auto).length;
+          const total = c.id === 'all' ? cats.flatMap(x=>x.items).length : c.items.length;
+          const active = activeFilter === c.id;
+          const icon = c.id === "all" ? "grid" : c.icon;
+          return <button key={c.id} onClick={() => setActiveFilter(c.id)} style={{border:`1px solid ${active ? t.ink : 'transparent'}`,background:active?t.ink:'transparent',color:active?t.bg:t.inkMute,borderRadius:999,padding:'7px 12px',fontSize:12,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:6,lineHeight:1,flexShrink:0,fontFamily:FONT,transition:'all 0.15s'}}>
+            <Icon name={icon} size={13} color={active ? t.bg : t.inkMute} />
+            <span>{c.name}</span></button>
+        })}
+      </div>
+
+      {shownCats.map(cat => {
         const fixedCaps = { personal: 26000, medical: 24000, lifestyle: 6000, insurance: 14350, education: 15000, housing: 7000 };
         const medGroup = Math.min(Math.min(itemTotalRaw("G6"),10000) + Math.min(itemTotalRaw("G7"),1000) + Math.min(itemTotalRaw("G8"),6000), 10000);
         const claimed = cat.id === "medical"
