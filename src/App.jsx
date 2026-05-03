@@ -1983,8 +1983,11 @@ export default function MakeCents() {
     // when a document spans multiple relief categories. Resolve to a single valid item.
     let catId = scanResult.category_id.trim();
     if (!allItems.find(i => i.id === catId)) {
-      // Try to find the first valid item ID within the compound string
-      const match = allItems.find(i => catId.includes(i.id));
+      // Split on common separators (+, comma, &, |, space) and find the first token
+      // that is an EXACT match — never use substring search (e.g. "G1" inside "G17" is wrong)
+      const tokens = catId.split(/[\s+,&|/]+/).map(t => t.trim()).filter(Boolean);
+      const match = tokens.reduce((found, token) =>
+        found || allItems.find(i => i.id === token) || null, null);
       if (!match) return; // can't map to any known category — skip silently
       catId = match.id;
     }
