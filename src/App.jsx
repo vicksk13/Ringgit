@@ -335,6 +335,7 @@ const MAKECENTSTAX_LS_KEYS = [
   "makecentstax-v3-enc",  // encrypted guest store (new)
   "makecentstax-v2",
   "makecentstax-theme",
+  "makecentstax-guide-seen",
   "makecentstax-lang",
   "makecentstax-consent",
   GUEST_DEVICE_KEY_LS,    // guest device encryption key (from crypto.js)
@@ -450,6 +451,21 @@ const TRANS = {
     tab_income:   "Income",
     tab_receipts: "Receipts",
     tab_more:     "Settings",
+    // Guide
+    guide_tag:         "Quick start guide",
+    guide_title:       "Welcome to MakeCents",
+    guide_sub:         "Here's how to sort your taxes in 4 steps.",
+    guide_cta:         "Start with Income →",
+    guide_how:         "How it works",
+    guide_drawer_sub:  "Your 4-step tax guide",
+    guide_s1_title:    "Add your income",
+    guide_s1_desc:     "Upload your EA form — AI fills everything. Or enter employment and rental income manually.",
+    guide_s2_title:    "Scan your receipts",
+    guide_s2_desc:     "Point your camera at any receipt. AI checks LHDN eligibility and auto-categorises it.",
+    guide_s3_title:    "Manage your receipts",
+    guide_s3_desc:     "Review, edit and track all scanned receipts. See your total relief at a glance.",
+    guide_s4_title:    "Export for audit",
+    guide_s4_desc:     "One tap exports everything to Google Drive — receipts, categories, and a CSV — ready if LHDN asks.",
 
     // Relief tab
     search_reliefs:   "Search reliefs...",
@@ -680,6 +696,21 @@ const TRANS = {
     tab_income:   "Pendapatan",
     tab_receipts: "Resit",
     tab_more:     "Tetapan",
+    // Guide
+    guide_tag:         "Panduan permulaan",
+    guide_title:       "Selamat datang ke MakeCents",
+    guide_sub:         "Susun cukai anda dalam 4 langkah mudah.",
+    guide_cta:         "Mula dengan Pendapatan →",
+    guide_how:         "Cara penggunaan",
+    guide_drawer_sub:  "Panduan cukai 4 langkah anda",
+    guide_s1_title:    "Tambah pendapatan anda",
+    guide_s1_desc:     "Muat naik borang EA — AI isi semua. Atau masukkan pendapatan pekerjaan dan sewa secara manual.",
+    guide_s2_title:    "Imbas resit anda",
+    guide_s2_desc:     "Arahkan kamera ke mana-mana resit. AI semak kelayakan LHDN dan mengkategorikannya secara automatik.",
+    guide_s3_title:    "Urus resit anda",
+    guide_s3_desc:     "Semak, edit dan jejak semua resit yang diimbas. Lihat jumlah pelepasan anda sekilas.",
+    guide_s4_title:    "Eksport untuk audit",
+    guide_s4_desc:     "Satu ketikan mengeksport semua ke Google Drive — resit, kategori, dan CSV — bersedia jika LHDN bertanya.",
 
     search_reliefs:   "Cari pelepasan...",
     of_claimed:       "daripada {0} dituntut",
@@ -1491,6 +1522,9 @@ export default function MakeCents() {
   const [showConsent,   setShowConsent]   = useState(false);
   const [pendingAuth,   setPendingAuth]   = useState(null); // "google" | "guest"
   const [showPrivacy,   setShowPrivacy]   = useState(false);
+  // User guide: modal (Option B) + drawer (Option C fallback)
+  const [showGuide,     setShowGuide]     = useState(false);
+  const [guideDrawer,   setGuideDrawer]   = useState(false);
 
   // ── AES-256-GCM encryption key ───────────────────────────────────────────
   // Stored in a ref (not state) so it never triggers a re-render and is never
@@ -1579,6 +1613,15 @@ export default function MakeCents() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (screen !== "app") return;
+    try {
+      if (!localStorage.getItem("makecentstax-guide-seen")) {
+        setShowGuide(true);
+      }
+    } catch {}
+  }, [screen]);
 
   useEffect(() => {
     if (screen !== "app") return;
@@ -2324,6 +2367,8 @@ export default function MakeCents() {
       )}
       <SyncToast message={syncError} t={t} />
       {showPrivacy && <PrivacyModal t={t} L={L} onClose={() => setShowPrivacy(false)} />}
+      {showGuide && <GuideModal t={t} L={L} onClose={() => setShowGuide(false)} />}
+      <GuideDrawer t={t} L={L} open={guideDrawer} onClose={() => setGuideDrawer(false)} />
       <ScannerSheet open={scannerOpen} seededItem={scannerSeed} t={t} L={L} ya={ya} allItems={allItems}
         onClose={() => { setScannerOpen(false); setScannerSeed(null); }}
         onAdd={addFromScan} />
@@ -2390,7 +2435,7 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* Nav links — Lovable rounded active style */}
+          {/* Nav links */}
           <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
             {[
               ["income",   L("tab_income"),   "briefcase"],
@@ -2414,6 +2459,18 @@ export default function MakeCents() {
                 </button>
               );
             })}
+            {/* How it works — persistent guide entry point */}
+            <button onClick={() => setGuideDrawer(true)} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              width: "100%", padding: "10px 14px", marginTop: 4,
+              border: `1px dashed ${t.hairStrong}`, borderRadius: 14, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 500,
+              textAlign: "left", background: "transparent", color: t.inkMute,
+              transition: "background 0.15s, color 0.15s",
+            }}>
+              <Icon name="sparkle" size={17} color={t.inkMute} />
+              {L("guide_how")}
+            </button>
           </nav>
 
           {/* Scan CTA — always visible, Lovable style */}
@@ -2455,7 +2512,20 @@ export default function MakeCents() {
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginTop: 2 }}>{tabLabel}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
+            {tab === "income" && (
+              <button onClick={() => setGuideDrawer(true)} style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
+                borderRadius: 10, background: t.surface, color: t.inkMute,
+                fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}>
+                <Icon name="sparkle" size={14} color={t.inkMute} />
+                {L("guide_how")}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -2815,6 +2885,231 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
 // ─────────────────────────────────────────────────────────────
 // TAB BAR
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// GUIDE MODAL — Option B: first-launch modal
+// ─────────────────────────────────────────────────────────────
+function GuideModal({ t, L, onClose }) {
+  const wide = useIsWide();
+  const steps = [
+    { icon: "upload",     title: L("guide_s1_title"), desc: L("guide_s1_desc") },
+    { icon: "camera",     title: L("guide_s2_title"), desc: L("guide_s2_desc") },
+    { icon: "receipt",    title: L("guide_s3_title"), desc: L("guide_s3_desc") },
+    { icon: "cloud",      title: L("guide_s4_title"), desc: L("guide_s4_desc") },
+  ];
+  const dismiss = () => {
+    try { localStorage.setItem("makecentstax-guide-seen", "1"); } catch {}
+    onClose();
+  };
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 800,
+      background: "rgba(29,27,45,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: wide ? 40 : 20,
+      backdropFilter: "blur(2px)",
+    }} onClick={dismiss}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: t.surface,
+        borderRadius: 20,
+        padding: wide ? "32px 36px" : "24px 20px",
+        width: "100%", maxWidth: 520,
+        boxShadow: t.shadowHi,
+        position: "relative",
+      }}>
+        {/* Close */}
+        <button onClick={dismiss} style={{
+          position: "absolute", top: 16, right: 16,
+          width: 30, height: 30, borderRadius: 8,
+          background: t.bgAlt, border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon name="close" size={14} color={t.inkMute} />
+        </button>
+
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            display: "inline-block", fontSize: 10, fontWeight: 700,
+            color: t.red, background: t.redSoft,
+            padding: "3px 10px", borderRadius: 6,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            marginBottom: 10, fontFamily: FONT,
+          }}>{L("guide_tag")}</div>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: wide ? 26 : 22, color: t.ink, lineHeight: 1.15, marginBottom: 4 }}>
+            {L("guide_title")}
+          </div>
+          <div style={{ fontSize: 13, color: t.inkMute, fontFamily: FONT }}>
+            {L("guide_sub")}
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "flex-start", gap: 14,
+              padding: "13px 15px", background: t.bg,
+              borderRadius: 12, border: `1px solid ${t.hair}`,
+            }}>
+              {/* Icon wrap */}
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: t.redSoft, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Icon name={s.icon} size={18} color={t.red} />
+              </div>
+              {/* Text */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 2 }}>
+                  STEP {i + 1}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontFamily: FONT, marginBottom: 2 }}>
+                  {s.title}
+                </div>
+                <div style={{ fontSize: 12, color: t.inkMute, fontFamily: FONT, lineHeight: 1.5 }}>
+                  {s.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <button onClick={dismiss} style={{
+          width: "100%", padding: "13px 16px",
+          background: t.red, color: "#FAF7F5",
+          border: "none", borderRadius: 12,
+          fontFamily: FONT, fontSize: 14, fontWeight: 700,
+          cursor: "pointer", letterSpacing: "0.02em",
+        }}>
+          {L("guide_cta")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// GUIDE DRAWER — Option C: persistent "How it works" slide-in
+// ─────────────────────────────────────────────────────────────
+function GuideDrawer({ t, L, open, onClose }) {
+  const wide = useIsWide();
+  const [closing, setClosing] = useState(false);
+  const steps = [
+    { icon: "upload",  title: L("guide_s1_title"), desc: L("guide_s1_desc") },
+    { icon: "camera",  title: L("guide_s2_title"), desc: L("guide_s2_desc") },
+    { icon: "receipt", title: L("guide_s3_title"), desc: L("guide_s3_desc") },
+    { icon: "cloud",   title: L("guide_s4_title"), desc: L("guide_s4_desc") },
+  ];
+  if (!open && !closing) return null;
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(() => { setClosing(false); onClose(); }, 200);
+  };
+
+  // Desktop: slide in from right. Mobile: slide up from bottom.
+  const drawerStyle = wide ? {
+    position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 750,
+    width: 340, background: t.surface,
+    borderLeft: `1px solid ${t.hair}`,
+    boxShadow: t.shadowHi,
+    display: "flex", flexDirection: "column",
+    transform: (open && !closing) ? "translateX(0)" : "translateX(100%)",
+    transition: "transform 220ms cubic-bezier(0.32,0,0,1)",
+  } : {
+    position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 750,
+    maxHeight: "88vh", background: t.surface,
+    borderRadius: "20px 20px 0 0",
+    borderTop: `1px solid ${t.hair}`,
+    boxShadow: t.shadowHi,
+    display: "flex", flexDirection: "column",
+    transform: (open && !closing) ? "translateY(0)" : "translateY(100%)",
+    transition: "transform 240ms cubic-bezier(0.32,0,0,1)",
+  };
+
+  return (
+    <>
+      {/* Scrim */}
+      <div onClick={handleClose} style={{
+        position: "fixed", inset: 0, zIndex: 749,
+        background: "rgba(29,27,45,0.35)",
+        opacity: (open && !closing) ? 1 : 0,
+        transition: "opacity 200ms ease",
+      }} />
+
+      <div style={drawerStyle}>
+        {/* Mobile drag pill */}
+        {!wide && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: t.hair }} />
+          </div>
+        )}
+
+        {/* Drawer header */}
+        <div style={{
+          padding: wide ? "22px 24px 16px" : "16px 20px",
+          borderBottom: `1px solid ${t.hair}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, color: t.ink, lineHeight: 1.15 }}>
+              {L("guide_how")}
+            </div>
+            <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2, fontFamily: FONT }}>
+              {L("guide_drawer_sub")}
+            </div>
+          </div>
+          <button onClick={handleClose} style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: t.bgAlt, border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <Icon name="close" size={14} color={t.inkMute} />
+          </button>
+        </div>
+
+        {/* Steps */}
+        <div style={{ flex: 1, overflowY: "auto", padding: wide ? "20px 24px" : "18px 20px" }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < steps.length - 1 ? 0 : 0 }}>
+              {/* Number + connector */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: t.red, color: "#FAF7F5",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, fontFamily: FONT, flexShrink: 0,
+                }}>{i + 1}</div>
+                {i < steps.length - 1 && (
+                  <div style={{ width: 1.5, flex: 1, minHeight: 28, background: t.hair, margin: "4px 0" }} />
+                )}
+              </div>
+              {/* Content */}
+              <div style={{ paddingBottom: i < steps.length - 1 ? 22 : 0, paddingTop: 4 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  background: t.redSoft, marginBottom: 8,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon name={s.icon} size={16} color={t.red} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontFamily: FONT, marginBottom: 4 }}>
+                  {s.title}
+                </div>
+                <div style={{ fontSize: 12, color: t.inkMute, fontFamily: FONT, lineHeight: 1.55 }}>
+                  {s.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function TabBar({ t, L, tab, setTab }) {
   const tabs = [
     ["income",   L("tab_income"),   "briefcase"],
