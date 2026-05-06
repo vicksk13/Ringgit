@@ -2949,7 +2949,7 @@ function GuideModal({ t, L, onClose }) {
             letterSpacing: "0.08em", textTransform: "uppercase",
             marginBottom: 10, fontFamily: FONT,
           }}>{L("guide_tag")}</div>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: wide ? 26 : 22, color: t.ink, lineHeight: 1.15, marginBottom: 4 }}>
+          <div style={{ fontFamily: FONT, fontSize: wide ? 26 : 22, fontWeight: 700, color: t.ink, lineHeight: 1.15, marginBottom: 4 }}>
             {L("guide_title")}
           </div>
           <div style={{ fontSize: 13, color: t.inkMute, fontFamily: FONT }}>
@@ -3068,7 +3068,7 @@ function GuideDrawer({ t, L, open, onClose }) {
           display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
         }}>
           <div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, color: t.ink, lineHeight: 1.15 }}>
+            <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 700, color: t.ink, lineHeight: 1.15 }}>
               {L("guide_how")}
             </div>
             <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2, fontFamily: FONT }}>
@@ -3240,7 +3240,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon name="sparkleAi" size={19} color="#fff" /></div>
-          <div style={{flex:1}}><div style={{fontSize:20,fontFamily:FONT_DISPLAY,lineHeight:1.2}}>{L('scan_banner_title')}</div><div style={{fontSize:13,color:t.inkSoft,marginTop:4}}>{L('scan_banner_sub')}</div></div>
+          <div style={{flex:1}}><div style={{fontSize:20,fontFamily:FONT,fontWeight:700,lineHeight:1.2}}>{L('scan_banner_title')}</div><div style={{fontSize:13,color:t.inkSoft,marginTop:4}}>{L('scan_banner_sub')}</div></div>
           <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer',flexShrink:0}}>{L('scan_receipt')}</button>
         </div>
       </>}
@@ -3327,7 +3327,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                   <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
                   {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'1px 5px',borderRadius:4}}>FROM EA</span>}
                 </div>
-                <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
+                <div style={{fontSize:19,fontFamily:FONT,fontWeight:700,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{d(item)}</div>
                 {isAutoLinked && <div style={{fontSize:11,color:t.gold,marginTop:4,lineHeight:1.4}}>Auto-linked from your EA form. Add manual entries to override.</div>}
                 <div style={{fontFamily:FONT_DISPLAY,fontSize:28,fontStyle:"italic",marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
@@ -4061,7 +4061,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           <div style={{ width: 64, height: 64, borderRadius: 20, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <Icon name="receipt" size={28} color={t.inkMute} />
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT_DISPLAY }}>{L('no_receipts')}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT }}>{L('no_receipts')}</div>
           <div style={{ fontSize: 13, color: t.inkMute, marginTop: 6, maxWidth: 300, margin: "8px auto 0" }}>
             {L("scan_from_relief")}
           </div>
