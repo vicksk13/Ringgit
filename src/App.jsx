@@ -594,6 +594,7 @@ const TRANS = {
     scanned_via_ai:      "Scanned via AI",
     amount_label:        "Amount",
     balance_due:         "BALANCE DUE",
+    your_refund:         "YOUR REFUND",
     tax_estimate_label:  "TAX ESTIMATE",
     relief_claimed_label:"RELIEF CLAIMED",
     what_you_owe:        "What you owe LHDN",
@@ -835,6 +836,7 @@ const TRANS = {
     scanned_via_ai:      "Diimbas melalui AI",
     amount_label:        "Amaun",
     balance_due:         "BAKI PERLU DIBAYAR",
+    your_refund:         "BAYARAN BALIK ANDA",
     tax_estimate_label:  "ANGGARAN CUKAI",
     relief_claimed_label:"PELEPASAN DITUNTUT",
     what_you_owe:        "Yang anda perlu bayar kepada LHDN",
@@ -2477,12 +2479,12 @@ export default function MakeCents() {
           <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }}
             style={{
               width: "100%", padding: "12px 16px", border: "none", borderRadius: 14,
-              background: t.red, color: "#FBF7EE",
+              background: t.red, color: "#FAF7F5",
               fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               boxShadow: t.shadowHi,
             }}>
-            <Icon name="sparkleAi" size={16} color="#FBF7EE" />
+            <Icon name="sparkleAi" size={16} color="#FAF7F5" />
             {L("scan_receipt")}
           </button>
         </div>
@@ -2508,7 +2510,8 @@ export default function MakeCents() {
         <Header t={t} L={L} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
           estTax={estTax} taxIsTentative={taxIsTentative} eligibleCapTotal={eligibleCapTotal}
-          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance} />
+          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance}
+          onHowItWorks={() => setGuideDrawer(true)} />
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
@@ -2800,7 +2803,7 @@ function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
 // ─────────────────────────────────────────────────────────────
 // HEADER
 // ─────────────────────────────────────────────────────────────
-function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal, totalMTDPaid, mtdBalance }) {
+function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal, totalMTDPaid, mtdBalance, onHowItWorks }) {
   return (
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2816,20 +2819,32 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
             </div>
           </div>
         </div>
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setYaOpen(!yaOpen)} style={{ padding: "8px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            YA{ya} <Icon name="chevD" size={12} color={t.inkMute} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* How it works button — visible on Relief tab (same as all other mobile tabs) */}
+          <button onClick={onHowItWorks} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
+            borderRadius: 10, background: t.surface, color: t.inkMute,
+            fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+          }}>
+            <Icon name="sparkle" size={14} color={t.inkMute} />
+            {L("guide_how")}
           </button>
-          {yaOpen && (
-            <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: t.surface, borderRadius: 12, border: `1px solid ${t.hair}`, boxShadow: t.shadowHi, overflow: "hidden", zIndex: 50, minWidth: 100 }}>
-              {YEARS.map(y => (
-                <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
-                  style={{ display: "block", width: "100%", padding: "11px 16px", border: "none", background: y === ya ? t.redSoft : "transparent", color: y === ya ? t.red : t.ink, fontSize: 13, fontWeight: y === ya ? 600 : 500, fontFamily: FONT, cursor: "pointer", textAlign: "left" }}>
-                  YA{y}
-                </button>
-              ))}
-            </div>
-          )}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setYaOpen(!yaOpen)} style={{ padding: "8px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              YA{ya} <Icon name="chevD" size={12} color={t.inkMute} />
+            </button>
+            {yaOpen && (
+              <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: t.surface, borderRadius: 12, border: `1px solid ${t.hair}`, boxShadow: t.shadowHi, overflow: "hidden", zIndex: 50, minWidth: 100 }}>
+                {YEARS.map(y => (
+                  <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
+                    style={{ display: "block", width: "100%", padding: "11px 16px", border: "none", background: y === ya ? t.redSoft : "transparent", color: y === ya ? t.red : t.ink, fontSize: 13, fontWeight: y === ya ? 600 : 500, fontFamily: FONT, cursor: "pointer", textAlign: "left" }}>
+                    YA{y}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2845,7 +2860,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
           const heroNum    = noIncome ? 'rgba(250,247,245,0.4)' : t.red;
           const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
           const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-          const label      = isBalance ? L('balance_due') : L('your refund');
+          const label      = isBalance ? L('balance_due') : L('your_refund');
           const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
           const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
           return (
@@ -3196,7 +3211,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
             const heroNum    = noIncome ? 'rgba(250,247,245,0.4)' : t.red;
             const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
             const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-            const label      = isBalance ? L('balance_due') : L('your refund');
+            const label      = isBalance ? L('balance_due') : L('your_refund');
             const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance||0).toLocaleString()}`;
             const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
             return (
