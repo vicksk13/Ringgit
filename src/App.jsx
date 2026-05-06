@@ -449,7 +449,7 @@ const TRANS = {
     tab_relief:   "Relief",
     tab_income:   "Income",
     tab_receipts: "Receipts",
-    tab_more:     "More",
+    tab_more:     "Settings",
 
     // Relief tab
     search_reliefs:   "Search reliefs...",
@@ -679,7 +679,7 @@ const TRANS = {
     tab_relief:   "Pelepasan",
     tab_income:   "Pendapatan",
     tab_receipts: "Resit",
-    tab_more:     "Lagi",
+    tab_more:     "Tetapan",
 
     search_reliefs:   "Cari pelepasan...",
     of_claimed:       "daripada {0} dituntut",
@@ -1476,7 +1476,7 @@ export default function MakeCents() {
   const [yobIn,         setYobIn]         = useState("");
   const [ya,            setYa]            = useState("2025");
   const [yaOpen,        setYaOpen]        = useState(false);
-  const [tab,           setTab]           = useState("relief");
+  const [tab,           setTab]           = useState("income");
   const [entries,       setEntries]       = useState([]);
   const [receipts,      setReceipts]      = useState([]);
   const [incomes,       setIncomes]       = useState([]);
@@ -2303,7 +2303,7 @@ export default function MakeCents() {
     </>
   );
 
-  const tabLabel = tab === "income" ? L("tab_income") : tab === "receipts" ? L("tab_receipts") : tab === "more" ? L("tab_more") : L("tab_relief");
+  const tabLabel = tab === "relief" ? L("tab_relief") : tab === "receipts" ? L("tab_receipts") : tab === "more" ? L("tab_more") : L("tab_income");
 
   // ── Shared overlays ─────────────────────────────────────────
   const overlays = (
@@ -2393,8 +2393,8 @@ export default function MakeCents() {
           {/* Nav links — Lovable rounded active style */}
           <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
             {[
-              ["relief",   L("tab_relief"),   "receipt"],
               ["income",   L("tab_income"),   "briefcase"],
+              ["relief",   L("tab_relief"),   "receipt"],
               ["receipts", L("tab_receipts"), "camera"],
               ["more",     L("tab_more"),     "settings"],
             ].map(([k, l, ic]) => {
@@ -2817,8 +2817,8 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
 // ─────────────────────────────────────────────────────────────
 function TabBar({ t, L, tab, setTab }) {
   const tabs = [
-    ["relief",   L("tab_relief"),   "receipt"],
     ["income",   L("tab_income"),   "briefcase"],
+    ["relief",   L("tab_relief"),   "receipt"],
     ["receipts", L("tab_receipts"), "camera"],
     ["more",     L("tab_more"),     "settings"],
   ];
