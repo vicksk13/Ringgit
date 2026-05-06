@@ -334,6 +334,7 @@ const MAKECENTSTAX_LS_KEYS = [
   "makecentstax-v3",
   "makecentstax-v3-enc",  // encrypted guest store (new)
   "makecentstax-v2",
+  "makecentstax-theme",
   "makecentstax-lang",
   "makecentstax-consent",
   GUEST_DEVICE_KEY_LS,    // guest device encryption key (from crypto.js)
@@ -381,6 +382,29 @@ const THEMES = {
     cardLabel:     "rgba(250,247,245,0.65)",
     cardLabelSoft: "rgba(250,247,245,0.5)",
     cardBorder:    "rgba(250,247,245,0.15)",
+  },
+  dark: {
+    // ── Canvas — brandbook black stacked up in elevation ────
+    // bg = brandbook --black. Each step lightens toward --charcoal.
+    bg: "#1D1B2D", bgAlt: "#252239", surface: "#2E2B42", surface2: "#353140",
+    // ── Text — brandbook off-white down to mid-gray ──────────
+    // ink = brandbook --off-white. inkMute = brandbook --mid-gray.
+    ink: "#FAF7F5", inkSoft: "#C8C4CC", inkMute: "#9A9498",
+    // ── Borders ─────────────────────────────────────────────
+    hair: "rgba(250,247,245,0.08)", hairStrong: "rgba(250,247,245,0.16)",
+    // ── Brand red — lifted from #B63B2C for dark-bg contrast ─
+    // #EB6E5E gives ~4.9:1 on #1D1B2D — passes WCAG AA large text.
+    // redSoft is a translucent tint so cards read clearly.
+    red: "#EB6E5E", redDeep: "#C94D3C", redSoft: "rgba(235,110,94,0.15)", redSoftFg: "#FAF7F5",
+    // ── Gold — nudged brighter for dark-bg legibility ────────
+    gold: "#C9993D", goldSoft: "rgba(201,153,61,0.15)",
+    // ── Shadows ─────────────────────────────────────────────
+    shadow:   "0 4px 24px rgba(0,0,0,0.45)",
+    shadowHi: "0 12px 40px rgba(0,0,0,0.6)",
+    // ── Light-bg card text (e.g. account card uses t.ink bg) ─
+    cardLabel:     "rgba(29,27,45,0.7)",
+    cardLabelSoft: "rgba(29,27,45,0.5)",
+    cardBorder:    "rgba(29,27,45,0.14)",
   },
 };
 
@@ -1427,7 +1451,11 @@ function PrivacyModal({ t, L, onClose }) {
 // MAIN APP
 // ─────────────────────────────────────────────────────────────
 export default function MakeCents() {
-  const t = THEMES.light;
+  const [themeName, setThemeNameRaw] = useState(() => {
+    try { return localStorage.getItem("makecentstax-theme") || "light"; } catch { return "light"; }
+  });
+  const setThemeName = (n) => { setThemeNameRaw(n); try { localStorage.setItem("makecentstax-theme", n); } catch {} };
+  const t = THEMES[themeName] || THEMES.light;
 
   // ── Language ────────────────────────────────────────────────
   const [lang, setLangRaw] = useState(() => {
@@ -2260,7 +2288,7 @@ export default function MakeCents() {
         <ReceiptsTab t={t} L={L} receipts={receipts} onRemove={removeReceipt} onView={setViewImg} ya={ya} allItems={allItems} />
       )}
       {tab === "more" && (
-        <MoreTab t={t} L={L} lang={lang} setLang={setLang} user={user} ya={ya}
+        <MoreTab t={t} L={L} lang={lang} setLang={setLang} user={user} ya={ya} themeName={themeName} setTheme={setThemeName}
           onSignOut={handleSignOut}
           onDeleteAccount={handleDeleteAccount}
           onReset={resetYAData}
@@ -3826,7 +3854,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
 // ─────────────────────────────────────────────────────────────
 // MORE TAB
 // ─────────────────────────────────────────────────────────────
-function MoreTab({ t, L, lang, setLang, user, ya, onSignOut, onDeleteAccount, onReset, onExport,
+function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut, onDeleteAccount, onReset, onExport,
   onImport, onPrivacy, onSignInGoogle, supabase, cryptoKey, entries, receipts, incomes, rentalIncomes }) {
   const [exporting,      setExporting]      = useState(false);
   const [exportProgress, setExportProgress] = useState("");
@@ -3999,6 +4027,13 @@ function MoreTab({ t, L, lang, setLang, user, ya, onSignOut, onDeleteAccount, on
       {/* Appearance */}
       <Section title={L("appearance")}>
         <div style={{ padding: "14px 18px" }}>
+          <SegmentControl
+            value={themeName}
+            onChange={setTheme}
+            options={[{ k: "light", label: L("light"), icon: "sun" }, { k: "dark", label: L("dark"), icon: "moon" }]}
+          />
+        </div>
+        <div style={{ padding: "0 18px 14px" }}>
           <SegmentControl
             value={lang}
             onChange={setLang}
