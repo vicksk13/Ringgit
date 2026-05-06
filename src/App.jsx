@@ -2514,17 +2514,16 @@ export default function MakeCents() {
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
-            {tab === "income" && (
-              <button onClick={() => setGuideDrawer(true)} style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
-                borderRadius: 10, background: t.surface, color: t.inkMute,
-                fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer",
-              }}>
-                <Icon name="sparkle" size={14} color={t.inkMute} />
-                {L("guide_how")}
-              </button>
-            )}
+            <button onClick={() => setGuideDrawer(true)} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
+              borderRadius: 10, background: t.surface, color: t.inkMute,
+              fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              flexShrink: 0,
+            }}>
+              <Icon name="sparkle" size={14} color={t.inkMute} />
+              {L("guide_how")}
+            </button>
           </div>
         </div>
       )}
