@@ -2868,7 +2868,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
               {noIncome && <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, borderRadius: "50%", background: t.red, opacity: 0.45 }} />}
               <div style={{ position: "relative" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: heroLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "italic", color: heroNum, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "normal", color: heroNum, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
                 <div style={{ fontSize: 10, color: heroSub, marginTop: 6 }}>{sub}</div>
               </div>
             </div>
@@ -2878,14 +2878,14 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{L('tax_estimate_label')}{taxIsTentative ? " ~" : ""}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "italic", color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "normal", color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>{L('what_you_owe')}</div>
           </div>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{L('relief_claimed_label')}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "italic", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "normal", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%
             </div>
             <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })} of cap</div>
@@ -3219,7 +3219,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                 {noIncome && <div style={{ position: 'absolute', top: -30, right: -30, width: 110, height: 110, borderRadius: '50%', background: t.red, opacity: 0.45 }} />}
                 <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: heroLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{label}</div>
-                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: heroNum, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "normal", color: heroNum, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
                   <div style={{ fontSize: 12, color: heroSub, marginTop: 'auto', paddingTop: 10 }}>{sub}</div>
                 </div>
               </div>
@@ -3228,13 +3228,13 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
           {/* Card 2 — TAX ESTIMATE */}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>{L('tax_estimate_label')}{taxIsTentative ? ' ~' : ''}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: t.red, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "normal", color: t.red, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
             <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>{L('what_you_owe')}</div>
           </div>
           {/* Card 3 — RELIEF CLAIMED % */}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>{L('relief_claimed_label')}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: t.ink, fontVariantNumeric: 'tabular-nums' }}>{Math.round((totalRelief / Math.max(1, totalCap)) * 100)}%</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "normal", color: t.ink, fontVariantNumeric: 'tabular-nums' }}>{Math.round((totalRelief / Math.max(1, totalCap)) * 100)}%</div>
             <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>RM {totalRelief.toLocaleString()} of RM {totalCap.toLocaleString()} cap</div>
           </div>
         </div>
@@ -3308,7 +3308,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                     {isAutoLinked && <div style={{fontSize:10,color:t.gold,marginTop:2}}>Auto-linked from your EA form · add manual entries to override</div>}
                   </div>
                   <div style={{flexShrink:0,textAlign:'right'}}>
-                    <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,fontStyle:"italic",color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
+                    <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,fontStyle:"normal",color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
                     {item.auto
                       ? <div style={{fontSize:10,color:t.red,fontWeight:600,marginTop:4}}>{isBM ? "Disahkan" : "Confirmed"}</div>
                       : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length ? L('view') : L('add')}</button>
@@ -3330,7 +3330,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                 <div style={{fontSize:19,fontFamily:FONT,fontWeight:700,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{d(item)}</div>
                 {isAutoLinked && <div style={{fontSize:11,color:t.gold,marginTop:4,lineHeight:1.4}}>Auto-linked from your EA form. Add manual entries to override.</div>}
-                <div style={{fontFamily:FONT_DISPLAY,fontSize:28,fontStyle:"italic",marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontFamily:FONT_DISPLAY,fontSize:28,fontStyle:"normal",marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
                 <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.red:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
                 <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`,opacity:hoveredCard===item.id||eItems.length>0?1:0,transition:'opacity 0.15s'}}>
@@ -3356,7 +3356,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
             background:t.surface, display:'flex', flexDirection:'column', overflow:'hidden'
           }}>
           {!wide && <div style={{display:'flex', justifyContent:'center', padding:'12px 0 0'}}><div style={{width:40, height:4, background:t.hair, borderRadius:2}}/></div>}
-            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{n(drawerItem)}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{d(drawerItem)}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontStyle:'italic',fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{n(drawerItem)}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{d(drawerItem)}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontStyle:'normal',fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
             <div style={{padding:18, overflow:'auto', flex:1}}>
               <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8,fontFamily:FONT}}>ENTRIES · {drawerEntries.length}</div>
               {drawerEntries.length===0
@@ -3366,7 +3366,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                       <div style={{fontSize:14,fontWeight:600,color:t.ink}}>{e.desc}</div>
                       <div style={{fontSize:12,color:t.inkMute}}>{e.date}</div>
                     </div>
-                    <div style={{fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:15,fontStyle:"italic",color:t.ink}}>RM {e.amount.toLocaleString()}</div>
+                    <div style={{fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:15,fontStyle:"normal",color:t.ink}}>RM {e.amount.toLocaleString()}</div>
                     <button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:10,cursor:'pointer',fontSize:15,opacity:0.5}}>🗑</button>
                   </div>)
               }
@@ -3852,7 +3852,7 @@ Rules:
                 {mtdBalance > 0 ? L("pay_byrhastil") : L("refund_efiling")}
               </div>}
             </div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "italic",
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "normal",
               color: mtdBalance > 0 ? t.red : t.ink, fontVariantNumeric: "tabular-nums" }}>
               RM {Math.abs(mtdBalance).toLocaleString()}
             </div>
@@ -4000,7 +4000,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           ].map(s => (
             <div key={s.label} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "16px 20px" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "italic", color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "normal", color: s.color, lineHeight: 1 }}>{s.value}</div>
               <div style={{ fontSize: 12, color: t.inkMute, marginTop: 4 }}>{s.sub}</div>
             </div>
           ))}
@@ -4133,7 +4133,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
                   <div style={{ marginTop: "auto", paddingTop: 10, borderTop: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{L("amount_label")}</div>
-                      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "italic", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "normal", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                         RM {(rx.amount || 0).toLocaleString()}
                       </div>
                     </div>
