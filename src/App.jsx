@@ -335,6 +335,7 @@ const MAKECENTSTAX_LS_KEYS = [
   "makecentstax-v3-enc",  // encrypted guest store (new)
   "makecentstax-v2",
   "makecentstax-theme",
+  "makecentstax-guide-seen",
   "makecentstax-lang",
   "makecentstax-consent",
   GUEST_DEVICE_KEY_LS,    // guest device encryption key (from crypto.js)
@@ -365,42 +366,51 @@ const hasConsentStored = () => {
 // ─────────────────────────────────────────────────────────────
 const THEMES = {
   light: {
-    // ── Canvas (Lovable warm cream) ──────────────────────────
-    bg: "#FBF7EE", bgAlt: "#EDE5D5", surface: "#FFFFFF", surface2: "#F0E8D6",
-    // ── Text ────────────────────────────────────────────────
-    ink: "#1C1A2C", inkSoft: "#44403C", inkMute: "#676672",
+    // ── Canvas (brandbook off-white / light-gray) ────────────
+    bg: "#FAF7F5", bgAlt: "#F0EEED", surface: "#FFFFFF", surface2: "#F5EEEC",
+    // ── Text (brandbook black / charcoal / dark-gray) ────────
+    ink: "#1D1B2D", inkSoft: "#353140", inkMute: "#746F73",
     // ── Borders ─────────────────────────────────────────────
-    hair: "rgba(28,26,44,0.08)", hairStrong: "rgba(28,26,44,0.16)",
-    // ── Brand maroon-red (Lovable --brand) ──────────────────
-    red: "#B83A2C", redDeep: "#8E2A1E", redSoft: "#FAE8DF", redSoftFg: "#7D271D",
-    // ── Accents ─────────────────────────────────────────────
+    hair: "rgba(29,27,45,0.08)", hairStrong: "rgba(29,27,45,0.16)",
+    // ── Brand red (brandbook primary) ───────────────────────
+    red: "#B63B2C", redDeep: "#9A3020", redSoft: "#F5EEEC", redSoftFg: "#9A3020",
+    // ── Gold accent (warning callouts — retained) ────────────
     gold: "#B8863D", goldSoft: "rgba(184,134,61,0.12)",
-    green: "#3A6B3A", greenSoft: "rgba(58,107,58,0.10)",
-    // ── Shadows (Lovable shadow-card / shadow-pop) ───────────
+    // ── Shadows (not in brandbook — retained) ────────────────
     shadow:   "0 1px 2px rgba(180,150,100,0.18), 0 8px 24px -12px rgba(120,90,50,0.18)",
     shadowHi: "0 12px 40px -12px rgba(90,25,15,0.28)",
-    // ── Sidebar/header card text (dark bg → light labels) ───
-    cardLabel:     "rgba(251,247,238,0.65)",
-    cardLabelSoft: "rgba(251,247,238,0.5)",
-    cardBorder:    "rgba(251,247,238,0.15)",
+    // ── Dark-bg card text ───────────────────────────────────
+    cardLabel:     "rgba(250,247,245,0.65)",
+    cardLabelSoft: "rgba(250,247,245,0.5)",
+    cardBorder:    "rgba(250,247,245,0.15)",
   },
   dark: {
-    bg: "#15110D", bgAlt: "#1E1813", surface: "#221A14", surface2: "#2A2018",
-    ink: "#F5EFE3", inkSoft: "#D6CDBE", inkMute: "#8B8275",
-    hair: "rgba(245,239,227,0.08)", hairStrong: "rgba(245,239,227,0.18)",
-    red: "#E35A40", redDeep: "#C8442B", redSoft: "rgba(227,90,64,0.18)", redSoftFg: "#F5A090",
-    gold: "#D4A94A", goldSoft: "rgba(212,169,74,0.15)",
-    green: "#8FB174", greenSoft: "rgba(143,177,116,0.14)",
-    shadow:   "0 4px 20px rgba(0,0,0,0.4)",
-    shadowHi: "0 12px 40px rgba(0,0,0,0.5)",
-    cardLabel:     "rgba(28,25,23,0.55)",
-    cardLabelSoft: "rgba(28,25,23,0.4)",
-    cardBorder:    "rgba(28,25,23,0.12)",
+    // ── Canvas — brandbook black stacked up in elevation ────
+    // bg = brandbook --black. Each step lightens toward --charcoal.
+    bg: "#1D1B2D", bgAlt: "#252239", surface: "#2E2B42", surface2: "#353140",
+    // ── Text — brandbook off-white down to mid-gray ──────────
+    // ink = brandbook --off-white. inkMute = brandbook --mid-gray.
+    ink: "#FAF7F5", inkSoft: "#C8C4CC", inkMute: "#9A9498",
+    // ── Borders ─────────────────────────────────────────────
+    hair: "rgba(250,247,245,0.08)", hairStrong: "rgba(250,247,245,0.16)",
+    // ── Brand red — lifted from #B63B2C for dark-bg contrast ─
+    // #EB6E5E gives ~4.9:1 on #1D1B2D — passes WCAG AA large text.
+    // redSoft is a translucent tint so cards read clearly.
+    red: "#EB6E5E", redDeep: "#C94D3C", redSoft: "rgba(235,110,94,0.15)", redSoftFg: "#FAF7F5",
+    // ── Gold — nudged brighter for dark-bg legibility ────────
+    gold: "#C9993D", goldSoft: "rgba(201,153,61,0.15)",
+    // ── Shadows ─────────────────────────────────────────────
+    shadow:   "0 4px 24px rgba(0,0,0,0.45)",
+    shadowHi: "0 12px 40px rgba(0,0,0,0.6)",
+    // ── Light-bg card text (e.g. account card uses t.ink bg) ─
+    cardLabel:     "rgba(29,27,45,0.7)",
+    cardLabelSoft: "rgba(29,27,45,0.5)",
+    cardBorder:    "rgba(29,27,45,0.14)",
   },
 };
 
-const FONT         = "'Poppins', -apple-system, system-ui, sans-serif";
-const FONT_DISPLAY = "'Fraunces', 'Georgia', ui-serif, serif"; // ← kept for key RM numbers
+const FONT         = "'DM Sans', -apple-system, system-ui, sans-serif";
+const FONT_DISPLAY = "'DM Serif Display', Georgia, ui-serif, serif"; // ← italic on RM numerals
 const YEARS = ["2025", "2026", "2027"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -440,7 +450,22 @@ const TRANS = {
     tab_relief:   "Relief",
     tab_income:   "Income",
     tab_receipts: "Receipts",
-    tab_more:     "More",
+    tab_more:     "Settings",
+    // Guide
+    guide_tag:         "Quick start guide",
+    guide_title:       "Welcome to MakeCents",
+    guide_sub:         "Here's how to sort your taxes in 4 steps.",
+    guide_cta:         "Start with Income →",
+    guide_how:         "How it works",
+    guide_drawer_sub:  "Your 4-step tax guide",
+    guide_s1_title:    "Add your income",
+    guide_s1_desc:     "Upload your EA form — AI fills everything. Or enter employment and rental income manually.",
+    guide_s2_title:    "Scan your receipts",
+    guide_s2_desc:     "Point your camera at any receipt. AI checks LHDN eligibility and auto-categorises it.",
+    guide_s3_title:    "Manage your receipts",
+    guide_s3_desc:     "Review, edit and track all scanned receipts. See your total relief at a glance.",
+    guide_s4_title:    "Export for audit",
+    guide_s4_desc:     "One tap exports everything to Google Drive — receipts, categories, and a CSV — ready if LHDN asks.",
 
     // Relief tab
     search_reliefs:   "Search reliefs...",
@@ -569,6 +594,7 @@ const TRANS = {
     scanned_via_ai:      "Scanned via AI",
     amount_label:        "Amount",
     balance_due:         "BALANCE DUE",
+    your_refund:         "YOUR REFUND",
     tax_estimate_label:  "TAX ESTIMATE",
     relief_claimed_label:"RELIEF CLAIMED",
     what_you_owe:        "What you owe LHDN",
@@ -670,7 +696,22 @@ const TRANS = {
     tab_relief:   "Pelepasan",
     tab_income:   "Pendapatan",
     tab_receipts: "Resit",
-    tab_more:     "Lagi",
+    tab_more:     "Tetapan",
+    // Guide
+    guide_tag:         "Panduan permulaan",
+    guide_title:       "Selamat datang ke MakeCents",
+    guide_sub:         "Susun cukai anda dalam 4 langkah mudah.",
+    guide_cta:         "Mula dengan Pendapatan →",
+    guide_how:         "Cara penggunaan",
+    guide_drawer_sub:  "Panduan cukai 4 langkah anda",
+    guide_s1_title:    "Tambah pendapatan anda",
+    guide_s1_desc:     "Muat naik borang EA — AI isi semua. Atau masukkan pendapatan pekerjaan dan sewa secara manual.",
+    guide_s2_title:    "Imbas resit anda",
+    guide_s2_desc:     "Arahkan kamera ke mana-mana resit. AI semak kelayakan LHDN dan mengkategorikannya secara automatik.",
+    guide_s3_title:    "Urus resit anda",
+    guide_s3_desc:     "Semak, edit dan jejak semua resit yang diimbas. Lihat jumlah pelepasan anda sekilas.",
+    guide_s4_title:    "Eksport untuk audit",
+    guide_s4_desc:     "Satu ketikan mengeksport semua ke Google Drive — resit, kategori, dan CSV — bersedia jika LHDN bertanya.",
 
     search_reliefs:   "Cari pelepasan...",
     of_claimed:       "daripada {0} dituntut",
@@ -795,6 +836,7 @@ const TRANS = {
     scanned_via_ai:      "Diimbas melalui AI",
     amount_label:        "Amaun",
     balance_due:         "BAKI PERLU DIBAYAR",
+    your_refund:         "BAYARAN BALIK ANDA",
     tax_estimate_label:  "ANGGARAN CUKAI",
     relief_claimed_label:"PELEPASAN DITUNTUT",
     what_you_owe:        "Yang anda perlu bayar kepada LHDN",
@@ -1446,7 +1488,7 @@ export default function MakeCents() {
     try { return localStorage.getItem("makecentstax-theme") || "light"; } catch { return "light"; }
   });
   const setThemeName = (n) => { setThemeNameRaw(n); try { localStorage.setItem("makecentstax-theme", n); } catch {} };
-  const t = THEMES[themeName];
+  const t = THEMES[themeName] || THEMES.light;
 
   // ── Language ────────────────────────────────────────────────
   const [lang, setLangRaw] = useState(() => {
@@ -1467,7 +1509,7 @@ export default function MakeCents() {
   const [yobIn,         setYobIn]         = useState("");
   const [ya,            setYa]            = useState("2025");
   const [yaOpen,        setYaOpen]        = useState(false);
-  const [tab,           setTab]           = useState("relief");
+  const [tab,           setTab]           = useState("income");
   const [entries,       setEntries]       = useState([]);
   const [receipts,      setReceipts]      = useState([]);
   const [incomes,       setIncomes]       = useState([]);
@@ -1482,6 +1524,9 @@ export default function MakeCents() {
   const [showConsent,   setShowConsent]   = useState(false);
   const [pendingAuth,   setPendingAuth]   = useState(null); // "google" | "guest"
   const [showPrivacy,   setShowPrivacy]   = useState(false);
+  // User guide: modal (Option B) + drawer (Option C fallback)
+  const [showGuide,     setShowGuide]     = useState(false);
+  const [guideDrawer,   setGuideDrawer]   = useState(false);
 
   // ── AES-256-GCM encryption key ───────────────────────────────────────────
   // Stored in a ref (not state) so it never triggers a re-render and is never
@@ -1570,6 +1615,15 @@ export default function MakeCents() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (screen !== "app") return;
+    try {
+      if (!localStorage.getItem("makecentstax-guide-seen")) {
+        setShowGuide(true);
+      }
+    } catch {}
+  }, [screen]);
 
   useEffect(() => {
     if (screen !== "app") return;
@@ -2294,7 +2348,7 @@ export default function MakeCents() {
     </>
   );
 
-  const tabLabel = tab === "income" ? L("tab_income") : tab === "receipts" ? L("tab_receipts") : tab === "more" ? L("tab_more") : L("tab_relief");
+  const tabLabel = tab === "relief" ? L("tab_relief") : tab === "receipts" ? L("tab_receipts") : tab === "more" ? L("tab_more") : L("tab_income");
 
   // ── Shared overlays ─────────────────────────────────────────
   const overlays = (
@@ -2315,6 +2369,8 @@ export default function MakeCents() {
       )}
       <SyncToast message={syncError} t={t} />
       {showPrivacy && <PrivacyModal t={t} L={L} onClose={() => setShowPrivacy(false)} />}
+      {showGuide && <GuideModal t={t} L={L} onClose={() => setShowGuide(false)} />}
+      <GuideDrawer t={t} L={L} open={guideDrawer} onClose={() => setGuideDrawer(false)} />
       <ScannerSheet open={scannerOpen} seededItem={scannerSeed} t={t} L={L} ya={ya} allItems={allItems}
         onClose={() => { setScannerOpen(false); setScannerSeed(null); }}
         onAdd={addFromScan} />
@@ -2381,11 +2437,11 @@ export default function MakeCents() {
             </div>
           </div>
 
-          {/* Nav links — Lovable rounded active style */}
+          {/* Nav links */}
           <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
             {[
-              ["relief",   L("tab_relief"),   "receipt"],
               ["income",   L("tab_income"),   "briefcase"],
+              ["relief",   L("tab_relief"),   "receipt"],
               ["receipts", L("tab_receipts"), "camera"],
               ["more",     L("tab_more"),     "settings"],
             ].map(([k, l, ic]) => {
@@ -2405,18 +2461,30 @@ export default function MakeCents() {
                 </button>
               );
             })}
+            {/* How it works — persistent guide entry point */}
+            <button onClick={() => setGuideDrawer(true)} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              width: "100%", padding: "10px 14px", marginTop: 4,
+              border: `1px dashed ${t.hairStrong}`, borderRadius: 14, cursor: "pointer",
+              fontFamily: FONT, fontSize: 13, fontWeight: 500,
+              textAlign: "left", background: "transparent", color: t.inkMute,
+              transition: "background 0.15s, color 0.15s",
+            }}>
+              <Icon name="sparkle" size={17} color={t.inkMute} />
+              {L("guide_how")}
+            </button>
           </nav>
 
           {/* Scan CTA — always visible, Lovable style */}
           <button onClick={() => { setScannerSeed(null); setScannerOpen(true); }}
             style={{
               width: "100%", padding: "12px 16px", border: "none", borderRadius: 14,
-              background: t.red, color: "#FBF7EE",
+              background: t.red, color: "#FAF7F5",
               fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               boxShadow: t.shadowHi,
             }}>
-            <Icon name="sparkleAi" size={16} color="#FBF7EE" />
+            <Icon name="sparkleAi" size={16} color="#FAF7F5" />
             {L("scan_receipt")}
           </button>
         </div>
@@ -2442,11 +2510,24 @@ export default function MakeCents() {
         <Header t={t} L={L} user={user} ya={ya} setYa={setYa} yaOpen={yaOpen} setYaOpen={setYaOpen}
           totalIncome={totalIncome} totalRelief={totalRelief} chargeable={chargeable}
           estTax={estTax} taxIsTentative={taxIsTentative} eligibleCapTotal={eligibleCapTotal}
-          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance} />
+          totalMTDPaid={totalMTDPaid} mtdBalance={mtdBalance}
+          onHowItWorks={() => setGuideDrawer(true)} />
       ) : (
         <div style={{ padding: "26px 20px 16px", fontFamily: FONT }}>
           <div style={{ fontSize: 11, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2 }}>YA{ya} · {user?.name}</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8, marginTop: 2 }}>{tabLabel}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: t.ink, letterSpacing: -0.8 }}>{tabLabel}</div>
+            <button onClick={() => setGuideDrawer(true)} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
+              borderRadius: 10, background: t.surface, color: t.inkMute,
+              fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              flexShrink: 0,
+            }}>
+              <Icon name="sparkle" size={14} color={t.inkMute} />
+              {L("guide_how")}
+            </button>
+          </div>
         </div>
       )}
 
@@ -2722,7 +2803,7 @@ function Signup({ t, L, name, setName, yob, setYob, onDone, onSkip }) {
 // ─────────────────────────────────────────────────────────────
 // HEADER
 // ─────────────────────────────────────────────────────────────
-function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal, totalMTDPaid, mtdBalance }) {
+function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRelief, chargeable, estTax, taxIsTentative, eligibleCapTotal, totalMTDPaid, mtdBalance, onHowItWorks }) {
   return (
     <div style={{ background: t.bg, padding: "18px 20px 22px", fontFamily: FONT }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2733,25 +2814,37 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
             <div style={{ fontSize: 15, fontWeight: 700, color: t.ink, letterSpacing: -0.3 }}>
               {user?.name}
               {user?.provider === "google" && (
-                <span style={{ fontSize: 9, background: t.greenSoft, color: t.green, padding: "2px 7px", borderRadius: 6, marginLeft: 6, fontWeight: 700, letterSpacing: 0.4, verticalAlign: "middle" }}>{L("synced")}</span>
+                <span style={{ fontSize: 9, background: t.redSoft, color: t.red, padding: "2px 7px", borderRadius: 6, marginLeft: 6, fontWeight: 700, letterSpacing: 0.4, verticalAlign: "middle" }}>{L("synced")}</span>
               )}
             </div>
           </div>
         </div>
-        <div style={{ position: "relative" }}>
-          <button onClick={() => setYaOpen(!yaOpen)} style={{ padding: "8px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            YA{ya} <Icon name="chevD" size={12} color={t.inkMute} />
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* How it works button — visible on Relief tab (same as all other mobile tabs) */}
+          <button onClick={onHowItWorks} style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "7px 12px", border: `1px solid ${t.hairStrong}`,
+            borderRadius: 10, background: t.surface, color: t.inkMute,
+            fontFamily: FONT, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
+          }}>
+            <Icon name="sparkle" size={14} color={t.inkMute} />
+            {L("guide_how")}
           </button>
-          {yaOpen && (
-            <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: t.surface, borderRadius: 12, border: `1px solid ${t.hair}`, boxShadow: t.shadowHi, overflow: "hidden", zIndex: 50, minWidth: 100 }}>
-              {YEARS.map(y => (
-                <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
-                  style={{ display: "block", width: "100%", padding: "11px 16px", border: "none", background: y === ya ? t.redSoft : "transparent", color: y === ya ? t.red : t.ink, fontSize: 13, fontWeight: y === ya ? 600 : 500, fontFamily: FONT, cursor: "pointer", textAlign: "left" }}>
-                  YA{y}
-                </button>
-              ))}
-            </div>
-          )}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setYaOpen(!yaOpen)} style={{ padding: "8px 12px", border: `1px solid ${t.hairStrong}`, borderRadius: 10, background: t.surface, color: t.ink, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              YA{ya} <Icon name="chevD" size={12} color={t.inkMute} />
+            </button>
+            {yaOpen && (
+              <div style={{ position: "absolute", top: "100%", right: 0, marginTop: 6, background: t.surface, borderRadius: 12, border: `1px solid ${t.hair}`, boxShadow: t.shadowHi, overflow: "hidden", zIndex: 50, minWidth: 100 }}>
+                {YEARS.map(y => (
+                  <button key={y} onClick={() => { setYa(y); setYaOpen(false); }}
+                    style={{ display: "block", width: "100%", padding: "11px 16px", border: "none", background: y === ya ? t.redSoft : "transparent", color: y === ya ? t.red : t.ink, fontSize: 13, fontWeight: y === ya ? 600 : 500, fontFamily: FONT, cursor: "pointer", textAlign: "left" }}>
+                    YA{y}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2762,12 +2855,12 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
           const noIncome   = totalIncome <= 0;
           const isRefund   = mtdBalance < 0;
           const isBalance  = mtdBalance > 0;
-          const heroBg     = noIncome ? t.ink : isRefund ? t.greenSoft : t.redSoft;
-          const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? 'rgba(58,107,58,0.18)' : 'rgba(184,58,44,0.18)'}`;
-          const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
+          const heroBg     = noIncome ? t.ink : isRefund ? t.surface : t.redSoft;
+          const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? t.hairStrong : 'rgba(182,59,44,0.18)'}`;
+          const heroNum    = noIncome ? 'rgba(250,247,245,0.4)' : t.red;
           const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
           const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-          const label      = isBalance ? L('balance_due') : L('your refund');
+          const label      = isBalance ? L('balance_due') : L('your_refund');
           const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
           const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
           return (
@@ -2775,7 +2868,7 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
               {noIncome && <div style={{ position: "absolute", top: -24, right: -24, width: 80, height: 80, borderRadius: "50%", background: t.red, opacity: 0.45 }} />}
               <div style={{ position: "relative" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: heroLabel, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: heroNum, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "italic", color: heroNum, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
                 <div style={{ fontSize: 10, color: heroSub, marginTop: 6 }}>{sub}</div>
               </div>
             </div>
@@ -2785,14 +2878,14 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{L('tax_estimate_label')}{taxIsTentative ? " ~" : ""}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "italic", color: t.red, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               RM {estTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </div>
             <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>{L('what_you_owe')}</div>
           </div>
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 16, padding: "14px 16px" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>{L('relief_claimed_label')}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 20, fontWeight: 700, fontStyle: "italic", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
               {Math.round((totalRelief / Math.max(1, eligibleCapTotal || 1)) * 100)}%
             </div>
             <div style={{ fontSize: 9, color: t.inkMute, marginTop: 3 }}>RM {totalRelief.toLocaleString(undefined, { maximumFractionDigits: 0 })} of cap</div>
@@ -2806,10 +2899,235 @@ function Header({ t, L, user, ya, setYa, yaOpen, setYaOpen, totalIncome, totalRe
 // ─────────────────────────────────────────────────────────────
 // TAB BAR
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// GUIDE MODAL — Option B: first-launch modal
+// ─────────────────────────────────────────────────────────────
+function GuideModal({ t, L, onClose }) {
+  const wide = useIsWide();
+  const steps = [
+    { icon: "upload",     title: L("guide_s1_title"), desc: L("guide_s1_desc") },
+    { icon: "camera",     title: L("guide_s2_title"), desc: L("guide_s2_desc") },
+    { icon: "receipt",    title: L("guide_s3_title"), desc: L("guide_s3_desc") },
+    { icon: "cloud",      title: L("guide_s4_title"), desc: L("guide_s4_desc") },
+  ];
+  const dismiss = () => {
+    try { localStorage.setItem("makecentstax-guide-seen", "1"); } catch {}
+    onClose();
+  };
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 800,
+      background: "rgba(29,27,45,0.72)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: wide ? 40 : 20,
+      backdropFilter: "blur(2px)",
+    }} onClick={dismiss}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: t.surface,
+        borderRadius: 20,
+        padding: wide ? "32px 36px" : "24px 20px",
+        width: "100%", maxWidth: 520,
+        boxShadow: t.shadowHi,
+        position: "relative",
+      }}>
+        {/* Close */}
+        <button onClick={dismiss} style={{
+          position: "absolute", top: 16, right: 16,
+          width: 30, height: 30, borderRadius: 8,
+          background: t.bgAlt, border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <Icon name="close" size={14} color={t.inkMute} />
+        </button>
+
+        {/* Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            display: "inline-block", fontSize: 10, fontWeight: 700,
+            color: t.red, background: t.redSoft,
+            padding: "3px 10px", borderRadius: 6,
+            letterSpacing: "0.08em", textTransform: "uppercase",
+            marginBottom: 10, fontFamily: FONT,
+          }}>{L("guide_tag")}</div>
+          <div style={{ fontFamily: FONT, fontSize: wide ? 26 : 22, fontWeight: 700, color: t.ink, lineHeight: 1.15, marginBottom: 4 }}>
+            {L("guide_title")}
+          </div>
+          <div style={{ fontSize: 13, color: t.inkMute, fontFamily: FONT }}>
+            {L("guide_sub")}
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "flex-start", gap: 14,
+              padding: "13px 15px", background: t.bg,
+              borderRadius: 12, border: `1px solid ${t.hair}`,
+            }}>
+              {/* Icon wrap */}
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: t.redSoft, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Icon name={s.icon} size={18} color={t.red} />
+              </div>
+              {/* Text */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: t.inkMute, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: FONT, marginBottom: 2 }}>
+                  STEP {i + 1}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontFamily: FONT, marginBottom: 2 }}>
+                  {s.title}
+                </div>
+                <div style={{ fontSize: 12, color: t.inkMute, fontFamily: FONT, lineHeight: 1.5 }}>
+                  {s.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <button onClick={dismiss} style={{
+          width: "100%", padding: "13px 16px",
+          background: t.red, color: "#FAF7F5",
+          border: "none", borderRadius: 12,
+          fontFamily: FONT, fontSize: 14, fontWeight: 700,
+          cursor: "pointer", letterSpacing: "0.02em",
+        }}>
+          {L("guide_cta")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// GUIDE DRAWER — Option C: persistent "How it works" slide-in
+// ─────────────────────────────────────────────────────────────
+function GuideDrawer({ t, L, open, onClose }) {
+  const wide = useIsWide();
+  const [closing, setClosing] = useState(false);
+  const steps = [
+    { icon: "upload",  title: L("guide_s1_title"), desc: L("guide_s1_desc") },
+    { icon: "camera",  title: L("guide_s2_title"), desc: L("guide_s2_desc") },
+    { icon: "receipt", title: L("guide_s3_title"), desc: L("guide_s3_desc") },
+    { icon: "cloud",   title: L("guide_s4_title"), desc: L("guide_s4_desc") },
+  ];
+  if (!open && !closing) return null;
+
+  const handleClose = () => {
+    setClosing(true);
+    setTimeout(() => { setClosing(false); onClose(); }, 200);
+  };
+
+  // Desktop: slide in from right. Mobile: slide up from bottom.
+  const drawerStyle = wide ? {
+    position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 750,
+    width: 340, background: t.surface,
+    borderLeft: `1px solid ${t.hair}`,
+    boxShadow: t.shadowHi,
+    display: "flex", flexDirection: "column",
+    transform: (open && !closing) ? "translateX(0)" : "translateX(100%)",
+    transition: "transform 220ms cubic-bezier(0.32,0,0,1)",
+  } : {
+    position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 750,
+    maxHeight: "88vh", background: t.surface,
+    borderRadius: "20px 20px 0 0",
+    borderTop: `1px solid ${t.hair}`,
+    boxShadow: t.shadowHi,
+    display: "flex", flexDirection: "column",
+    transform: (open && !closing) ? "translateY(0)" : "translateY(100%)",
+    transition: "transform 240ms cubic-bezier(0.32,0,0,1)",
+  };
+
+  return (
+    <>
+      {/* Scrim */}
+      <div onClick={handleClose} style={{
+        position: "fixed", inset: 0, zIndex: 749,
+        background: "rgba(29,27,45,0.35)",
+        opacity: (open && !closing) ? 1 : 0,
+        transition: "opacity 200ms ease",
+      }} />
+
+      <div style={drawerStyle}>
+        {/* Mobile drag pill */}
+        {!wide && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: t.hair }} />
+          </div>
+        )}
+
+        {/* Drawer header */}
+        <div style={{
+          padding: wide ? "22px 24px 16px" : "16px 20px",
+          borderBottom: `1px solid ${t.hair}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+        }}>
+          <div>
+            <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 700, color: t.ink, lineHeight: 1.15 }}>
+              {L("guide_how")}
+            </div>
+            <div style={{ fontSize: 12, color: t.inkMute, marginTop: 2, fontFamily: FONT }}>
+              {L("guide_drawer_sub")}
+            </div>
+          </div>
+          <button onClick={handleClose} style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: t.bgAlt, border: "none", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <Icon name="close" size={14} color={t.inkMute} />
+          </button>
+        </div>
+
+        {/* Steps */}
+        <div style={{ flex: 1, overflowY: "auto", padding: wide ? "20px 24px" : "18px 20px" }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 14, marginBottom: i < steps.length - 1 ? 0 : 0 }}>
+              {/* Number + connector */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: t.red, color: "#FAF7F5",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, fontFamily: FONT, flexShrink: 0,
+                }}>{i + 1}</div>
+                {i < steps.length - 1 && (
+                  <div style={{ width: 1.5, flex: 1, minHeight: 28, background: t.hair, margin: "4px 0" }} />
+                )}
+              </div>
+              {/* Content */}
+              <div style={{ paddingBottom: i < steps.length - 1 ? 22 : 0, paddingTop: 4 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  background: t.redSoft, marginBottom: 8,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon name={s.icon} size={16} color={t.red} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.ink, fontFamily: FONT, marginBottom: 4 }}>
+                  {s.title}
+                </div>
+                <div style={{ fontSize: 12, color: t.inkMute, fontFamily: FONT, lineHeight: 1.55 }}>
+                  {s.desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function TabBar({ t, L, tab, setTab }) {
   const tabs = [
-    ["relief",   L("tab_relief"),   "receipt"],
     ["income",   L("tab_income"),   "briefcase"],
+    ["relief",   L("tab_relief"),   "receipt"],
     ["receipts", L("tab_receipts"), "camera"],
     ["more",     L("tab_more"),     "settings"],
   ];
@@ -2888,12 +3206,12 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
             const noIncome   = totalIncome <= 0;
             const isRefund   = (mtdBalance||0) < 0;
             const isBalance  = (mtdBalance||0) > 0;
-            const heroBg     = noIncome ? t.ink : isRefund ? t.greenSoft : t.redSoft;
-            const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? 'rgba(58,107,58,0.18)' : 'rgba(184,58,44,0.18)'}`;
-            const heroNum    = noIncome ? 'rgba(251,247,238,0.4)' : isRefund ? t.green : t.red;
+            const heroBg     = noIncome ? t.ink : isRefund ? t.surface : t.redSoft;
+            const heroBorder = noIncome ? 'none' : `1px solid ${isRefund ? t.hairStrong : 'rgba(182,59,44,0.18)'}`;
+            const heroNum    = noIncome ? 'rgba(250,247,245,0.4)' : t.red;
             const heroLabel  = noIncome ? 'rgba(251,247,238,0.5)' : t.inkMute;
             const heroSub    = noIncome ? 'rgba(251,247,238,0.35)' : t.inkSoft;
-            const label      = isBalance ? L('balance_due') : L('your refund');
+            const label      = isBalance ? L('balance_due') : L('your_refund');
             const value      = noIncome ? '—' : `RM ${Math.abs(mtdBalance||0).toLocaleString()}`;
             const sub        = noIncome ? L('add_income_calc') : isRefund ? L('file_to_claim') : L('still_owe');
             return (
@@ -2901,7 +3219,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                 {noIncome && <div style={{ position: 'absolute', top: -30, right: -30, width: 110, height: 110, borderRadius: '50%', background: t.red, opacity: 0.45 }} />}
                 <div style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: heroLabel, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{label}</div>
-                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: heroNum, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: heroNum, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
                   <div style={{ fontSize: 12, color: heroSub, marginTop: 'auto', paddingTop: 10 }}>{sub}</div>
                 </div>
               </div>
@@ -2910,19 +3228,19 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
           {/* Card 2 — TAX ESTIMATE */}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>{L('tax_estimate_label')}{taxIsTentative ? ' ~' : ''}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.red, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: t.red, fontVariantNumeric: 'tabular-nums' }}>RM {estTax.toLocaleString()}</div>
             <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>{L('what_you_owe')}</div>
           </div>
           {/* Card 3 — RELIEF CLAIMED % */}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: 11, letterSpacing: 1, fontWeight: 700, color: t.inkMute, textTransform: 'uppercase', marginBottom: 8 }}>{L('relief_claimed_label')}</div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, color: t.ink, fontVariantNumeric: 'tabular-nums' }}>{Math.round((totalRelief / Math.max(1, totalCap)) * 100)}%</div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 38, lineHeight: 1.02, fontStyle: "italic", color: t.ink, fontVariantNumeric: 'tabular-nums' }}>{Math.round((totalRelief / Math.max(1, totalCap)) * 100)}%</div>
             <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 'auto', paddingTop: 10 }}>RM {totalRelief.toLocaleString()} of RM {totalCap.toLocaleString()} cap</div>
           </div>
         </div>
         <div style={{ background: t.redSoft, border: `1px solid rgba(184,58,44,0.15)`, borderRadius: 14, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
           <div style={{width:44,height:44,borderRadius:12,background:t.red,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon name="sparkleAi" size={19} color="#fff" /></div>
-          <div style={{flex:1}}><div style={{fontSize:20,fontFamily:FONT_DISPLAY,lineHeight:1.2}}>{L('scan_banner_title')}</div><div style={{fontSize:13,color:t.inkSoft,marginTop:4}}>{L('scan_banner_sub')}</div></div>
+          <div style={{flex:1}}><div style={{fontSize:20,fontFamily:FONT,fontWeight:700,lineHeight:1.2}}>{L('scan_banner_title')}</div><div style={{fontSize:13,color:t.inkSoft,marginTop:4}}>{L('scan_banner_sub')}</div></div>
           <button onClick={() => onOpenScanner(null)} style={{padding:'10px 18px',border:'none',borderRadius:10,background:t.red,color:'#fff',fontWeight:700,cursor:'pointer',flexShrink:0}}>{L('scan_receipt')}</button>
         </div>
       </>}
@@ -2980,19 +3298,19 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
                       <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
-                      {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.green,background:t.greenSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
+                      {item.auto && <span style={{fontSize:9,fontWeight:700,color:t.red,background:t.redSoft,padding:'2px 6px',borderRadius:6}}>AUTO</span>}
                       {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'2px 6px',borderRadius:6}}>FROM EA</span>}
                     </div>
                     <div style={{fontSize:13,fontWeight:600,color:t.ink,lineHeight:1.3,marginBottom:2}}>{n(item)}</div>
                     <div style={{fontSize:11,color:t.inkMute,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%'}}>{d(item)}</div>
-                    <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:3}}/></div>
+                    <div style={{height:3,background:t.bgAlt,borderRadius:3,marginTop:8}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.red:isAutoLinked?t.gold:t.red,borderRadius:3}}/></div>
                     <div style={{fontSize:10,color:t.inkMute,marginTop:4}}>RM {claimedAmt.toLocaleString()} of RM {capEff.toLocaleString()}</div>
                     {isAutoLinked && <div style={{fontSize:10,color:t.gold,marginTop:2}}>Auto-linked from your EA form · add manual entries to override</div>}
                   </div>
                   <div style={{flexShrink:0,textAlign:'right'}}>
-                    <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
+                    <div style={{fontFamily:FONT_DISPLAY,fontSize:18,fontWeight:700,fontStyle:"italic",color:t.ink,fontVariantNumeric:'tabular-nums',lineHeight:1}}>RM {claimedAmt.toLocaleString()}</div>
                     {item.auto
-                      ? <div style={{fontSize:10,color:t.green,fontWeight:600,marginTop:4}}>{isBM ? "Disahkan" : "Confirmed"}</div>
+                      ? <div style={{fontSize:10,color:t.red,fontWeight:600,marginTop:4}}>{isBM ? "Disahkan" : "Confirmed"}</div>
                       : <button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{marginTop:6,border:'none',background:eItems.length?t.bgAlt:t.red,color:eItems.length?t.ink:'#fff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:FONT,display:'block'}}>{eItems.length ? L('view') : L('add')}</button>
                     }
                   </div>
@@ -3009,15 +3327,15 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                   <span style={{fontSize:9,fontWeight:600,color:t.inkMute,letterSpacing:'0.05em'}}>{item.id.startsWith("G17") ? "G17" : item.id}</span>
                   {isAutoLinked && <span style={{fontSize:9,fontWeight:700,color:t.gold,background:t.goldSoft,padding:'1px 5px',borderRadius:4}}>FROM EA</span>}
                 </div>
-                <div style={{fontSize:19,fontFamily:FONT_DISPLAY,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
+                <div style={{fontSize:19,fontFamily:FONT,fontWeight:700,lineHeight:1.1,minHeight:42}}>{n(item)}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:6,minHeight:32,overflow:'hidden',textOverflow:'ellipsis',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{d(item)}</div>
                 {isAutoLinked && <div style={{fontSize:11,color:t.gold,marginTop:4,lineHeight:1.4}}>Auto-linked from your EA form. Add manual entries to override.</div>}
-                <div style={{fontFamily:FONT_DISPLAY,fontSize:28,marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
+                <div style={{fontFamily:FONT_DISPLAY,fontSize:28,fontStyle:"italic",marginTop:10,lineHeight:1.05}}>RM {claimedAmt.toLocaleString()}</div>
                 <div style={{fontSize:12,color:t.inkMute,marginTop:2,textAlign:'right'}}>of RM {capEff.toLocaleString()}</div>
-                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.green:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
+                <div style={{height:4,background:t.bgAlt,borderRadius:4,marginTop:10,marginBottom:12}}><div style={{width:`${Math.min(100,pct)}%`,height:'100%',background:item.auto?t.red:isAutoLinked?t.gold:t.red,borderRadius:4}}/></div>
                 <div style={{marginTop:'auto',paddingTop:8,display:'flex',justifyContent:'space-between',alignItems:'center',minHeight:34,fontSize:11,color:t.inkMute,borderTop:`1px solid ${t.hair}`,opacity:hoveredCard===item.id||eItems.length>0?1:0,transition:'opacity 0.15s'}}>
                   <span>{eItems.length?`${eItems.length} entr`+(eItems.length>1?'ies':'y'):isAutoLinked?'From income':'No entries yet'}</span>
-                  {item.auto?<span style={{color:t.green}}>{isBM ? "Disahkan" : "Confirmed"}</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length ? L('view') : L('add')}</button>}
+                  {item.auto?<span style={{color:t.red}}>{isBM ? "Disahkan" : "Confirmed"}</span>:<button onClick={()=>{setDrawerItemId(item.id); setDescIn(''); setAmtIn(''); setUnitsIn(1); setDrawerFormOpen(false);}} style={{border:'none',background:t.ink,color:t.bg,borderRadius:999,padding:'4px 12px',fontSize:12,fontWeight:700,cursor:'pointer',lineHeight:1,fontFamily:FONT}}>{eItems.length ? L('view') : L('add')}</button>}
                 </div>
               </div>
             })}
@@ -3038,7 +3356,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
             background:t.surface, display:'flex', flexDirection:'column', overflow:'hidden'
           }}>
           {!wide && <div style={{display:'flex', justifyContent:'center', padding:'12px 0 0'}}><div style={{width:40, height:4, background:t.hair, borderRadius:2}}/></div>}
-            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{n(drawerItem)}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{d(drawerItem)}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
+            <div style={{padding:18, borderBottom:`1px solid ${t.hair}`}}><div style={{fontSize:11,color:t.inkMute}}><span style={{background:t.redSoft,color:t.red,padding:'2px 7px',borderRadius:8,fontWeight:700}}>{drawerItem.id}</span> <span style={{marginLeft:6}}>{L('lhdn_tax_relief')}</span><button onClick={closeDrawer} style={{float:'right',border:'none',background:'transparent',cursor:'pointer'}}>✕</button></div><div style={{fontSize:33,fontFamily:"'DM Serif Display', Georgia, serif",marginTop:8,lineHeight:1.05}}>{n(drawerItem)}</div><div style={{fontSize:14,color:t.inkSoft,marginTop:6}}>{d(drawerItem)}</div><div style={{border:`1px solid ${t.hair}`,borderRadius:10,padding:12,marginTop:12}}><div style={{display:'flex',justifyContent:'space-between'}}><div style={{fontSize:40,fontStyle:'italic',fontFamily:"'DM Serif Display', Georgia, serif"}}>RM {drawerClaimed.toLocaleString()}</div><div style={{fontSize:13,color:t.inkMute,alignSelf:'flex-end'}}>{L('of_cap', drawerCap.toLocaleString())}</div></div><div style={{height:4,background:t.bgAlt,borderRadius:4}}><div style={{width:`${Math.min(100,(drawerClaimed/Math.max(1,drawerCap))*100)}%`,height:'100%',background:t.red,borderRadius:4}}/></div><div style={{fontSize:13,color:t.inkMute,marginTop:6}}>{L('remaining', Math.max(0,drawerCap-drawerClaimed).toLocaleString())}</div></div></div>
             <div style={{padding:18, overflow:'auto', flex:1}}>
               <div style={{fontSize:11,letterSpacing:1,fontWeight:700,color:t.inkMute,marginBottom:8,fontFamily:FONT}}>ENTRIES · {drawerEntries.length}</div>
               {drawerEntries.length===0
@@ -3048,7 +3366,7 @@ function ReliefTab({ t, L, lang, cats, entries, itemEntries, itemTotalRaw, onAdd
                       <div style={{fontSize:14,fontWeight:600,color:t.ink}}>{e.desc}</div>
                       <div style={{fontSize:12,color:t.inkMute}}>{e.date}</div>
                     </div>
-                    <div style={{fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:15,color:t.ink}}>RM {e.amount.toLocaleString()}</div>
+                    <div style={{fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:15,fontStyle:"italic",color:t.ink}}>RM {e.amount.toLocaleString()}</div>
                     <button onClick={()=>onRemoveEntry(e.id)} style={{border:'none',background:'transparent',marginLeft:10,cursor:'pointer',fontSize:15,opacity:0.5}}>🗑</button>
                   </div>)
               }
@@ -3491,7 +3809,7 @@ Rules:
             </div>
           ))}
           <div style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: 14, marginBottom: 16 }}>
-            {[[L("gross_rental_label"), totalRentalIncome, t.ink], [L("deductible_label"), -totalRentalExpenses, t.green], [L("net_rental_label"), netRentalIncome, t.ink]].map(([l, v, c], i) => (
+            {[[L("gross_rental_label"), totalRentalIncome, t.ink], [L("deductible_label"), -totalRentalExpenses, t.ink], [L("net_rental_label"), netRentalIncome, t.ink]].map(([l, v, c], i) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: i === 2 ? 13 : 12, fontWeight: i === 2 ? 700 : 500, color: i === 2 ? t.ink : t.inkSoft, padding: "4px 0", borderTop: i === 2 ? `1px solid ${t.hair}` : "none", marginTop: i === 2 ? 6 : 0, paddingTop: i === 2 ? 8 : 4 }}>
                 <span>{l}</span><span style={{ fontVariantNumeric: "tabular-nums", color: c }}>RM {Math.abs(v).toLocaleString()}</span>
               </div>
@@ -3505,10 +3823,10 @@ Rules:
           <div style={{ fontSize: wide ? 18 : 15, fontWeight: 700, color: t.ink, marginBottom: 14 }}>{L("tax_summary")} · YA{ya}</div>
           {[
             [L("total_income_label"),   totalIncome,          t.ink,   false],
-            [L("total_relief_label"),  -totalRelief,          t.green, false],
+            [L("total_relief_label"),  -totalRelief,          t.ink,   false],
             [L("chargeable_label"),     chargeable,           t.ink,   true ],
             [L("estimated_tax"),        estTax,               t.ink,   false],
-            [L("mtd_pcb_paid"),        -totalMTDPaid,         t.green, false],
+            [L("mtd_pcb_paid"),        -totalMTDPaid,         t.ink,   false],
           ].map(([label, val, color, divider], i) => (
             <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
               fontSize: divider ? 13 : 12, fontWeight: divider ? 700 : 500,
@@ -3523,7 +3841,7 @@ Rules:
           ))}
           {/* Balance row */}
           <div style={{ marginTop: 10, padding: "14px 16px", borderRadius: 12,
-            background: mtdBalance > 0 ? t.redSoft : t.greenSoft,
+            background: mtdBalance > 0 ? t.redSoft : t.bgAlt,
             border: `1px solid ${mtdBalance > 0 ? t.hairStrong : t.hair}`,
             display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
@@ -3534,8 +3852,8 @@ Rules:
                 {mtdBalance > 0 ? L("pay_byrhastil") : L("refund_efiling")}
               </div>}
             </div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700,
-              color: mtdBalance > 0 ? t.red : t.green, fontVariantNumeric: "tabular-nums" }}>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "italic",
+              color: mtdBalance > 0 ? t.red : t.ink, fontVariantNumeric: "tabular-nums" }}>
               RM {Math.abs(mtdBalance).toLocaleString()}
             </div>
           </div>
@@ -3682,7 +4000,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           ].map(s => (
             <div key={s.label} style={{ background: t.surface, border: `1px solid ${t.hair}`, borderRadius: 14, padding: "16px 20px" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{s.label}</div>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, fontStyle: "italic", color: s.color, lineHeight: 1 }}>{s.value}</div>
               <div style={{ fontSize: 12, color: t.inkMute, marginTop: 4 }}>{s.sub}</div>
             </div>
           ))}
@@ -3743,7 +4061,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
           <div style={{ width: 64, height: 64, borderRadius: 20, background: t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <Icon name="receipt" size={28} color={t.inkMute} />
           </div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT_DISPLAY }}>{L('no_receipts')}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.inkSoft, fontFamily: FONT }}>{L('no_receipts')}</div>
           <div style={{ fontSize: 13, color: t.inkMute, marginTop: 6, maxWidth: 300, margin: "8px auto 0" }}>
             {L("scan_from_relief")}
           </div>
@@ -3815,7 +4133,7 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
                   <div style={{ marginTop: "auto", paddingTop: 10, borderTop: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 10, color: t.inkMute, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>{L("amount_label")}</div>
-                      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+                      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 700, fontStyle: "italic", color: t.ink, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                         RM {(rx.amount || 0).toLocaleString()}
                       </div>
                     </div>
@@ -4037,11 +4355,11 @@ function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut
       <Section title={L("data_export")}>
         {user?.provider === "google" ? (
           <Row
-            icon={exporting ? null : "cloud"} iconBg={t.greenSoft} iconColor={t.green}
+            icon={exporting ? null : "cloud"} iconBg={t.redSoft} iconColor={t.red}
             label={driveStep === "done" ? L("exported") : exporting ? L("exporting") : L("export_drive")}
             sub={exportProgress || L("export_drive_sub", ya)}
             right={exporting
-              ? <div style={{ width: 20, height: 20, border: `2px solid ${t.hair}`, borderTopColor: t.green, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+              ? <div style={{ width: 20, height: 20, border: `2px solid ${t.hair}`, borderTopColor: t.red, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
               : <Icon name="chevR" size={14} color={t.inkMute} />}
             onClick={runDriveExport}
           />
@@ -4319,16 +4637,16 @@ If not claimable:
                 <div style={{ fontSize: 12, fontWeight: 600, color: t.inkMute }}>{L("compressing")}</div>
               </div>
             ) : img ? (
-              <div style={{ width: "100%", padding: "16px", background: t.surface, border: `1.5px solid ${t.green}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div style={{ width: "100%", padding: "16px", background: t.surface, border: `1.5px solid ${t.red}`, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 {img?.startsWith("data:application/pdf") ? (
   <div style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-    <Icon name="receipt" size={36} color={t.green} />
+    <Icon name="receipt" size={36} color={t.red} />
     <div style={{ fontSize: 12, color: t.inkSoft }}>PDF document ready</div>
   </div>
 ) : (
   <img src={img} style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10, objectFit: "contain" }} alt="Receipt preview" />
 )}
-                <div style={{ fontSize: 12, fontWeight: 600, color: t.green }}>{L("receipt_ok")}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: t.red }}>{L("receipt_ok")}</div>
                 <button onClick={() => setImg(null)} style={{ fontSize: 11, color: t.inkMute, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: FONT }}>{L("remove")}</button>
               </div>
             ) : (
@@ -4408,10 +4726,10 @@ If not claimable:
         {step === "result" && result && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 18, background: result.claimable ? t.greenSoft : t.redSoft, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={result.claimable ? "check" : "close"} size={20} color={result.claimable ? t.green : t.red} weight={2.2} />
+              <div style={{ width: 36, height: 36, borderRadius: 18, background: result.claimable ? t.redSoft : t.bgAlt, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={result.claimable ? "check" : "close"} size={20} color={result.claimable ? t.red : t.inkMute} weight={2.2} />
               </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: result.claimable ? t.green : t.red, letterSpacing: -0.4 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: result.claimable ? t.red : t.inkMute, letterSpacing: -0.4 }}>
                 {result.claimable ? L("claimable") : L("not_claimable")}
               </div>
             </div>
@@ -4489,13 +4807,13 @@ const baseStyle = (t) => ({
 });
 
 const globalCSS = `
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,400&family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
 @keyframes spin      { to { transform: rotate(360deg); } }
 @keyframes fadein    { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideup   { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes slidedown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; font-family: 'Poppins', -apple-system, system-ui, sans-serif; }
+html, body { margin: 0; padding: 0; font-family: 'DM Sans', -apple-system, system-ui, sans-serif; }
 input::placeholder, textarea::placeholder { color: rgba(139,130,117,0.7); }
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
