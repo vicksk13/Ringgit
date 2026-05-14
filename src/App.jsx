@@ -4182,8 +4182,9 @@ function ReceiptsTab({ t, L, receipts, onRemove, onView, ya, allItems }) {
 }
 
 
+
 // ─────────────────────────────────────────────────────────────
-// EFILING SUMMARY MODAL
+// EFILING SUMMARY MODAL — mirrors LHDN BE form exactly
 // ─────────────────────────────────────────────────────────────
 function EFilingSummaryModal({
   t, L, lang, user, ya,
@@ -4196,222 +4197,311 @@ function EFilingSummaryModal({
   const isBM = lang === "ms";
   const wide = useIsWide();
 
-  const fmt2  = (n) => (Math.abs(n) || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const rmFmt = (n) => `RM ${fmt2(n)}`;
+  const fmt  = (n) => (Math.abs(n) || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const rm   = (n) => `RM ${fmt(n)}`;
 
-  const totalEmpIncome = incomes.reduce(
-    (s, i) => s + (i.amount || 0) + (i.bonus || 0) + (i.otherAllowances || 0), 0
-  );
-  const totalInc = totalEmpIncome + (netRentalIncome || 0);
+  // ── Totals ───────────────────────────────────────────────
+  const totalEmpIncome = incomes.reduce((s, i) => s + (i.amount || 0) + (i.bonus || 0) + (i.otherAllowances || 0), 0);
+  const totalInc       = totalEmpIncome + (netRentalIncome || 0);
 
-  const rebate400      = chargeable > 0 && chargeable <= 35000 ? 400 : 0;
-  const taxRounded     = Math.round(estTax);
-  const taxAfterRebate = Math.max(0, taxRounded - rebate400);
-  const finalBalance   = Math.round(taxAfterRebate - totalMTDPaid);
-  const nextYear       = String(parseInt(ya) + 1);
+  // ── Tax breakdown (mirrors LHDN Rumusan format) ──────────
+  // Shows "Tax on the first RM X" and "Tax on the balance RM Y at Z%"
+  const BRACKETS = [
+    { max: 5000,     prev: 0,       r: 0,  c: 0      },
+    { max: 20000,    prev: 5000,    r: 1,  c: 0      },
+    { max: 35000,    prev: 20000,   r: 3,  c: 150    },
+    { max: 50000,    prev: 35000,   r: 6,  c: 600    },
+    { max: 70000,    prev: 50000,   r: 11, c: 1500   },
+    { max: 100000,   prev: 70000,   r: 19, c: 3700   },
+    { max: 400000,   prev: 100000,  r: 25, c: 9400   },
+    { max: 600000,   prev: 400000,  r: 26, c: 84400  },
+    { max: 2000000,  prev: 600000,  r: 28, c: 136400 },
+    { max: Infinity, prev: 2000000, r: 30, c: 528400 },
+  ];
+  const taxBreakdown = (ci) => {
+    if (ci <= 0) return { firstAmt: 0, firstTax: 0, balanceAmt: 0, rate: 0, balanceTax: 0, total: 0 };
+    for (const b of BRACKETS) {
+      if (ci <= b.max) {
+        const balanceAmt = ci - b.prev;
+        const balanceTax = Math.round(balanceAmt * b.r) / 100;
+        return { firstAmt: b.prev, firstTax: b.c, balanceAmt, rate: b.r, balanceTax, total: Math.round((b.c + balanceTax) * 100) / 100 };
+      }
+    }
+  };
+  const bd = taxBreakdown(chargeable);
 
-  const g17combined = Math.min(
-    Math.min(itemTotalRaw("G17ins"), 3000) + Math.min(itemTotalRaw("G17epf"), 4000),
-    7000
-  );
+  // ── Rebates ───────────────────────────────────────────────
+  const rebateInd      = chargeable > 0 && chargeable <= 35000 ? 400 : 0;
+  const totalTaxCharged = Math.max(0, bd.total - rebateInd);
+  const finalBalance    = Math.round(totalTaxCharged - totalMTDPaid);
 
-  const reliefLines = [
-    { code: "C1",  en: "Individual Relief",                          bm: "Pelepasan Individu",                          amount: 9000,                              auto: true },
-    { code: "C3",  en: "Disabled Individual",                        bm: "Individu OKU",                                amount: Math.min(itemTotalRaw("G4"),  7000) },
-    { code: "C4",  en: "Spouse / Alimony",                           bm: "Pasangan / Nafkah",                           amount: Math.min(itemTotalRaw("G14"), 4000) },
-    { code: "C5",  en: "Disabled Spouse",                            bm: "Pasangan OKU",                                amount: Math.min(itemTotalRaw("G15"), 6000) },
-    { code: "C7",  en: "Parents Medical",                            bm: "Perubatan Ibu Bapa",                          amount: Math.min(itemTotalRaw("G2"),  8000) },
-    { code: "C8",  en: "Disabled Parents",                           bm: "Ibu Bapa OKU",                                amount: Math.min(itemTotalRaw("G3"),  6000) },
-    { code: "C9",  en: "Medical / Vaccination / Dental",             bm: "Rawatan / Vaksinasi / Pergigian",             amount: groupCapped.med678,                noteEn: "Combined cap G6+G7+G8: RM10,000",                    noteBm: "Had gabungan G6+G7+G8: RM10,000" },
-    { code: "C17", en: "Lifestyle (Books / Sports / Utilities / Computer)", bm: "Gaya Hidup (Buku/Sukan/Utiliti/Komputer)", amount: groupCapped.g9,               noteEn: "Cap: RM2,500",                                       noteBm: "Had: RM2,500" },
-    { code: "C18", en: "Sports & Fitness",                           bm: "Sukan & Kecergasan",                          amount: groupCapped.g10,                   noteEn: "Cap: RM1,000",                                       noteBm: "Had: RM1,000" },
-    { code: "C24", en: "EV Charging Equipment",                      bm: "Peralatan Pengecasan EV",                     amount: groupCapped.g21,                   noteEn: "Cap: RM2,500",                                       noteBm: "Had: RM2,500" },
-    { code: "C10", en: "Self Education (Tertiary / Skills)",         bm: "Pendidikan Diri (Pengajian Tinggi/Kemahiran)", amount: Math.min(itemTotalRaw("G11"), 7000) },
-    { code: "C11", en: "Child Education",                            bm: "Pendidikan Anak",                             amount: Math.min(itemTotalRaw("G5"),  8000) },
-    { code: "C12", en: "Childcare Fees",                             bm: "Yuran Pengasuhan Anak",                       amount: Math.min(itemTotalRaw("G12"), 3000) },
-    { code: "C19", en: "Life Insurance / Takaful + EPF",             bm: "Insurans Hayat / Takaful + KWSP",             amount: g17combined,                       noteEn: "Combined cap: RM7,000 (Insurance RM3k + EPF RM4k)",  noteBm: "Had gabungan: RM7,000 (Insurans RM3k + KWSP RM4k)" },
-    { code: "C20", en: "Private Retirement Scheme (PRS)",            bm: "Skim Persaraan Swasta (PRS)",                 amount: Math.min(itemTotalRaw("G18"), 3000) },
-    { code: "C21", en: "Education / Medical Insurance",              bm: "Insurans Pendidikan / Perubatan",             amount: Math.min(itemTotalRaw("G19"), 4000) },
-    { code: "C22", en: "SOCSO / EIS",                                bm: "PERKESO / EIS",                               amount: Math.min(itemTotalRaw("G20"), 350)  },
-    { code: "C23", en: "Housing (Disabled)",                         bm: "Perumahan (OKU)",                             amount: groupCapped.g22 },
-  ].filter(r => r.amount > 0);
+  // ── G17 combined ──────────────────────────────────────────
+  const g17combined = Math.min(Math.min(itemTotalRaw("G17ins"), 3000) + Math.min(itemTotalRaw("G17epf"), 4000), 7000);
 
+  // ── Date ──────────────────────────────────────────────────
   const now     = new Date();
   const dateStr = now.toLocaleDateString(isBM ? "ms-MY" : "en-MY", { year: "numeric", month: "long", day: "numeric" });
-  const timeStr = now.toLocaleTimeString("en-MY", { hour: "2-digit", minute: "2-digit" });
 
-  // ── PDF — opens print-ready HTML in new tab ───────────────
+  // ── Relief lines — EXACT LHDN field labels ────────────────
+  const reliefRows = [
+    {
+      label: isBM ? "Individu dan saudara mara tanggungan" : "Individual and dependent relatives",
+      amount: 9000, auto: true,
+    },
+    {
+      label: isBM ? "Perbelanjaan untuk ibu bapa atau datuk nenek" : "Expenses for parents or grandparents",
+      amount: Math.min(itemTotalRaw("G2"), 8000),
+    },
+    {
+      label: isBM ? "Alat sokongan asas untuk diri sendiri, pasangan, anak atau ibu bapa yang cacat" : "Basic supporting equipment for disabled self, spouse, child or parent",
+      amount: Math.min(itemTotalRaw("G3"), 6000),
+    },
+    {
+      label: isBM ? "Individu kurang upaya" : "Disabled individual",
+      amount: Math.min(itemTotalRaw("G4"), 7000),
+    },
+    {
+      label: isBM ? "Yuran pendidikan (Diri sendiri)" : "Education fees (Self)",
+      amount: Math.min(itemTotalRaw("G11"), 7000),
+    },
+    {
+      label: isBM ? "Perbelanjaan perubatan penyakit serius / rawatan kesuburan / vaksinasi / pergigian (G6+G7+G8)" : "Medical expenses — serious disease / fertility / vaccination / dental (G6+G7+G8)",
+      amount: groupCapped.med678,
+      note: isBM ? "Had gabungan: RM10,000" : "Combined cap: RM10,000",
+    },
+    {
+      label: isBM ? "Gaya Hidup — Perbelanjaan untuk kegunaan / manfaat diri sendiri, pasangan atau anak" : "Lifestyle — Expenses for the use / benefit of self, spouse or child",
+      amount: groupCapped.g9,
+      note: isBM ? "Had: RM2,500" : "Cap: RM2,500",
+    },
+    {
+      label: isBM ? "Gaya Hidup — Peralatan / kemudahan sukan" : "Lifestyle — Sports & fitness equipment / facilities",
+      amount: groupCapped.g10,
+      note: isBM ? "Had: RM1,000" : "Cap: RM1,000",
+    },
+    {
+      label: isBM ? "Yuran penjagaan kanak-kanak di pusat penjagaan berdaftar / tadika" : "Child care fees to a registered child care centre / kindergarten",
+      amount: Math.min(itemTotalRaw("G12"), 3000),
+    },
+    {
+      label: isBM ? "Suami / isteri / bayaran nafkah kepada bekas isteri" : "Husband / wife / payment of alimony to former wife",
+      amount: Math.min(itemTotalRaw("G14"), 4000),
+    },
+    {
+      label: isBM ? "Pasangan kurang upaya" : "Disabled spouse",
+      amount: Math.min(itemTotalRaw("G15"), 6000),
+    },
+    {
+      label: isBM ? "Insurans hayat dan KWSP — Jumlah (had gabungan RM7,000)" : "Life insurance and EPF — Total (combined cap RM7,000)",
+      amount: g17combined,
+      sub: [
+        { label: isBM ? "  · Premium insurans hayat / caruman KWSP (Sukarela)" : "  · Life insurance premium / EPF (Voluntary)", amount: Math.min(itemTotalRaw("G17ins"), 3000), note: isBM ? "Had: RM3,000" : "Cap: RM3,000" },
+        { label: isBM ? "  · Caruman KWSP (Sukarela atau Wajib) / skim diluluskan" : "  · Contribution to EPF (voluntary or compulsory) / approved scheme", amount: Math.min(itemTotalRaw("G17epf"), 4000), note: isBM ? "Had: RM4,000" : "Cap: RM4,000" },
+      ],
+    },
+    {
+      label: isBM ? "Skim persaraan swasta dan anuiti tertunda" : "Private retirement scheme and deferred annuity",
+      amount: Math.min(itemTotalRaw("G18"), 3000),
+    },
+    {
+      label: isBM ? "Insurans pendidikan dan perubatan untuk diri sendiri, pasangan atau anak" : "Education and medical insurance for self, spouse or child",
+      amount: Math.min(itemTotalRaw("G19"), 4000),
+    },
+    {
+      label: isBM ? "Caruman kepada PERKESO / EIS" : "Contribution to SOCSO / EIS",
+      amount: Math.min(itemTotalRaw("G20"), 350),
+    },
+    {
+      label: isBM ? "Kemudahan pengecasan kenderaan elektrik / mesin kompos sisa makanan" : "EV charging facility / food waste compost machine",
+      amount: groupCapped.g21,
+    },
+    {
+      label: isBM ? "Faedah pinjaman untuk pembelian hartanah kediaman pertama" : "Interest expended for the purchase of the first residential property",
+      amount: groupCapped.g22,
+    },
+  ].filter(r => r.amount > 0);
+
+  // ── PDF ───────────────────────────────────────────────────
   const handleDownloadPDF = () => {
     const w = window.open("", "_blank");
-    if (!w) {
-      alert(isBM ? "Sila benarkan pop-up untuk muat turun PDF." : "Please allow pop-ups to download PDF.");
-      return;
-    }
-
-    const reliefRowsHTML = reliefLines.map(r => `
-      <tr>
-        <td class="code">${r.code}</td>
-        <td>${isBM ? r.bm : r.en}${r.auto ? ' <span class="tag-auto">AUTO</span>' : ""}
-          ${(isBM ? r.noteBm : r.noteEn) ? `<div class="note">${isBM ? r.noteBm : r.noteEn}</div>` : ""}
-        </td>
-        <td class="amt">${rmFmt(r.amount)}</td>
-      </tr>`).join("");
+    if (!w) { alert(isBM ? "Sila benarkan pop-up." : "Please allow pop-ups."); return; }
 
     const incomeRowsHTML = incomes.map((inc, idx) => {
-      const empSub = (inc.amount || 0) + (inc.bonus || 0) + (inc.otherAllowances || 0);
       return `
-        ${(incomes.length > 1 || inc.employer) ? `<tr class="emp-hdr"><td colspan="3">${isBM ? "Majikan" : "Employer"}${incomes.length > 1 ? ` ${idx + 1}` : ""}: <strong>${inc.employer || (isBM ? "Tidak dinyatakan" : "Not stated")}</strong></td></tr>` : ""}
-        ${(inc.amount || 0)          > 0 ? `<tr><td class="code">B1(a)</td><td>${isBM ? "Gaji / Emolumen Kasar" : "Gross Salary / Emoluments"}</td><td class="amt">${rmFmt(inc.amount)}</td></tr>` : ""}
-        ${(inc.bonus || 0)           > 0 ? `<tr><td class="code">B1(b)</td><td>${isBM ? "Bonus / Komisyen / Fi" : "Bonus / Commission / Fees"}</td><td class="amt">${rmFmt(inc.bonus)}</td></tr>` : ""}
-        ${(inc.otherAllowances || 0) > 0 ? `<tr><td class="code">B1(c)</td><td>${isBM ? "Elaun / Perkuisit Lain" : "Other Allowances / Perquisites"}</td><td class="amt">${rmFmt(inc.otherAllowances)}</td></tr>` : ""}
-        ${incomes.length > 1 ? `<tr class="sub-hdr"><td></td><td>${isBM ? "Sub-jumlah (majikan ini)" : "Sub-total (this employer)"}</td><td class="amt">${rmFmt(empSub)}</td></tr>` : ""}
-        ${((inc.mtdPaid || 0) > 0 || (inc.epfContrib || 0) > 0 || (inc.socso || 0) > 0) ? `<tr class="ded-hdr"><td colspan="3">${isBM ? "Potongan (rujukan sahaja)" : "Deductions (reference only)"}</td></tr>` : ""}
-        ${(inc.mtdPaid    || 0) > 0 ? `<tr class="ded"><td class="code">D1</td><td>${isBM ? "PCB / MTD Dipotong" : "PCB / MTD Deducted"}</td><td class="amt dim">(${rmFmt(inc.mtdPaid)})</td></tr>` : ""}
-        ${(inc.epfContrib || 0) > 0 ? `<tr class="ded"><td class="code">E1</td><td>${isBM ? "Caruman KWSP (Pekerja)" : "EPF Contribution (Employee)"}</td><td class="amt dim">(${rmFmt(inc.epfContrib)})</td></tr>` : ""}
-        ${(inc.socso      || 0) > 0 ? `<tr class="ded"><td class="code">E2</td><td>${isBM ? "Caruman PERKESO (Pekerja)" : "SOCSO Contribution (Employee)"}</td><td class="amt dim">(${rmFmt(inc.socso)})</td></tr>` : ""}`;
+        ${(incomes.length > 1 || inc.employer) ? `<tr class="sec-hdr"><td colspan="2">${isBM ? "Majikan" : "Employer"}${incomes.length > 1 ? ` ${idx + 1}` : ""}: <strong>${inc.employer || "—"}</strong></td></tr>` : ""}
+        <tr><td>${isBM ? "Gaji kasar / emolumen" : "Gross salary / emoluments"} (B1a)</td><td class="amt">${fmt(inc.amount || 0)}</td></tr>
+        ${(inc.bonus || 0) > 0 ? `<tr><td>${isBM ? "Bonus / komisyen / fi" : "Bonus / commission / fees"} (B1b)</td><td class="amt">${fmt(inc.bonus)}</td></tr>` : ""}
+        ${(inc.otherAllowances || 0) > 0 ? `<tr><td>${isBM ? "Elaun / perkuisit lain" : "Other allowances / perquisites"} (B1c)</td><td class="amt">${fmt(inc.otherAllowances)}</td></tr>` : ""}
+        ${(inc.mtdPaid || 0) > 0 ? `<tr class="ded"><td>${isBM ? "Potongan Cukai Bulanan / MTD" : "Monthly Tax Deductions (MTD)"}</td><td class="amt dim">(${fmt(inc.mtdPaid)})</td></tr>` : ""}
+        ${(inc.epfContrib || 0) > 0 ? `<tr class="ded"><td>${isBM ? "Caruman KWSP (pekerja)" : "EPF contribution (employee)"}</td><td class="amt dim">(${fmt(inc.epfContrib)})</td></tr>` : ""}
+        ${(inc.socso || 0) > 0 ? `<tr class="ded"><td>${isBM ? "Caruman PERKESO (pekerja)" : "SOCSO contribution (employee)"}</td><td class="amt dim">(${fmt(inc.socso)})</td></tr>` : ""}`;
     }).join("");
 
-    const rentalRowsHTML = rentalIncomes.map((r, i) =>
-      `<tr><td class="code">H${i + 1}</td><td>${r.employer || r.address || (isBM ? `Hartanah ${i + 1}` : `Property ${i + 1}`)}</td><td class="amt">${rmFmt(r.amount || 0)}</td></tr>`
-    ).join("");
-
-    const bracketRows = [
-      [5000, 0, "0"], [20000, 1, "150"], [35000, 3, "600"], [50000, 6, "1,500"],
-      [70000, 11, "3,700"], [100000, 19, "9,400"], [400000, 25, "84,400"],
-      [600000, 26, "136,400"], [2000000, 28, "528,400"], [Infinity, 30, "—"],
-    ].map(([max, rate, cum], i) => {
-      const prevMax = [0, 5000, 20000, 35000, 50000, 70000, 100000, 400000, 600000][i];
-      const hi = i === 0 ? chargeable <= 5000 : (chargeable > prevMax && chargeable <= max);
-      return `<tr${hi ? ' class="hi"' : ""}><td class="code" style="color:#555">${max === Infinity ? "> RM2,000,000" : `\u2264 RM${max.toLocaleString()}`}</td><td>${rate}%</td><td class="amt" style="font-size:10px;color:#999">${isBM ? "Terkumpul" : "Cum."} RM${cum}</td></tr>`;
+    const reliefRowsHTML = reliefRows.map(r => {
+      let html = `<tr><td>${r.label}${r.auto ? ' <span class="auto">AUTO</span>' : ""}</td><td class="amt">${fmt(r.amount)}</td></tr>`;
+      if (r.sub) r.sub.forEach(s => { if (s.amount > 0) html += `<tr class="sub-item"><td>${s.label}</td><td class="amt">${fmt(s.amount)}</td></tr>`; });
+      return html;
     }).join("");
 
     w.document.write(`<!DOCTYPE html>
 <html lang="${isBM ? "ms" : "en"}">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>MakeCents \u2014 eFiling Guide YA${ya}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<title>MakeCents — eFiling Guide YA${ya}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;font-size:12px;color:#1a1a1a;background:#fff;max-width:800px;margin:0 auto;padding:32px 24px}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #C8442B}
-.brand{font-size:20px;font-weight:800;color:#C8442B}
-.doc-title{font-size:14px;font-weight:700;margin-top:4px}
-.doc-meta{font-size:10px;color:#888;margin-top:2px}
-.ya-badge{background:#C8442B;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:4px}
-.disc{background:#fffbea;border:1px solid #e8d44d;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:11px;color:#7a5c00;line-height:1.6}
-.disc strong{display:block;margin-bottom:4px}
-.sec{margin-bottom:18px;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden}
-.sh{padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;display:flex;justify-content:space-between;align-items:center}
-.sh.dark{background:#1a1a1a;color:#fff}.sh.red{background:#C8442B;color:#fff}
-.sh.green{background:#1a5c32;color:#fff}.sh.navy{background:#1a3a5c;color:#fff}.sh.grey{background:#f4f4f4;color:#444}
-.sh .sub{font-size:10px;opacity:.75;font-weight:400}
+body{font-family:'DM Sans',sans-serif;font-size:12px;color:#1a1a1a;background:#fff;max-width:900px;margin:0 auto;padding:28px 24px}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #1a6eb5}
+.lhdn-title{font-size:13px;font-weight:800;color:#1a6eb5}
+.form-title{font-size:11px;color:#555;margin-top:3px;line-height:1.5}
+.ya-tag{background:#1a6eb5;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:16px;display:inline-block;margin-bottom:4px}
+.disc{background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#7a5c00;line-height:1.5}
+.page-block{margin-bottom:18px;border:1px solid #ccd6e0;border-radius:8px;overflow:hidden}
+.page-title{background:#1a6eb5;color:#fff;padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.page-title.grey{background:#4a5568}
+.page-title.green{background:#276749}
+.page-title.red{background:#c8372b}
+.sub-label{background:#e8f0f8;padding:5px 14px;font-size:10px;font-weight:700;color:#1a6eb5;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #ccd6e0}
 table{width:100%;border-collapse:collapse}
-td{padding:8px 16px;vertical-align:top;line-height:1.4}
-td.code{width:52px;font-size:10px;font-weight:700;color:#C8442B;white-space:nowrap}
-td.amt{width:150px;text-align:right;font-weight:600;white-space:nowrap}
+td{padding:7px 14px;vertical-align:top;line-height:1.4;border-bottom:1px solid #eef0f3}
+td:last-child{width:140px;text-align:right;font-weight:600;white-space:nowrap}
+td.amt{text-align:right;font-weight:600}
 td.dim{color:#888}
-tr{border-bottom:1px solid #f0f0f0}tr:last-child{border-bottom:none}
-tr.total td{font-weight:700;background:#f8f8f8;border-top:2px solid #ddd;font-size:13px}
-tr.emp-hdr td{background:#f4f4f4;font-size:11px;color:#555;padding:6px 16px}
-tr.sub-hdr td{background:#f4f4f4;font-weight:600;font-size:11px}
-tr.ded-hdr td{background:#fafafa;font-size:10px;font-weight:700;text-transform:uppercase;color:#aaa;letter-spacing:.5px;padding:5px 16px}
-tr.ded td{background:#fafafa}tr.hi td{background:#fff5f0;font-weight:700}
-.note{font-size:10px;color:#aaa;margin-top:2px}
-.tag-auto{background:#e8f4e8;color:#1a5c32;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:6px}
-.tip{padding:10px 16px;font-size:11px;color:#666;line-height:1.7;border-left:3px solid #C8442B;background:#fffbf9}
-.tip.green{border-left-color:#1a5c32;background:#f0fbf4;color:#2a5c3a}
-.bal{padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
-.bal.owe{background:#C8442B}.bal.ref{background:#1a5c32}
-.bal .bl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.7);margin-bottom:4px}
-.bal .bv{font-family:'DM Serif Display',serif;font-size:26px;color:#fff}
-.bal .bh{font-size:11px;font-weight:600;color:rgba(255,255,255,.9);text-align:right}
-.step{padding:12px 16px;font-size:11px;color:#555;line-height:1.8;background:#f9f9f9}
-.step strong{color:#C8442B}
-.footer{margin-top:24px;padding-top:12px;border-top:1px solid #e0e0e0;font-size:10px;color:#aaa;display:flex;justify-content:space-between}
-@media print{body{padding:16px}button{display:none!important}}
+tr:last-child td{border-bottom:none}
+tr.total td{font-weight:700;background:#f0f4f8;border-top:2px solid #b0bec5;font-size:13px;padding:9px 14px}
+tr.total-red td{font-weight:700;background:#fdecea;border-top:2px solid #e57373;font-size:13px;padding:9px 14px;color:#c8372b}
+tr.total-green td{font-weight:700;background:#e8f5e9;border-top:2px solid #81c784;font-size:13px;padding:9px 14px;color:#276749}
+tr.sec-hdr td{background:#f0f4f8;font-size:10px;font-weight:700;color:#555;padding:5px 14px;border-bottom:1px solid #ccd6e0}
+tr.ded td{background:#fafafa;color:#888}
+tr.sub-item td{background:#fafafa;font-size:11px;padding:5px 14px 5px 26px;color:#555}
+tr.computation td{padding:6px 14px}
+.auto{background:#e8f5e9;color:#276749;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;margin-left:6px}
+.field-note{font-size:10px;color:#888;margin-top:2px}
+.rumusan-row{display:flex;justify-content:space-between;padding:7px 14px;border-bottom:1px solid #eef0f3;font-size:12px}
+.rumusan-row.total{font-weight:700;background:#f0f4f8;border-top:2px solid #b0bec5;border-bottom:none;font-size:13px;padding:9px 14px}
+.rumusan-row.ci{font-weight:700;background:#1a6eb5;color:#fff;border-top:2px solid #1155a0;border-bottom:none;font-size:14px;padding:10px 14px}
+.rumusan-row.payable{font-weight:700;background:#c8372b;color:#fff;font-size:13px;padding:9px 14px;border-bottom:none}
+.rumusan-row.refund{font-weight:700;background:#276749;color:#fff;font-size:13px;padding:9px 14px;border-bottom:none}
+.rumusan-row.indent{padding-left:28px;color:#555}
+.section-divider{background:#4a5568;color:#fff;padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.footer{margin-top:20px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:10px;color:#aaa;display:flex;justify-content:space-between}
+@media print{body{padding:14px}button{display:none!important}}
 </style>
 </head>
 <body>
-<div class="hdr">
+<div class="page-header">
   <div>
-    <div class="brand">MakeCents</div>
-    <div class="doc-title">${isBM ? "Panduan eFiling Cukai Pendapatan \u2014 Borang BE" : "Income Tax eFiling Guide \u2014 Form BE"}</div>
-    <div class="doc-meta">${isBM ? "Dijana" : "Generated"} ${dateStr}, ${timeStr} \u00b7 ${isBM ? "Bukan nasihat cukai rasmi" : "Not official tax advice"}</div>
+    <div class="lhdn-title">ef.hasil.gov.my — eBE ${ya} · ${isBM ? "MakeCents Panduan Pengisian" : "MakeCents Filing Guide"}</div>
+    <div class="form-title">RETURN FORM OF AN INDIVIDUAL · Resident who does not carry on business<br>Under Section 77 of the Income Tax Act 1967</div>
   </div>
   <div style="text-align:right">
-    <div class="ya-badge">YA ${ya}</div>
-    <div style="font-size:12px;font-weight:600;color:#333;margin-top:4px">${user?.name || (isBM ? "Pengguna" : "User")}</div>
-    <div style="font-size:10px;color:#888">mytax.hasil.gov.my \u2192 e-Filing \u2192 BE</div>
+    <div class="ya-tag">e-BE YA ${ya}</div>
+    <div style="font-size:11px;font-weight:600;color:#333;margin-top:3px">${user?.name || "—"}</div>
+    <div style="font-size:10px;color:#888">${isBM ? "Dijana oleh MakeCents · " : "Generated by MakeCents · "}${dateStr}</div>
   </div>
 </div>
-<div class="disc">
-  <strong>\u26a0 ${isBM ? "Anggaran sahaja \u2014 bukan pengesahan rasmi LHDN" : "Estimate only \u2014 not official LHDN confirmation"}</strong>
-  ${isBM ? "Angka ini dikira berdasarkan maklumat yang anda masukkan. Sila semak semula dengan resit asal sebelum menghantar eFiling." : "These figures are calculated from your MakeCents inputs. Please verify against original receipts before submitting your eFiling."}
+
+<div class="disc">⚠ ${isBM ? "Anggaran sahaja — bukan pengesahan rasmi LHDN. Semak dengan dokumen asal sebelum menghantar eFiling." : "Estimate only — not official LHDN confirmation. Verify against original documents before submitting your eFiling."}</div>
+
+<!-- PAGE 3: PENDAPATAN -->
+<div class="page-block">
+  <div class="page-title">📄 ${isBM ? "Halaman 3 — Pendapatan Berkanun & Jumlah Pendapatan" : "Page 3 — Statutory Income & Total Income"} (ef.hasil.gov.my/eBE${ya}/Pendapatan)</div>
+  ${incomes.length > 0 ? `
+  <div class="sub-label">${isBM ? "Pendapatan Pekerjaan" : "Employment Income"}</div>
+  <table>${incomeRowsHTML}
+    <tr class="total"><td>${isBM ? "Pendapatan berkanun daripada sumber pekerjaan di Malaysia" : "Statutory income from sources of employment in Malaysia"}</td><td class="amt">${fmt(totalEmpIncome)}</td></tr>
+    <tr><td>${isBM ? "Bilangan pekerjaan" : "Number of employments"}</td><td class="amt">${incomes.length}</td></tr>
+  </table>` : ""}
+  ${(netRentalIncome || 0) > 0 ? `
+  <div class="sub-label">${isBM ? "Pendapatan Sewa" : "Rental Income"}</div>
+  <table>
+    ${rentalIncomes.map((r, i) => `<tr><td>${r.employer || r.address || `${isBM ? "Hartanah" : "Property"} ${i + 1}`}</td><td class="amt">${fmt(r.amount || 0)}</td></tr>`).join("")}
+    ${(totalRentalExpenses || 0) > 0 ? `<tr class="ded"><td>${isBM ? "Tolak: Perbelanjaan boleh ditolak" : "Less: Deductible expenses"}</td><td class="amt dim">(${fmt(totalRentalExpenses)})</td></tr>` : ""}
+    <tr class="total"><td>${isBM ? "Pendapatan berkanun daripada sumber sewa di Malaysia" : "Statutory income from sources of rents in Malaysia"}</td><td class="amt">${fmt(netRentalIncome)}</td></tr>
+  </table>` : ""}
+  <table>
+    <tr class="total"><td><strong>${isBM ? "PENDAPATAN AGREGAT" : "AGGREGATE INCOME"}</strong></td><td class="amt">${fmt(totalInc)}</td></tr>
+    <tr class="total"><td><strong>${isBM ? "JUMLAH PENDAPATAN (DIRI SENDIRI)" : "TOTAL INCOME (SELF)"}</strong></td><td class="amt">${fmt(totalInc)}</td></tr>
+    <tr><td>${isBM ? "Potongan Cukai Bulanan (MTD) / Seksyen 107D" : "Monthly Tax Deductions (MTD) / Section 107D"}</td><td class="amt">${fmt(totalMTDPaid)}</td></tr>
+  </table>
 </div>
-<div class="sec">
-  <div class="sh grey">\ud83d\udccb ${isBM ? "Langkah 1 \u2014 Buka eFiling" : "Step 1 \u2014 Open eFiling"}</div>
-  <div class="step">${isBM ? "Pergi ke <strong>mytax.hasil.gov.my</strong> \u2192 Log masuk dengan <strong>MyTax / MyDigital ID</strong> \u2192 Pilih <strong>e-Borang</strong> \u2192 Pilih <strong>Borang BE (YA " + ya + ")</strong>" : "Go to <strong>mytax.hasil.gov.my</strong> \u2192 Log in with <strong>MyTax / MyDigital ID</strong> \u2192 Select <strong>e-Form</strong> \u2192 Choose <strong>Form BE (YA " + ya + ")</strong>"}</div>
+
+<!-- PAGE 4: PELEPASAN -->
+<div class="page-block">
+  <div class="page-title green">📄 ${isBM ? "Halaman 4 — Pelepasan" : "Page 4 — Relief"} (ef.hasil.gov.my/eBE${ya}/Pelepasan)</div>
+  <table>
+    ${reliefRowsHTML}
+    <tr class="total"><td><strong>${isBM ? "JUMLAH PELEPASAN" : "TOTAL RELIEF"}</strong></td><td class="amt">${fmt(totalRelief)}</td></tr>
+  </table>
 </div>
-${incomes.length > 0 ? `<div class="sec"><div class="sh dark"><span>${isBM ? "Bahagian B \u2014 Pendapatan Penggajian" : "Section B \u2014 Employment Income"}</span><span class="sub">${isBM ? "Isi dari Borang EA" : "Fill from EA Form(s)"}</span></div><table>${incomeRowsHTML}<tr class="total"><td class="code"></td><td>${isBM ? "Jumlah Pendapatan Penggajian" : "Total Employment Income"}</td><td class="amt">${rmFmt(totalEmpIncome)}</td></tr></table><div class="tip">\ud83d\udca1 ${isBM ? "Salin dari Borang EA majikan. B1(a)=Gaji kasar, B1(b)=Bonus, D1=PCB dipotong, E1=Caruman KWSP." : "Copy from your employer's EA Form. B1(a)=Gross salary, B1(b)=Bonus, D1=PCB deducted, E1=EPF contribution."}</div></div>` : ""}
-${rentalIncomes.length > 0 ? `<div class="sec"><div class="sh dark">${isBM ? "Bahagian C \u2014 Pendapatan Sewa" : "Section C \u2014 Rental Income"}</div><table>${rentalRowsHTML}${(totalRentalExpenses || 0) > 0 ? `<tr><td class="code"></td><td>${isBM ? "Tolak: Perbelanjaan Boleh Ditolak" : "Less: Deductible Expenses"}</td><td class="amt dim">(${rmFmt(totalRentalExpenses)})</td></tr>` : ""}<tr class="total"><td class="code"></td><td>${isBM ? "Pendapatan Sewa Bersih" : "Net Rental Income"}</td><td class="amt">${rmFmt(netRentalIncome)}</td></tr></table></div>` : ""}
-<div class="sec"><div class="sh navy">${isBM ? "Jumlah Pendapatan Agregat" : "Total Aggregate Income"}</div><table>${totalEmpIncome > 0 ? `<tr><td class="code">A</td><td>${isBM ? "Pendapatan Penggajian" : "Employment Income"}</td><td class="amt">${rmFmt(totalEmpIncome)}</td></tr>` : ""}${(netRentalIncome || 0) > 0 ? `<tr><td class="code">B</td><td>${isBM ? "Pendapatan Sewa Bersih" : "Net Rental Income"}</td><td class="amt">${rmFmt(netRentalIncome)}</td></tr>` : ""}<tr class="total"><td class="code"></td><td>${isBM ? "Jumlah Pendapatan" : "Total Income"}</td><td class="amt">${rmFmt(totalInc)}</td></tr></table></div>
-<div class="sec"><div class="sh green"><span>${isBM ? "Bahagian F \u2014 Pelepasan Cukai" : "Section F \u2014 Tax Reliefs"}</span><span class="sub">${isBM ? "Masukkan jumlah sebenar (bukan had)" : "Enter actual amount spent (not cap)"}</span></div><table>${reliefRowsHTML}<tr class="total"><td class="code"></td><td>${isBM ? "Jumlah Pelepasan" : "Total Relief"}</td><td class="amt">${rmFmt(totalRelief)}</td></tr></table><div class="tip green">\ud83d\udca1 ${isBM ? "Simpan semua resit sekurang-kurangnya 7 tahun. LHDN boleh meminta audit dalam tempoh tersebut." : "Keep all receipts for at least 7 years. LHDN may request an audit within that period."}</div></div>
-<div class="sec"><div class="sh dark">${isBM ? "Pendapatan Bercukai" : "Chargeable Income"}</div><table><tr><td class="code"></td><td>${isBM ? "Jumlah Pendapatan" : "Total Income"}</td><td class="amt">${rmFmt(totalInc)}</td></tr><tr><td class="code"></td><td>${isBM ? "Tolak: Jumlah Pelepasan" : "Less: Total Relief"}</td><td class="amt dim">(${rmFmt(totalRelief)})</td></tr><tr class="total"><td class="code"></td><td>${isBM ? "Pendapatan Bercukai" : "Chargeable Income"}</td><td class="amt">${rmFmt(chargeable)}</td></tr></table></div>
-<div class="sec"><div class="sh red">${isBM ? "Pengiraan & Baki Cukai" : "Tax Computation & Balance"}</div><table><tr><td class="code"></td><td>${isBM ? `Cukai atas RM ${chargeable.toLocaleString()} (kadar progresif YA${ya})` : `Tax on RM ${chargeable.toLocaleString()} (YA${ya} progressive rates)`}</td><td class="amt">${rmFmt(taxRounded)}</td></tr>${rebate400 > 0 ? `<tr><td class="code"></td><td>${isBM ? "Tolak: Rebat individu (Pendapatan Bercukai \u2264 RM35,000)" : "Less: Individual rebate (Chargeable Income \u2264 RM35,000)"}</td><td class="amt dim">(${rmFmt(rebate400)})</td></tr>` : ""}<tr class="total"><td class="code"></td><td>${isBM ? "Cukai Kena Dibayar" : "Tax Payable"}</td><td class="amt">${rmFmt(taxAfterRebate)}</td></tr>${totalMTDPaid > 0 ? `<tr><td class="code">D1</td><td>${isBM ? "Tolak: PCB / MTD yang telah dipotong" : "Less: PCB / MTD already deducted"}</td><td class="amt dim">(${rmFmt(totalMTDPaid)})</td></tr>` : ""}</table><div class="bal ${finalBalance > 0 ? "owe" : "ref"}"><div><div class="bl">${finalBalance > 0 ? (isBM ? "Baki Cukai Perlu Dibayar" : "Tax Balance Due") : (isBM ? "Bayaran Balik Cukai" : "Tax Refund")}</div><div class="bv">${rmFmt(Math.abs(finalBalance))}</div></div><div class="bh">${finalBalance > 0 ? (isBM ? "Bayar via FPX / Kad Kredit dalam eFiling" : "Pay via FPX / Credit Card in eFiling") : (isBM ? "Bayaran balik dikreditkan dalam 30 hari" : "Refund credited within 30 days")}</div></div></div>
-<div class="sec"><div class="sh grey">\ud83d\udcca ${isBM ? `Rujukan Kadar Cukai YA${ya}` : `YA${ya} Tax Rate Reference`}</div><table>${bracketRows}</table></div>
-<div class="sec"><div class="sh grey">\ud83d\udccc ${isBM ? "Peringatan Penting" : "Important Reminders"}</div><table><tr><td style="padding:12px 16px;font-size:11px;line-height:1.9;color:#555">${[isBM?"Simpan semua resit & dokumen sokongan selama <strong>7 tahun</strong> dari tarikh penghantaran":"Keep all receipts & supporting documents for <strong>7 years</strong> from submission date",isBM?`Tarikh akhir: <strong>30 April ${nextYear}</strong> (tiada pendapatan perniagaan) / <strong>30 Jun ${nextYear}</strong>`:`Filing deadline: <strong>30 April ${nextYear}</strong> (no business income) / <strong>30 June ${nextYear}</strong> (with business income)`,isBM?"Kemaskini <strong>IBAN bank</strong> anda di MyTax untuk bayaran balik yang lebih cepat":"Update your <strong>bank IBAN</strong> in MyTax for faster refunds",isBM?"Jika ada pendapatan perniagaan, guna <strong>Borang B</strong> (bukan BE)":"If you have business income, use <strong>Form B</strong> (not Form BE)",isBM?"MakeCents adalah alat anggaran sahaja \u2014 semak dengan <strong>pakar cukai bertauliah</strong>":"MakeCents is an estimation tool only \u2014 verify with a <strong>licensed tax professional</strong>"].map(r=>`\u2022 ${r}<br>`).join("")}</td></tr></table></div>
-<div class="footer"><span>${isBM ? "Dijana oleh MakeCents \u00b7 makecents.co \u00b7 Bukan nasihat cukai rasmi" : "Generated by MakeCents \u00b7 makecents.co \u00b7 Not official tax advice"}</span><span>${dateStr}</span></div>
+
+<!-- PAGE 5: RUMUSAN -->
+<div class="page-block">
+  <div class="page-title red">📄 ${isBM ? "Halaman 5 — Rumusan" : "Page 5 — Summary (Rumusan)"} (ef.hasil.gov.my/eBE${ya}/Rumusan)</div>
+  <div class="rumusan-row"><span>${isBM ? "Jumlah pendapatan" : "Total income"}</span><span>${fmt(totalInc)}</span></div>
+  <div class="rumusan-row"><span>LESS&nbsp;&nbsp;${isBM ? "Jumlah pelepasan" : "Total relief"}</span><span>${fmt(totalRelief)}</span></div>
+  <div class="rumusan-row ci"><span><strong>${isBM ? "PENDAPATAN BERCUKAI" : "CHARGEABLE INCOME"}</strong></span><span><strong>${fmt(chargeable)}</strong></span></div>
+  <div class="section-divider">${isBM ? "PENGIRAAN CUKAI PENDAPATAN" : "INCOME TAX COMPUTATION"}</div>
+  <div class="rumusan-row indent" style="font-size:11px;color:#555">${isBM ? "Pendapatan bercukai tertakluk kepada Bahagian I Jadual 1" : "Chargeable income subject to Part I of Schedule 1"}</div>
+  ${bd.firstAmt > 0 ? `<div class="rumusan-row indent"><span>${isBM ? "Cukai atas yang pertama" : "Tax on the first"} RM${bd.firstAmt.toLocaleString()}</span><span>${fmt(bd.firstTax)}</span></div>` : ""}
+  <div class="rumusan-row indent"><span>${isBM ? "Cukai atas baki" : "Tax on the balance"} RM${bd.balanceAmt.toLocaleString()} ${isBM ? "Pada kadar" : "At rate"} ${bd.rate}%</span><span>${fmt(bd.balanceTax)}</span></div>
+  <div class="rumusan-row total"><span><strong>${isBM ? "JUMLAH CUKAI PENDAPATAN" : "TOTAL INCOME TAX"}</strong></span><span><strong>${fmt(bd.total)}</strong></span></div>
+  ${rebateInd > 0 ? `<div class="rumusan-row indent"><span>${isBM ? "Rebat cukai untuk individu" : "Tax rebate for individual"}</span><span>(${fmt(rebateInd)})</span></div>` : `<div class="rumusan-row indent"><span>${isBM ? "Rebat cukai untuk individu" : "Tax rebate for individual"}</span><span>0</span></div>`}
+  <div class="rumusan-row indent"><span>${isBM ? "Rebat cukai untuk suami / isteri" : "Tax rebate for husband / wife"}</span><span>0</span></div>
+  <div class="rumusan-row indent"><span>${isBM ? "Zakat dan fitrah" : "Zakat and fitrah"}</span><span>0.00</span></div>
+  <div class="rumusan-row total"><span><strong>${isBM ? "JUMLAH CUKAI DIKENAKAN" : "TOTAL TAX CHARGED"}</strong></span><span><strong>${fmt(totalTaxCharged)}</strong></span></div>
+  <div class="rumusan-row indent"><span>LESS&nbsp;&nbsp;${isBM ? "Jumlah potongan cukai (Seksyen 110) dan relief (Seksyen 132 dan 133)" : "Total tax deduction (Section 110) and relief (Section 132 and 133)"}</span><span>0.00</span></div>
+  <div class="rumusan-row total"><span><strong>${isBM ? `CUKAI KENA DIBAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX PAYABLE FOR THE YEAR OF ASSESSMENT ${ya}`}</strong></span><span><strong>${fmt(totalTaxCharged)}</strong></span></div>
+  <div class="rumusan-row indent"><span>${isBM ? `MTD / Seksyen 107D / Ansuran sendiri / CP500 — dibayar untuk pendapatan tahun ${parseInt(ya)-1}` : `MTD / Section 107D / Self installment / CP500 payment made for the year ${parseInt(ya)-1}`}</span><span>${fmt(totalMTDPaid)}</span></div>
+  ${finalBalance > 0
+    ? `<div class="rumusan-row payable"><span><strong>${isBM ? `CUKAI TIDAK CUKUP BAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX BALANCE DUE FOR THE YEAR OF ASSESSMENT ${ya}`}</strong></span><span><strong>${fmt(finalBalance)}</strong></span></div>
+       <div style="padding:8px 14px;font-size:11px;background:#fdecea;color:#c8372b">💳 ${isBM ? "Bayar melalui FPX / Kad Kredit dalam eFiling sebelum 30 April " + (parseInt(ya)+1) : "Pay via FPX / Credit Card in eFiling before 30 April " + (parseInt(ya)+1)}</div>`
+    : `<div class="rumusan-row refund"><span><strong>${isBM ? `CUKAI LEBIH BAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX PAID IN EXCESS FOR THE YEAR OF ASSESSMENT ${ya}`}</strong></span><span><strong>${fmt(Math.abs(finalBalance))}</strong></span></div>
+       <div style="padding:8px 14px;font-size:11px;background:#e8f5e9;color:#276749">✓ ${isBM ? "Bayaran balik akan dikreditkan ke akaun bank anda dalam masa 30 hari" : "Refund will be credited to your bank account within 30 days"}</div>`
+  }
+</div>
+
+<div class="footer">
+  <span>${isBM ? "Dijana oleh MakeCents · makecents.co · Bukan nasihat cukai rasmi" : "Generated by MakeCents · makecents.co · Not official tax advice"}</span>
+  <span>${dateStr}</span>
+</div>
 <script>window.onload=function(){window.print()}<\/script>
 </body></html>`);
     w.document.close();
   };
 
-  // ── Sub-components ────────────────────────────────────────
-  const Block = ({ children, mb = 16 }) => (
-    <div style={{ border: `1px solid ${t.hair}`, borderRadius: 12, marginBottom: mb, overflow: "hidden" }}>
+  // ── In-app sub-components ─────────────────────────────────
+  const PageBlock = ({ title, titleColor = t.ink, children }) => (
+    <div style={{ border: `1px solid ${t.hair}`, borderRadius: 12, marginBottom: 16, overflow: "hidden" }}>
+      <div style={{ background: titleColor, color: "#fff", padding: "9px 16px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>
+        {title}
+      </div>
       {children}
     </div>
   );
 
-  const SecHead = ({ label, sub, bg = t.ink, color = "#fff" }) => (
-    <div style={{ background: bg, color, padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>{label}</span>
-      {sub && <span style={{ fontSize: 10, opacity: 0.72, fontWeight: 400 }}>{sub}</span>}
-    </div>
-  );
-
-  const SRow = ({ code, label, amount, note, isTotal, isDed, noBorder }) => (
+  const TR = ({ label, value, isTotal, isDed, isCI, sub }) => (
     <div style={{
-      display: "flex", alignItems: "flex-start", padding: "9px 16px",
-      borderBottom: noBorder ? "none" : `1px solid ${t.hair}`,
-      background: isTotal ? t.surface : "transparent",
+      display: "flex", alignItems: "flex-start", padding: isTotal || isCI ? "10px 16px" : "8px 16px",
+      borderBottom: `1px solid ${t.hair}`,
+      background: isCI ? t.red : isTotal ? t.surface : "transparent",
     }}>
-      {code !== undefined && (
-        <span style={{ fontSize: 10, fontWeight: 700, color: t.red, minWidth: 44, marginRight: 8, marginTop: 1, flexShrink: 0 }}>{code}</span>
-      )}
-      <span style={{ flex: 1, fontSize: 12, fontWeight: isTotal ? 700 : 500, color: isTotal ? t.ink : t.inkSoft, lineHeight: 1.4 }}>
+      <span style={{ flex: 1, fontSize: isTotal || isCI ? 13 : 12, fontWeight: isTotal || isCI ? 700 : 500, color: isCI ? "#fff" : isTotal ? t.ink : t.inkSoft, lineHeight: 1.4 }}>
         {label}
-        {note && <span style={{ display: "block", fontSize: 10, color: t.inkMute, marginTop: 1 }}>{note}</span>}
+        {sub && <span style={{ display: "block", fontSize: 10, color: t.inkMute, marginTop: 1 }}>{sub}</span>}
       </span>
-      <span style={{ fontSize: isTotal ? 13 : 12, fontWeight: isTotal ? 700 : 600, color: isDed ? t.inkMute : t.ink, fontVariantNumeric: "tabular-nums", marginLeft: 12, whiteSpace: "nowrap" }}>
-        {isDed ? `(${rmFmt(amount)})` : rmFmt(amount)}
+      <span style={{ fontSize: isTotal || isCI ? 13 : 12, fontWeight: isTotal || isCI ? 700 : 600, color: isCI ? "#fff" : isDed ? t.inkMute : t.ink, fontVariantNumeric: "tabular-nums", marginLeft: 12, whiteSpace: "nowrap" }}>
+        {isDed ? `(${rm(value)})` : isTotal || isCI ? rm(value) : rm(value)}
       </span>
     </div>
   );
 
-  const Tip = ({ text, green }) => (
-    <div style={{ padding: "10px 16px", background: green ? "rgba(26,92,50,0.07)" : t.redSoft, borderTop: `1px solid ${t.hair}`, fontSize: 11, color: green ? "#1a5c32" : t.inkSoft, lineHeight: 1.7 }}>
-      💡 {text}
+  const SecLabel = ({ label }) => (
+    <div style={{ background: t.surface, padding: "5px 16px", fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 0.6, borderBottom: `1px solid ${t.hair}` }}>
+      {label}
     </div>
   );
-
-  const bracketData = [
-    [5000, 0], [20000, 1], [35000, 3], [50000, 6], [70000, 11],
-    [100000, 19], [400000, 25], [600000, 26], [2000000, 28], [Infinity, 30],
-  ];
-  const prevMaxes = [0, 5000, 20000, 35000, 50000, 70000, 100000, 400000, 600000, 2000000];
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: t.bg, fontFamily: FONT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -4419,189 +4509,155 @@ ${rentalIncomes.length > 0 ? `<div class="sec"><div class="sh dark">${isBM ? "Ba
       {/* Top bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: `1px solid ${t.hair}`, background: t.bg, flexShrink: 0 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: t.red, textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>MakeCents</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#1a6eb5", textTransform: "uppercase", letterSpacing: 1, marginBottom: 2 }}>ef.hasil.gov.my · e-BE {ya}</div>
           <div style={{ fontSize: 17, fontWeight: 700, color: t.ink, lineHeight: 1.1 }}>
-            {isBM ? "Panduan eFiling" : "eFiling Guide"} · YA{ya}
+            {isBM ? "Panduan Pengisian eFiling" : "eFiling Filing Guide"} · YA{ya}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button
-            onClick={handleDownloadPDF}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", border: "none", borderRadius: 10, background: t.red, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}
-          >
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleDownloadPDF} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", border: "none", borderRadius: 10, background: "#1a6eb5", color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>
             <Icon name="download" size={14} color="#fff" />
             {isBM ? "Muat Turun PDF" : "Download PDF"}
           </button>
-          <button
-            onClick={onClose}
-            style={{ width: 36, height: 36, border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
+          <button onClick={onClose} style={{ width: 36, height: 36, border: `1px solid ${t.hair}`, borderRadius: 10, background: t.surface, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Icon name="close" size={16} color={t.inkMute} />
           </button>
         </div>
       </div>
 
-      {/* Scrollable body */}
-      <div style={{ flex: 1, overflowY: "auto", padding: wide ? "20px 24px 60px" : "16px 16px 60px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: "auto", padding: wide ? "20px 24px 60px" : "16px 16px 60px", maxWidth: 760, width: "100%", margin: "0 auto" }}>
 
         {/* Disclaimer */}
-        <div style={{ background: "#fffbea", border: "1px solid #e8d44d", borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 11, color: "#7a5c00", lineHeight: 1.6 }}>
-          <strong style={{ display: "block", marginBottom: 3 }}>
-            ⚠ {isBM ? "Anggaran sahaja — bukan pengesahan rasmi LHDN" : "Estimate only — not official LHDN confirmation"}
-          </strong>
-          {isBM
-            ? "Angka ini dikira berdasarkan maklumat yang anda masukkan. Sila semak semula dengan resit asal sebelum menghantar eFiling."
-            : "These figures are calculated from your MakeCents inputs. Please verify against original receipts before submitting your eFiling."}
+        <div style={{ background: "#fff8e1", border: "1px solid #f0c040", borderRadius: 10, padding: "10px 14px", marginBottom: 18, fontSize: 11, color: "#7a5c00", lineHeight: 1.6 }}>
+          <strong style={{ display: "block", marginBottom: 2 }}>⚠ {isBM ? "Anggaran sahaja — bukan pengesahan rasmi LHDN" : "Estimate only — not official LHDN confirmation"}</strong>
+          {isBM ? "Angka ini dikira berdasarkan input MakeCents anda. Sila semak dengan dokumen asal sebelum menghantar eFiling." : "Figures are calculated from your MakeCents inputs. Verify against original documents before submitting."}
         </div>
 
-        {/* Step 1 */}
-        <Block>
-          <SecHead label={isBM ? "Langkah 1 — Buka eFiling" : "Step 1 — Open eFiling"} bg={t.surface} color={t.inkMute} />
-          <div style={{ padding: "12px 16px", fontSize: 12, color: t.inkSoft, lineHeight: 1.7 }}>
-            {isBM
-              ? <span>Pergi ke <strong style={{ color: t.red }}>mytax.hasil.gov.my</strong> → Log masuk dengan <strong>MyTax / MyDigital ID</strong> → Pilih <strong>e-Borang</strong> → Pilih <strong>Borang BE (YA {ya})</strong></span>
-              : <span>Go to <strong style={{ color: t.red }}>mytax.hasil.gov.my</strong> → Log in with <strong>MyTax / MyDigital ID</strong> → Select <strong>e-Form</strong> → Choose <strong>Form BE (YA {ya})</strong></span>}
-          </div>
-        </Block>
-
-        {/* Section B: Employment */}
-        {incomes.length > 0 && (
-          <Block>
-            <SecHead label={isBM ? "Bahagian B — Pendapatan Penggajian" : "Section B — Employment Income"} sub={isBM ? "Isi dari Borang EA" : "Fill from EA Form(s)"} />
-            {incomes.map((inc, idx) => {
-              const empSub = (inc.amount || 0) + (inc.bonus || 0) + (inc.otherAllowances || 0);
-              return (
-                <div key={inc.id || idx}>
-                  {(incomes.length > 1 || inc.employer) && (
-                    <div style={{ background: t.surface, padding: "6px 16px", fontSize: 11, fontWeight: 600, color: t.inkMute, borderBottom: `1px solid ${t.hair}` }}>
-                      {incomes.length > 1 ? `${isBM ? "Majikan" : "Employer"} ${idx + 1}: ` : ""}
-                      {inc.employer || (isBM ? "Tidak dinyatakan" : "Not stated")}
-                    </div>
-                  )}
-                  {(inc.amount || 0)          > 0 && <SRow code="B1(a)" label={isBM ? "Gaji / Emolumen Kasar" : "Gross Salary / Emoluments"} amount={inc.amount} />}
-                  {(inc.bonus || 0)           > 0 && <SRow code="B1(b)" label={isBM ? "Bonus / Komisyen / Fi" : "Bonus / Commission / Fees"} amount={inc.bonus} />}
-                  {(inc.otherAllowances || 0) > 0 && <SRow code="B1(c)" label={isBM ? "Elaun / Perkuisit Lain" : "Other Allowances / Perquisites"} amount={inc.otherAllowances} />}
-                  {incomes.length > 1 && (
-                    <div style={{ padding: "6px 16px", background: t.surface, borderTop: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600 }}>
-                      <span style={{ color: t.inkSoft }}>{isBM ? "Sub-jumlah (majikan ini)" : "Sub-total (this employer)"}</span>
-                      <span style={{ color: t.ink, fontVariantNumeric: "tabular-nums" }}>{rmFmt(empSub)}</span>
-                    </div>
-                  )}
-                  {((inc.mtdPaid || 0) > 0 || (inc.epfContrib || 0) > 0 || (inc.socso || 0) > 0) && (
-                    <div style={{ background: t.surface, padding: "5px 16px 4px", borderTop: `1px solid ${t.hair}` }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        {isBM ? "Potongan (rujukan sahaja)" : "Deductions (reference only)"}
-                      </span>
-                    </div>
-                  )}
-                  {(inc.mtdPaid    || 0) > 0 && <SRow code="D1" label={isBM ? "PCB / MTD Dipotong" : "PCB / MTD Deducted"} amount={inc.mtdPaid} isDed />}
-                  {(inc.epfContrib || 0) > 0 && <SRow code="E1" label={isBM ? "Caruman KWSP (Pekerja)" : "EPF Contribution (Employee)"} amount={inc.epfContrib} isDed />}
-                  {(inc.socso      || 0) > 0 && <SRow code="E2" label={isBM ? "Caruman PERKESO (Pekerja)" : "SOCSO Contribution (Employee)"} amount={inc.socso} isDed />}
-                </div>
-              );
-            })}
-            <SRow label={isBM ? "Jumlah Pendapatan Penggajian" : "Total Employment Income"} amount={totalEmpIncome} isTotal noBorder />
-            <Tip text={isBM ? "Salin dari Borang EA majikan. B1(a)=Gaji kasar, B1(b)=Bonus, D1=PCB dipotong, E1=Caruman KWSP." : "Copy from your employer's EA Form. B1(a)=Gross salary, B1(b)=Bonus, D1=PCB deducted, E1=EPF contribution."} />
-          </Block>
-        )}
-
-        {/* Section C: Rental */}
-        {rentalIncomes.length > 0 && (
-          <Block>
-            <SecHead label={isBM ? "Bahagian C — Pendapatan Sewa" : "Section C — Rental Income"} />
-            {rentalIncomes.map((r, i) => (
-              <SRow key={r.id || i} code={`H${i + 1}`} label={r.employer || r.address || `${isBM ? "Hartanah" : "Property"} ${i + 1}`} amount={r.amount || 0} />
+        {/* PAGE 3: PENDAPATAN */}
+        <PageBlock title={`📄 ${isBM ? "Halaman 3 — Pendapatan Berkanun & Jumlah Pendapatan" : "Page 3 — Statutory Income & Total Income"}`} titleColor="#4a5568">
+          {incomes.length > 0 && <>
+            <SecLabel label={isBM ? "Pekerjaan" : "Employment"} />
+            {incomes.map((inc, idx) => (
+              <div key={inc.id || idx}>
+                {(incomes.length > 1 || inc.employer) && (
+                  <div style={{ background: t.surface, padding: "5px 16px", fontSize: 10, fontWeight: 700, color: t.inkMute, borderBottom: `1px solid ${t.hair}` }}>
+                    {incomes.length > 1 ? `${isBM ? "Majikan" : "Employer"} ${idx + 1}: ` : ""}{inc.employer || "—"}
+                  </div>
+                )}
+                <TR label={`${isBM ? "Gaji kasar / emolumen" : "Gross salary / emoluments"} (B1a)`} value={inc.amount || 0} />
+                {(inc.bonus || 0) > 0 && <TR label={`${isBM ? "Bonus / komisyen / fi" : "Bonus / commission / fees"} (B1b)`} value={inc.bonus} />}
+                {(inc.otherAllowances || 0) > 0 && <TR label={`${isBM ? "Elaun / perkuisit lain" : "Other allowances / perquisites"} (B1c)`} value={inc.otherAllowances} />}
+                {((inc.mtdPaid || 0) > 0 || (inc.epfContrib || 0) > 0 || (inc.socso || 0) > 0) && (
+                  <div style={{ background: t.surface, padding: "4px 16px", borderBottom: `1px solid ${t.hair}` }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase" }}>{isBM ? "Potongan (rujukan)" : "Deductions (reference)"}</span>
+                  </div>
+                )}
+                {(inc.mtdPaid || 0) > 0 && <TR label={isBM ? "Potongan Cukai Bulanan (MTD)" : "Monthly Tax Deductions (MTD)"} value={inc.mtdPaid} isDed />}
+                {(inc.epfContrib || 0) > 0 && <TR label={isBM ? "Caruman KWSP (pekerja)" : "EPF contribution (employee)"} value={inc.epfContrib} isDed />}
+                {(inc.socso || 0) > 0 && <TR label={isBM ? "Caruman PERKESO (pekerja)" : "SOCSO contribution (employee)"} value={inc.socso} isDed />}
+              </div>
             ))}
-            {(totalRentalExpenses || 0) > 0 && <SRow label={isBM ? "Tolak: Perbelanjaan Boleh Ditolak" : "Less: Deductible Expenses"} amount={totalRentalExpenses} isDed />}
-            <SRow label={isBM ? "Pendapatan Sewa Bersih" : "Net Rental Income"} amount={netRentalIncome || 0} isTotal noBorder />
-          </Block>
-        )}
+            <TR label={isBM ? "Pendapatan berkanun daripada sumber pekerjaan di Malaysia" : "Statutory income from sources of employment in Malaysia"} value={totalEmpIncome} isTotal />
+            <TR label={isBM ? "Bilangan pekerjaan" : "Number of employments"} value={incomes.length} sub={null} />
+          </>}
+          {rentalIncomes.length > 0 && <>
+            <SecLabel label={isBM ? "Sewa" : "Rental"} />
+            {rentalIncomes.map((r, i) => <TR key={r.id || i} label={r.employer || r.address || `${isBM ? "Hartanah" : "Property"} ${i + 1}`} value={r.amount || 0} />)}
+            {(totalRentalExpenses || 0) > 0 && <TR label={isBM ? "Tolak: Perbelanjaan boleh ditolak" : "Less: Deductible expenses"} value={totalRentalExpenses} isDed />}
+            <TR label={isBM ? "Pendapatan berkanun daripada sumber sewa di Malaysia" : "Statutory income from sources of rents in Malaysia"} value={netRentalIncome || 0} isTotal />
+          </>}
+          <TR label={isBM ? "PENDAPATAN AGREGAT" : "AGGREGATE INCOME"} value={totalInc} isTotal />
+          <TR label={isBM ? "JUMLAH PENDAPATAN (DIRI SENDIRI)" : "TOTAL INCOME (SELF)"} value={totalInc} isTotal />
+          <TR label={isBM ? "Potongan Cukai Bulanan (MTD) / Seksyen 107D" : "Monthly Tax Deductions (MTD) / Section 107D"} value={totalMTDPaid} isDed />
+        </PageBlock>
 
-        {/* Aggregate Income */}
-        <Block>
-          <SecHead label={isBM ? "Jumlah Pendapatan Agregat" : "Total Aggregate Income"} bg="#1a3a5c" />
-          {totalEmpIncome > 0 && <SRow code="A" label={isBM ? "Pendapatan Penggajian" : "Employment Income"} amount={totalEmpIncome} />}
-          {(netRentalIncome || 0) > 0 && <SRow code="B" label={isBM ? "Pendapatan Sewa Bersih" : "Net Rental Income"} amount={netRentalIncome} />}
-          <SRow label={isBM ? "Jumlah Pendapatan" : "Total Income"} amount={totalInc} isTotal noBorder />
-        </Block>
-
-        {/* Section F: Reliefs */}
-        <Block>
-          <SecHead label={isBM ? "Bahagian F — Pelepasan Cukai" : "Section F — Tax Reliefs"} sub={isBM ? "Masukkan jumlah sebenar (bukan had)" : "Enter actual amount spent (not cap)"} bg="#1a5c32" />
-          {reliefLines.map(r => (
-            <SRow key={r.code} code={r.code} label={(isBM ? r.bm : r.en) + (r.auto ? "  ✓ AUTO" : "")} amount={r.amount} note={isBM ? r.noteBm : r.noteEn} />
+        {/* PAGE 4: PELEPASAN */}
+        <PageBlock title={`📄 ${isBM ? "Halaman 4 — Pelepasan" : "Page 4 — Relief (Pelepasan)"}`} titleColor="#276749">
+          {reliefRows.map((r, i) => (
+            <div key={i}>
+              <TR label={r.label + (r.auto ? "  ✓ AUTO" : "")} value={r.amount} sub={r.note} />
+              {r.sub && r.sub.filter(s => s.amount > 0).map((s, j) => (
+                <div key={j} style={{ display: "flex", alignItems: "flex-start", padding: "6px 16px 6px 28px", borderBottom: `1px solid ${t.hair}`, background: t.surface }}>
+                  <span style={{ flex: 1, fontSize: 11, color: t.inkSoft }}>{s.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: t.inkSoft, fontVariantNumeric: "tabular-nums", marginLeft: 12 }}>{rm(s.amount)}</span>
+                </div>
+              ))}
+            </div>
           ))}
-          <SRow label={isBM ? "Jumlah Pelepasan" : "Total Relief"} amount={totalRelief} isTotal noBorder />
-          <Tip text={isBM ? "Simpan semua resit sekurang-kurangnya 7 tahun. LHDN boleh meminta audit dalam tempoh tersebut." : "Keep all receipts for at least 7 years. LHDN may request an audit within that period."} green />
-        </Block>
+          <TR label={isBM ? "JUMLAH PELEPASAN" : "TOTAL RELIEF"} value={totalRelief} isTotal />
+        </PageBlock>
 
-        {/* Chargeable Income */}
-        <Block>
-          <SecHead label={isBM ? "Pendapatan Bercukai" : "Chargeable Income"} />
-          <SRow label={isBM ? "Jumlah Pendapatan" : "Total Income"} amount={totalInc} />
-          <SRow label={isBM ? "Tolak: Jumlah Pelepasan" : "Less: Total Relief"} amount={totalRelief} isDed />
-          <SRow label={isBM ? "Pendapatan Bercukai" : "Chargeable Income"} amount={chargeable} isTotal noBorder />
-        </Block>
+        {/* PAGE 5: RUMUSAN */}
+        <PageBlock title={`📄 ${isBM ? "Halaman 5 — Rumusan (Summary)" : "Page 5 — Summary (Rumusan)"}`} titleColor="#c8372b">
+          <TR label={isBM ? "Jumlah pendapatan" : "Total income"} value={totalInc} />
+          <TR label={`LESS  ${isBM ? "Jumlah pelepasan" : "Total relief"}`} value={totalRelief} isDed />
+          <TR label={isBM ? "PENDAPATAN BERCUKAI" : "CHARGEABLE INCOME"} value={chargeable} isCI />
 
-        {/* Tax Computation */}
-        <Block>
-          <SecHead label={isBM ? "Pengiraan & Baki Cukai" : "Tax Computation & Balance"} bg={t.red} />
-          <SRow label={isBM ? `Cukai atas RM ${chargeable.toLocaleString()} (kadar progresif YA${ya})` : `Tax on RM ${chargeable.toLocaleString()} (YA${ya} progressive rates)`} amount={taxRounded} />
-          {rebate400 > 0 && <SRow label={isBM ? "Tolak: Rebat individu (Pendapatan Bercukai ≤ RM35,000)" : "Less: Individual rebate (Chargeable Income ≤ RM35,000)"} amount={rebate400} isDed />}
-          <SRow label={isBM ? "Cukai Kena Dibayar" : "Tax Payable"} amount={taxAfterRebate} isTotal />
-          {totalMTDPaid > 0 && <SRow code="D1" label={isBM ? "Tolak: PCB / MTD yang telah dipotong" : "Less: PCB / MTD already deducted"} amount={totalMTDPaid} isDed />}
-          <div style={{ background: finalBalance > 0 ? t.red : "#1a5c32", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ background: t.surface, padding: "5px 16px", borderBottom: `1px solid ${t.hair}` }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: t.inkMute, textTransform: "uppercase" }}>{isBM ? "PENGIRAAN CUKAI PENDAPATAN" : "INCOME TAX COMPUTATION"}</span>
+          </div>
+          <div style={{ padding: "6px 16px 3px", borderBottom: `1px solid ${t.hair}`, fontSize: 11, color: t.inkMute, fontStyle: "italic" }}>
+            {isBM ? "Pendapatan bercukai tertakluk kepada Bahagian I Jadual 1" : "Chargeable income subject to Part I of Schedule 1"}
+          </div>
+          {bd.firstAmt > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, fontSize: 12, color: t.inkSoft }}>
+              <span>{isBM ? "Cukai atas yang pertama" : "Tax on the first"} RM{bd.firstAmt.toLocaleString()}</span>
+              <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: t.ink }}>{fmt(bd.firstTax)}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, fontSize: 12, color: t.inkSoft }}>
+            <span>{isBM ? "Cukai atas baki" : "Tax on the balance"} RM{bd.balanceAmt.toLocaleString()} {isBM ? "Pada kadar" : "At rate"} {bd.rate}%</span>
+            <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: t.ink }}>{fmt(bd.balanceTax)}</span>
+          </div>
+          <TR label={isBM ? "JUMLAH CUKAI PENDAPATAN" : "TOTAL INCOME TAX"} value={bd.total} isTotal />
+
+          <div style={{ padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft }}>
+            <span>{isBM ? "Rebat cukai untuk individu" : "Tax rebate for individual"}</span>
+            <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: rebateInd > 0 ? t.red : t.inkMute }}>{rebateInd > 0 ? `(${fmt(rebateInd)})` : "0"}</span>
+          </div>
+          <div style={{ padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft }}>
+            <span>{isBM ? "Rebat cukai untuk suami / isteri" : "Tax rebate for husband / wife"}</span>
+            <span style={{ color: t.inkMute }}>0</span>
+          </div>
+          <div style={{ padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft }}>
+            <span>{isBM ? "Zakat dan fitrah" : "Zakat and fitrah"}</span>
+            <span style={{ color: t.inkMute }}>0.00</span>
+          </div>
+          <TR label={isBM ? "JUMLAH CUKAI DIKENAKAN" : "TOTAL TAX CHARGED"} value={totalTaxCharged} isTotal />
+
+          <div style={{ padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft }}>
+            <span>LESS  {isBM ? "Jumlah potongan cukai (Seksyen 110) dan relief (Seksyen 132 dan 133)" : "Total tax deduction (Section 110) and relief (Section 132 and 133)"}</span>
+            <span style={{ color: t.inkMute }}>0.00</span>
+          </div>
+          <TR label={isBM ? `CUKAI KENA DIBAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX PAYABLE FOR THE YEAR OF ASSESSMENT ${ya}`} value={totalTaxCharged} isTotal />
+
+          <div style={{ padding: "7px 16px 7px 28px", borderBottom: `1px solid ${t.hair}`, display: "flex", justifyContent: "space-between", fontSize: 12, color: t.inkSoft }}>
+            <span>{isBM ? `MTD / Seksyen 107D / Ansuran sendiri / CP500 dibayar untuk pendapatan tahun ${parseInt(ya)-1}` : `MTD / Section 107D / Self installment / CP500 payment made for the year ${parseInt(ya)-1}`}</span>
+            <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: t.ink }}>{fmt(totalMTDPaid)}</span>
+          </div>
+
+          {/* Final result — matches LHDN Rumusan exactly */}
+          <div style={{ background: finalBalance > 0 ? t.red : "#276749", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>
-                {finalBalance > 0 ? (isBM ? "Baki Cukai Perlu Dibayar" : "Tax Balance Due") : (isBM ? "Bayaran Balik Cukai" : "Tax Refund")}
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 4 }}>
+                {finalBalance > 0
+                  ? (isBM ? `CUKAI TIDAK CUKUP BAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX BALANCE DUE FOR THE YEAR OF ASSESSMENT ${ya}`)
+                  : (isBM ? `CUKAI LEBIH BAYAR BAGI TAHUN TAKSIRAN ${ya}` : `TAX PAID IN EXCESS FOR THE YEAR OF ASSESSMENT ${ya}`)}
               </div>
               <div style={{ fontFamily: FONT_DISPLAY, fontSize: 30, color: "#fff", fontVariantNumeric: "tabular-nums", lineHeight: 1.05 }}>
                 RM {Math.abs(finalBalance).toLocaleString()}
               </div>
             </div>
-            <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: "#fff" }}>
+            <div style={{ textAlign: "right", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
               {finalBalance > 0
-                ? (isBM ? "Bayar via FPX / Kad Kredit dalam eFiling" : "Pay via FPX / Credit Card in eFiling")
-                : (isBM ? "Bayaran balik dikreditkan dalam 30 hari" : "Refund credited within 30 days")}
+                ? (isBM ? `Bayar sebelum 30 April ${parseInt(ya)+1}\nvia FPX / Kad Kredit dalam eFiling` : `Pay before 30 April ${parseInt(ya)+1}\nvia FPX / Credit Card in eFiling`)
+                : (isBM ? "Bayaran balik dalam masa 30 hari\nselepas eFiling dihantar" : "Refund within 30 days\nafter eFiling submission")}
             </div>
           </div>
-        </Block>
+        </PageBlock>
 
-        {/* Tax Rate Reference */}
-        <Block>
-          <SecHead label={`📊 ${isBM ? `Rujukan Kadar Cukai YA${ya}` : `YA${ya} Tax Rate Reference`}`} bg={t.surface} color={t.inkMute} />
-          {bracketData.map(([max, rate], i) => {
-            const inBracket = i === 0 ? chargeable <= 5000 : (chargeable > prevMaxes[i] && chargeable <= max);
-            return (
-              <div key={i} style={{ display: "flex", padding: "7px 16px", borderBottom: `1px solid ${t.hair}`, background: inBracket ? t.redSoft : "transparent", fontWeight: inBracket ? 700 : 400 }}>
-                <span style={{ minWidth: 130, fontSize: 11, color: t.inkMute }}>{max === Infinity ? "> RM2,000,000" : `≤ RM${max.toLocaleString()}`}</span>
-                <span style={{ fontSize: 12, fontWeight: inBracket ? 700 : 500, color: inBracket ? t.red : t.ink }}>{rate}%</span>
-                {inBracket && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: t.red }}>{isBM ? "← kadar anda" : "← your bracket"}</span>}
-              </div>
-            );
-          })}
-        </Block>
-
-        {/* Reminders */}
-        <Block>
-          <SecHead label={`📌 ${isBM ? "Peringatan Penting" : "Important Reminders"}`} bg={t.surface} color={t.inkMute} />
-          <div style={{ padding: "14px 16px" }}>
-            {[
-              isBM ? "Simpan semua resit & dokumen sokongan selama 7 tahun dari tarikh penghantaran" : "Keep all receipts & supporting documents for 7 years from submission date",
-              isBM ? `Tarikh akhir: 30 April ${nextYear} (tiada pendapatan perniagaan) / 30 Jun ${nextYear} (dengan pendapatan perniagaan)` : `Filing deadline: 30 April ${nextYear} (no business income) / 30 June ${nextYear} (with business income)`,
-              isBM ? "Kemaskini IBAN bank anda di MyTax untuk bayaran balik yang lebih cepat" : "Update your bank IBAN in MyTax for faster refunds",
-              isBM ? "Jika ada pendapatan perniagaan, guna Borang B (bukan BE)" : "If you have business income, use Form B (not Form BE)",
-              isBM ? "MakeCents adalah alat anggaran sahaja — semak dengan pakar cukai bertauliah" : "MakeCents is an estimation tool only — verify with a licensed tax professional",
-            ].map((r, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>
-                <span style={{ color: t.red, flexShrink: 0, fontWeight: 700 }}>•</span>
-                <span>{r}</span>
-              </div>
-            ))}
-          </div>
-        </Block>
-
-        <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, paddingTop: 4, paddingBottom: 20 }}>
+        <div style={{ textAlign: "center", fontSize: 11, color: t.inkMute, paddingBottom: 20 }}>
           {isBM ? `Dijana oleh MakeCents · makecents.co · ${dateStr}` : `Generated by MakeCents · makecents.co · ${dateStr}`}
         </div>
       </div>
@@ -4609,7 +4665,7 @@ ${rentalIncomes.length > 0 ? `<div class="sec"><div class="sh dark">${isBM ? "Ba
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+
 // MORE TAB
 // ─────────────────────────────────────────────────────────────
 function MoreTab({ t, L, lang, setLang, user, ya, themeName, setTheme, onSignOut, onDeleteAccount, onReset, onExport,
